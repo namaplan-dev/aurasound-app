@@ -98,22 +98,24 @@ public class LocalMusicScannerPlugin extends Plugin {
         }
 
         String[] projection = projectionList.toArray(new String[0]);
+        String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
         String sortOrder = MediaStore.Audio.Media.TITLE + " COLLATE NOCASE ASC";
 
-        try (Cursor cursor = getContext().getContentResolver().query(collection, projection, null, null, sortOrder)) {
+        try (Cursor cursor = getContext().getContentResolver().query(collection, projection, selection, null, sortOrder)) {
             if (cursor == null) return results;
+
+            int totalRows = cursor.getCount();
+            emitScanProgress(0, totalRows, "Scanning device music folders...");
 
             int idCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID);
             int titleCol = cursor.getColumnIndex(MediaStore.Audio.Media.TITLE);
             int artistCol = cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST);
             int albumCol = cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM);
-            int albumIdCol = cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID);
             int durationCol = cursor.getColumnIndex(MediaStore.Audio.Media.DURATION);
             int sizeCol = cursor.getColumnIndex(MediaStore.Audio.Media.SIZE);
             int mimeCol = cursor.getColumnIndex(MediaStore.Audio.Media.MIME_TYPE);
             int dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA);
             int displayNameCol = cursor.getColumnIndex(MediaStore.Audio.Media.DISPLAY_NAME);
-            int isMusicCol = cursor.getColumnIndex(MediaStore.Audio.Media.IS_MUSIC);
             int dateAddedCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATE_ADDED);
             int relPathCol = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
                 ? cursor.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH)
@@ -125,35 +127,24 @@ public class LocalMusicScannerPlugin extends Plugin {
                 ? cursor.getColumnIndex(MediaStore.Audio.Media.GENRE)
                 : -1;
 
+            int scannedRow = 0;
             while (cursor.moveToNext()) {
+                scannedRow++;
                 long id = cursor.getLong(idCol);
                 long durationMs = durationCol >= 0 ? cursor.getLong(durationCol) : 0L;
                 long size = sizeCol >= 0 ? cursor.getLong(sizeCol) : 0L;
-                int isMusic = isMusicCol >= 0 ? cursor.getInt(isMusicCol) : 1;
                 String displayName = displayNameCol >= 0 ? safeStr(cursor.getString(displayNameCol)) : "";
                 String dataPath = dataCol >= 0 ? safeStr(cursor.getString(dataCol)) : "";
                 String mimeType = mimeCol >= 0 ? safeStr(cursor.getString(mimeCol)) : "";
 
-                if (size <= 1024) continue;
+                if (scannedRow == 1 || scannedRow % 10 == 0 || scannedRow == totalRows) {
+                    emitScanProgress(scannedRow, Math.max(totalRows, scannedRow), !displayName.isEmpty() ? displayName : "Scanning audio...");
+                }
+
+                if (size <= 4096) continue;
+                if (durationMs > 0 && durationMs < 10000) continue;
+
                 String lowerName = (!displayName.isEmpty() ? displayName : dataPath).toLowerCase(Locale.ROOT);
-                boolean isSupportedExt = lowerName.endsWith(".flac")
-                    || lowerName.endsWith(".alac")
-                    || lowerName.endsWith(".wav")
-                    || lowerName.endsWith(".wave")
-                    || lowerName.endsWith(".mp3")
-                    || lowerName.endsWith(".m4a")
-                    || lowerName.endsWith(".aac")
-                    || lowerName.endsWith(".ogg")
-                    || lowerName.endsWith(".oga")
-                    || lowerName.endsWith(".opus");
-
-                if (isMusic == 0 && (!isSupportedExt || durationMs < 15000)) {
-                    continue;
-                }
-                if (durationMs > 0 && durationMs < 4000) {
-                    continue;
-                }
-
                 String title = titleCol >= 0 ? safeStr(cursor.getString(titleCol)) : "";
                 if (title.isEmpty()) {
                     title = stripExtension(!displayName.isEmpty() ? displayName : new File(dataPath).getName());
@@ -186,11 +177,8 @@ public class LocalMusicScannerPlugin extends Plugin {
                     folderPath = "Device Music";
                 }
 
-                long albumId = albumIdCol >= 0 ? cursor.getLong(albumIdCol) : 0L;
                 Uri contentUri = ContentUris.withAppendedId(collection, id);
-                String albumArtUri = albumId > 0
-                    ? ContentUris.withAppendedId(Uri.parse("content://media/external/audio/albumart"), albumId).toString()
-                    : "";
+                String albumArtUri = "";
 
                 int durationSec = Math.max(1, (int) Math.round(durationMs / 1000.0));
                 String format = detectFormat(lowerName, mimeType);
@@ -223,9 +211,19 @@ public class LocalMusicScannerPlugin extends Plugin {
                 item.put("addedAt", addedAtMs);
                 results.put(item);
             }
+
+            emitScanProgress(totalRows, totalRows, "Completed device scan");
         }
 
         return results;
+    }
+
+    private void emitScanProgress(int current, int total, String fileName) {
+        JSObject payload = new JSObject();
+        payload.put("current", current);
+        payload.put("total", total);
+        payload.put("fileName", fileName);
+        notifyListeners("scanProgress", payload);
     }
 
     private String safeStr(String value) {

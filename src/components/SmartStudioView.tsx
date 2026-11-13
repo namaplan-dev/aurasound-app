@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { User } from 'firebase/auth';
 import {
   Check,
+  CopyCheck,
+  ImagePlus,
   Loader2,
   Play,
   Plus,
@@ -9,19 +11,41 @@ import {
   Shuffle,
   Sparkles,
   Trash2,
+  Upload,
   Wand2,
 } from 'lucide-react';
 import {
+  AppTaskCategory,
+  ArtworkSuggestion,
   DailyRecommendation,
+  DuplicateGroup,
   SmartPlaylist,
   SmartRule,
   TagCleanupSuggestion,
   Track,
 } from '../types/music';
 import { evaluateSmartPlaylist } from '../services/smartPlaylistEngine';
+import {
+  resizeArtworkFileToDataUrl,
+  resolveApiUrl,
+  runBatchedTagCleanupScan,
+  runDuplicateScan,
+  runOriginalAlbumArtScan,
+} from '../services/aiAssistantService';
 import { tactile } from '../services/tactileFeedback';
+import { ProgressBar } from './ProgressBar';
+import { CoverArt } from './CoverArt';
 
-type StudioSection = 'all' | 'mixes' | 'playlists' | 'tags';
+type StudioSection = 'all' | 'mixes' | 'playlists' | 'tags' | 'duplicates' | 'artwork';
+
+interface InlineProgress {
+  label: string;
+  detail: string;
+  current: number;
+  total: number;
+  percent: number;
+  status: 'running' | 'done' | 'error';
+}
 
 interface SmartStudioViewProps {
   user: User | null;
@@ -34,6 +58,17 @@ interface SmartStudioViewProps {
   onDeleteSmartPlaylist: (id: string) => void;
   onUpdateDailyRecommendations: (recs: DailyRecommendation[]) => void;
   onApplyTagCleanups: (suggestions: TagCleanupSuggestion[]) => void;
+  onRemoveDuplicateTracks: (trackIds: string[]) => void;
+  onApplyArtworkUpdates: (updates: Array<{ trackId: string; coverUrl: string }>) => void;
+  onTaskProgress: (
+    id: string,
+    category: AppTaskCategory,
+    title: string,
+    detail: string,
+    current: number,
+    total: number,
+    status?: 'running' | 'done' | 'error'
+  ) => void;
 }
 
 const STUDIO_SECTIONS: Array<{ id: StudioSection; label: string }> = [
@@ -41,6 +76,8 @@ const STUDIO_SECTIONS: Array<{ id: StudioSection; label: string }> = [
   { id: 'mixes', label: 'Daily Mixes' },
   { id: 'playlists', label: 'Smart Playlists' },
   { id: 'tags', label: 'Tag Cleanup' },
+  { id: 'duplicates', label: 'Duplicates' },
+  { id: 'artwork', label: 'Album Art' },
 ];
 
 export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
@@ -54,15 +91,20 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
   onDeleteSmartPlaylist,
   onUpdateDailyRecommendations,
   onApplyTagCleanups,
+  onRemoveDuplicateTracks,
+  onApplyArtworkUpdates,
+  onTaskProgress,
 }) => {
   const [section, setSection] = useState<StudioSection>('all');
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+  const [playlistProgress, setPlaylistProgress] = useState<InlineProgress | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
 
   const [dailyLoading, setDailyLoading] = useState(false);
+  const [dailyProgress, setDailyProgress] = useState<InlineProgress | null>(null);
 
-  // Manual rule-based smart playlist state (always works without login)
+  // Manual rule-based smart playlist state
   const [showManualForm, setShowManualForm] = useState(false);
   const [manualName, setManualName] = useState('');
   const [manualGenre, setManualGenre] = useState('');
@@ -72,26 +114,73 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
 
   // AI Tag Cleanup state
   const [tagLoading, setTagLoading] = useState(false);
+  const [tagProgress, setTagProgress] = useState<InlineProgress | null>(null);
   const [tagSuggestions, setTagSuggestions] = useState<TagCleanupSuggestion[]>([]);
   const [tagStatus, setTagStatus] = useState<string | null>(null);
 
+  // AI Duplicate Scanner state
+  const [dupLoading, setDupLoading] = useState(false);
+  const [dupProgress, setDupProgress] = useState<InlineProgress | null>(null);
+  const [dupGroups, setDupGroups] = useState<DuplicateGroup[]>([]);
+  const [dupStatus, setDupStatus] = useState<string | null>(null);
+
+  // AI Original Album Art Finder & Manual Uploader state
+  const [artLoading, setArtLoading] = useState(false);
+  const [artProgress, setArtProgress] = useState<InlineProgress | null>(null);
+  const [artSuggestions, setArtSuggestions] = useState<ArtworkSuggestion[]>([]);
+  const [artStatus, setArtStatus] = useState<string | null>(null);
+  const [uploadTargetTrackId, setUploadTargetTrackId] = useState<string | null>(null);
+  const artFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const report = (
+    setter: React.Dispatch<React.SetStateAction<InlineProgress | null>>,
+    taskId: string,
+    category: AppTaskCategory,
+    label: string,
+    detail: string,
+    current: number,
+    total: number,
+    status: 'running' | 'done' | 'error' = 'running'
+  ) => {
+    const pct = total > 0 ? Math.round((current / total) * 100) : status === 'done' ? 100 : 0;
+    setter({ label, detail, current, total, percent: pct, status });
+    onTaskProgress(taskId, category, label, detail, current, total, status);
+  };
+
   const handleGenerateAiPlaylist = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
-      onSignInGoogle();
-      return;
-    }
     const clean = aiPrompt.trim();
     if (!clean) return;
+    const taskId = `ai_pl_${Date.now()}`;
     setAiLoading(true);
     setAiError(null);
+    report(
+      setPlaylistProgress,
+      taskId,
+      'ai-playlist',
+      'AI Smart Playlist',
+      'Collecting listening history & library profile...',
+      1,
+      3
+    );
+
     try {
       const recent = [...tracks]
         .sort((a, b) => (b.lastPlayedAt || 0) - (a.lastPlayedAt || 0))
         .slice(0, 15)
         .map((t) => ({ title: t.title, artist: t.artist, genre: t.genre, playCount: t.playCount }));
 
-      const resp = await fetch('/api/ai/smart-playlist', {
+      report(
+        setPlaylistProgress,
+        taskId,
+        'ai-playlist',
+        'AI Smart Playlist',
+        `Curating playlist for "${clean.slice(0, 32)}"...`,
+        2,
+        3
+      );
+
+      const resp = await fetch(resolveApiUrl('/api/ai/smart-playlist'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -130,20 +219,39 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
       onAddSmartPlaylist(created);
       tactile.success();
       setAiPrompt('');
+      report(
+        setPlaylistProgress,
+        taskId,
+        'ai-playlist',
+        'AI Smart Playlist Ready',
+        `Created "${created.name}"`,
+        3,
+        3,
+        'done'
+      );
     } catch (err) {
-      setAiError(err instanceof Error ? err.message : 'Unable to generate smart playlist.');
+      const msg = err instanceof Error ? err.message : 'Unable to generate smart playlist.';
+      setAiError(msg);
+      report(setPlaylistProgress, taskId, 'ai-playlist', 'AI Playlist Error', msg, 3, 3, 'error');
     } finally {
       setAiLoading(false);
     }
   };
 
   const handleRefreshDailyMixes = async () => {
-    if (!user) {
-      onSignInGoogle();
-      return;
-    }
+    const taskId = `ai_mix_${Date.now()}`;
     setDailyLoading(true);
     setAiError(null);
+    report(
+      setDailyProgress,
+      taskId,
+      'ai-mixes',
+      'Refreshing Daily Mixes',
+      'Analyzing top genres and favorite artists...',
+      1,
+      3
+    );
+
     try {
       const genreCounts = new Map<string, number>();
       const artistCounts = new Map<string, number>();
@@ -159,7 +267,17 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
         .map(([g]) => g);
       const favoriteArtists = [...artistCounts.keys()].slice(0, 6);
 
-      const resp = await fetch('/api/ai/daily-mix', {
+      report(
+        setDailyProgress,
+        taskId,
+        'ai-mixes',
+        'Refreshing Daily Mixes',
+        'Composing 3 personalized mixes with AI...',
+        2,
+        3
+      );
+
+      const resp = await fetch(resolveApiUrl('/api/ai/daily-mix'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tracks, topGenres, favoriteArtists }),
@@ -178,8 +296,20 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
         onUpdateDailyRecommendations(mixes);
         tactile.success();
       }
+      report(
+        setDailyProgress,
+        taskId,
+        'ai-mixes',
+        'Daily Mixes Updated',
+        `Generated ${mixes.length} tailored mixes`,
+        3,
+        3,
+        'done'
+      );
     } catch (err) {
-      setAiError(err instanceof Error ? err.message : 'Daily mix refresh failed.');
+      const msg = err instanceof Error ? err.message : 'Daily mix refresh failed.';
+      setAiError(msg);
+      report(setDailyProgress, taskId, 'ai-mixes', 'Daily Mixes Error', msg, 3, 3, 'error');
     } finally {
       setDailyLoading(false);
     }
@@ -216,60 +346,206 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
   };
 
   const handleScanTagsWithAi = async () => {
-    if (!user) {
-      onSignInGoogle();
-      return;
-    }
+    if (tracks.length === 0) return;
+    const taskId = `ai_tags_${Date.now()}`;
     setTagLoading(true);
     setTagStatus(null);
     setAiError(null);
+    report(
+      setTagProgress,
+      taskId,
+      'ai-tags',
+      'AI Song Tag Cleanup',
+      `Preparing ${tracks.length} tracks...`,
+      0,
+      tracks.length
+    );
+
     try {
-      const resp = await fetch('/api/ai/tag-cleanup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tracks }),
+      const mapped = await runBatchedTagCleanupScan(tracks, (current, total, detail) => {
+        report(setTagProgress, taskId, 'ai-tags', 'AI Song Tag Cleanup', detail, current, total);
       });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || 'Tag scan failed.');
-
-      const trackMap = new Map(tracks.map((t) => [t.id, t]));
-      const mapped: TagCleanupSuggestion[] = (data.suggestions || [])
-        .map((s: Record<string, string>) => {
-          const orig = trackMap.get(s.trackId);
-          if (!orig) return null;
-          return {
-            trackId: s.trackId,
-            currentTitle: orig.title,
-            currentArtist: orig.artist,
-            currentAlbum: orig.album,
-            currentGenre: orig.genre,
-            suggestedTitle: s.suggestedTitle || orig.title,
-            suggestedArtist: s.suggestedArtist || orig.artist,
-            suggestedAlbum: s.suggestedAlbum || orig.album,
-            suggestedGenre: s.suggestedGenre || orig.genre,
-            reason: s.reason || 'Normalized metadata',
-            selected: true,
-          };
-        })
-        .filter((item: TagCleanupSuggestion | null): item is TagCleanupSuggestion => item !== null);
-
       setTagSuggestions(mapped);
       if (mapped.length === 0) {
         setTagStatus('All scanned tracks already have clean metadata tags.');
+      } else {
+        tactile.success();
       }
+      report(
+        setTagProgress,
+        taskId,
+        'ai-tags',
+        'Tag Cleanup Scan Complete',
+        `Found ${mapped.length} track(s) with suggested tag fixes`,
+        tracks.length,
+        tracks.length,
+        'done'
+      );
     } catch (err) {
-      setAiError(err instanceof Error ? err.message : 'Unable to scan library tags.');
+      const msg = err instanceof Error ? err.message : 'Unable to scan library tags.';
+      setAiError(msg);
+      report(setTagProgress, taskId, 'ai-tags', 'Tag Scan Error', msg, 0, tracks.length, 'error');
     } finally {
       setTagLoading(false);
+    }
+  };
+
+  const handleScanDuplicatesWithAi = async () => {
+    if (tracks.length === 0) return;
+    const taskId = `ai_dups_${Date.now()}`;
+    setDupLoading(true);
+    setDupStatus(null);
+    setAiError(null);
+    report(
+      setDupProgress,
+      taskId,
+      'ai-duplicates',
+      'AI Duplicate Scanner',
+      `Inspecting ${tracks.length} tracks...`,
+      0,
+      tracks.length
+    );
+
+    try {
+      const foundGroups = await runDuplicateScan(tracks, (current, total, detail) => {
+        report(
+          setDupProgress,
+          taskId,
+          'ai-duplicates',
+          'AI Duplicate Scanner',
+          detail,
+          current,
+          total
+        );
+      });
+      setDupGroups(foundGroups);
+      if (foundGroups.length === 0) {
+        setDupStatus('No duplicate tracks detected across your library.');
+      } else {
+        tactile.success();
+      }
+      report(
+        setDupProgress,
+        taskId,
+        'ai-duplicates',
+        'Duplicate Scan Complete',
+        `Found ${foundGroups.length} duplicate group(s)`,
+        tracks.length,
+        tracks.length,
+        'done'
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Duplicate scan failed.';
+      setAiError(msg);
+      report(setDupProgress, taskId, 'ai-duplicates', 'Duplicate Scan Error', msg, 0, tracks.length, 'error');
+    } finally {
+      setDupLoading(false);
+    }
+  };
+
+  const handleFindOriginalAlbumArt = async () => {
+    if (tracks.length === 0) return;
+    const taskId = `ai_art_${Date.now()}`;
+    setArtLoading(true);
+    setArtStatus(null);
+    setAiError(null);
+    report(
+      setArtProgress,
+      taskId,
+      'ai-artwork',
+      'AI Original Album Art Finder',
+      `Preparing ${tracks.length} tracks for artwork matching...`,
+      0,
+      tracks.length
+    );
+
+    try {
+      const found = await runOriginalAlbumArtScan(tracks, (current, total, detail) => {
+        report(
+          setArtProgress,
+          taskId,
+          'ai-artwork',
+          'AI Original Album Art Finder',
+          detail,
+          current,
+          total
+        );
+      });
+      setArtSuggestions(found);
+      if (found.length === 0) {
+        setArtStatus('No new official album covers matched automatically. You can upload custom cover images below.');
+      } else {
+        tactile.success();
+      }
+      report(
+        setArtProgress,
+        taskId,
+        'ai-artwork',
+        'Album Art Lookup Complete',
+        `Found ${found.length} original album cover(s)`,
+        tracks.length,
+        tracks.length,
+        'done'
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to search original album art.';
+      setAiError(msg);
+      report(setArtProgress, taskId, 'ai-artwork', 'Album Art Lookup Error', msg, 0, tracks.length, 'error');
+    } finally {
+      setArtLoading(false);
+    }
+  };
+
+  const handleManualArtworkFileSelected = async (file: File | null) => {
+    if (!file || !uploadTargetTrackId) return;
+    const targetTrack = tracks.find((t) => t.id === uploadTargetTrackId);
+    const taskId = `art_upload_${Date.now()}`;
+    try {
+      const optimizedUrl = await resizeArtworkFileToDataUrl(file, (current, total, detail) => {
+        report(
+          setArtProgress,
+          taskId,
+          'ai-artwork',
+          `Uploading Cover Art${targetTrack ? `: ${targetTrack.title}` : ''}`,
+          detail,
+          current,
+          total,
+          current === total ? 'done' : 'running'
+        );
+      });
+
+      onApplyArtworkUpdates([{ trackId: uploadTargetTrackId, coverUrl: optimizedUrl }]);
+      tactile.success();
+      setArtStatus(`Uploaded & applied original cover art to "${targetTrack?.title || 'track'}".`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Artwork upload failed.';
+      setAiError(msg);
+      report(setArtProgress, taskId, 'ai-artwork', 'Artwork Upload Failed', msg, 0, 4, 'error');
+    } finally {
+      setUploadTargetTrackId(null);
     }
   };
 
   const showMixes = section === 'all' || section === 'mixes';
   const showPlaylists = section === 'all' || section === 'playlists';
   const showTags = section === 'all' || section === 'tags';
+  const showDuplicates = section === 'all' || section === 'duplicates';
+  const showArtwork = section === 'all' || section === 'artwork';
 
   return (
     <div className="space-y-6 max-w-5xl">
+      <input
+        ref={artFileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0] || null;
+          e.target.value = '';
+          void handleManualArtworkFileSelected(file);
+        }}
+      />
+
       {/* Header + Segmented Section Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-4">
         <div>
@@ -277,7 +553,7 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
             Smart Studio
           </h2>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Daily personalized mixes, dynamic smart playlists, and library tag cleanup.
+            AI duplicate scanner, tag cleanup, original album art lookup/upload, daily mixes, and smart playlists.
           </p>
         </div>
 
@@ -320,7 +596,374 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
         </div>
       )}
 
-      {/* 1. Personalized Daily Recommendations */}
+      {/* 1. AI Duplicate Scanner */}
+      {showDuplicates && (
+        <section className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-display font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                <CopyCheck className="w-4 h-4 accent-text" />
+                <span>AI Duplicate Track Scanner</span>
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                Detects duplicate songs across folders and formats, keeping the highest lossless bit-depth copy.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleScanDuplicatesWithAi}
+              disabled={dupLoading || tracks.length < 2}
+              className="min-h-[42px] px-4 rounded-lg accent-bg text-sm font-medium flex items-center gap-2 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-50"
+            >
+              {dupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CopyCheck className="w-4 h-4" />}
+              <span>{dupLoading ? 'Scanning...' : 'Scan for Duplicates'}</span>
+            </button>
+          </div>
+
+          {dupProgress && (
+            <ProgressBar
+              label={dupProgress.label}
+              detail={dupProgress.detail}
+              current={dupProgress.current}
+              total={dupProgress.total}
+              percent={dupProgress.percent}
+              status={dupProgress.status}
+            />
+          )}
+
+          {dupStatus && <p className="text-sm text-zinc-600 dark:text-zinc-400">{dupStatus}</p>}
+
+          {dupGroups.length > 0 && (
+            <div className="space-y-4 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+              {dupGroups.map((group) => (
+                <div
+                  key={group.groupId}
+                  className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-3.5 space-y-2"
+                >
+                  <div className="text-xs text-zinc-500 dark:text-zinc-400 font-mono-tabular">
+                    {group.reason} · {group.similarityScore}% match
+                  </div>
+                  <div className="divide-y divide-zinc-200/70 dark:divide-zinc-800/70">
+                    {group.items.map((item) => (
+                      <label
+                        key={item.trackId}
+                        className="flex items-center justify-between gap-3 py-2 cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={item.selectedForRemoval}
+                            onChange={() => {
+                              tactile.toggle(!item.selectedForRemoval);
+                              setDupGroups((prev) =>
+                                prev.map((g) =>
+                                  g.groupId !== group.groupId
+                                    ? g
+                                    : {
+                                        ...g,
+                                        items: g.items.map((x) =>
+                                          x.trackId === item.trackId
+                                            ? { ...x, selectedForRemoval: !x.selectedForRemoval }
+                                            : x
+                                        ),
+                                      }
+                                )
+                              );
+                            }}
+                            className="w-4 h-4 accent-amber-500 shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                              {item.title}
+                            </div>
+                            <div className="text-xs text-zinc-500 dark:text-zinc-400 truncate font-mono-tabular">
+                              {item.artist} · {item.format} {item.bitDepth}b/{Math.round(item.sampleRate / 1000)}kHz · {item.bitrateKbps} kbps
+                            </div>
+                          </div>
+                        </div>
+                        <span
+                          className={`text-xs font-medium shrink-0 ${
+                            item.isRecommendedKeep && !item.selectedForRemoval
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : item.selectedForRemoval
+                              ? 'text-rose-600 dark:text-rose-400'
+                              : 'text-zinc-500'
+                          }`}
+                        >
+                          {item.selectedForRemoval
+                            ? 'Remove Copy'
+                            : item.isRecommendedKeep
+                            ? 'Keep Master'
+                            : 'Keep'}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const idsToRemove = dupGroups.flatMap((g) =>
+                      g.items.filter((i) => i.selectedForRemoval).map((i) => i.trackId)
+                    );
+                    if (idsToRemove.length > 0) {
+                      tactile.success();
+                      onRemoveDuplicateTracks(idsToRemove);
+                      setDupGroups([]);
+                      setDupStatus(`Removed ${idsToRemove.length} duplicate track(s) while keeping master copies.`);
+                    }
+                  }}
+                  className="min-h-[44px] px-5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium flex items-center gap-2 active:scale-95 transition-transform duration-100"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Remove Selected Duplicates</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* 2. AI Metadata & Tag Cleanup */}
+      {showTags && (
+        <section className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-display font-semibold text-zinc-900 dark:text-zinc-100">
+                AI Metadata & Tag Cleanup
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Clean messy filenames and fix artist, title, album, and genre tags while preserving Lithuanian & Cyrillic scripts.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleScanTagsWithAi}
+              disabled={tagLoading || tracks.length === 0}
+              className="min-h-[42px] px-4 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-sm font-medium flex items-center gap-2 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-50"
+            >
+              {tagLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+              <span>{tagLoading ? 'Scanning Tags...' : 'Scan & Fix Tags'}</span>
+            </button>
+          </div>
+
+          {tagProgress && (
+            <ProgressBar
+              label={tagProgress.label}
+              detail={tagProgress.detail}
+              current={tagProgress.current}
+              total={tagProgress.total}
+              percent={tagProgress.percent}
+              status={tagProgress.status}
+            />
+          )}
+
+          {tagStatus && <p className="text-sm text-zinc-600 dark:text-zinc-400">{tagStatus}</p>}
+
+          {tagSuggestions.length > 0 && (
+            <div className="space-y-3 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+              <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                {tagSuggestions.map((s) => (
+                  <label
+                    key={s.trackId}
+                    className="flex items-start gap-3 py-3 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/60 rounded-lg px-2"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={s.selected}
+                      onChange={() => {
+                        tactile.toggle(!s.selected);
+                        setTagSuggestions((prev) =>
+                          prev.map((item) =>
+                            item.trackId === s.trackId ? { ...item, selected: !item.selected } : item
+                          )
+                        );
+                      }}
+                      className="mt-1 w-4 h-4 accent-amber-500"
+                    />
+                    <div className="min-w-0 flex-1 text-xs space-y-1">
+                      <div className="text-zinc-500 line-through truncate">
+                        {s.currentArtist} — {s.currentTitle} ({s.currentAlbum})
+                      </div>
+                      <div className="text-zinc-900 dark:text-zinc-100 font-medium truncate">
+                        {s.suggestedArtist} — {s.suggestedTitle} ({s.suggestedAlbum} · {s.suggestedGenre})
+                      </div>
+                      <div className="text-zinc-500">{s.reason}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const chosen = tagSuggestions.filter((s) => s.selected);
+                    if (chosen.length > 0) {
+                      tactile.success();
+                      onApplyTagCleanups(chosen);
+                      setTagSuggestions([]);
+                      setTagStatus(`Updated ${chosen.length} track(s).`);
+                    }
+                  }}
+                  className="min-h-[44px] px-5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium flex items-center gap-2 active:scale-95 transition-transform duration-100"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Apply Changes</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* 3. AI Original Album Art Finder & Manual Cover Uploader */}
+      {showArtwork && (
+        <section className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-display font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                <ImagePlus className="w-4 h-4 accent-text" />
+                <span>AI Original Album Art Finder & Uploader</span>
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Matches songs to original album releases via AI & Cover Art Archive, or lets you upload custom covers from your device.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleFindOriginalAlbumArt}
+              disabled={artLoading || tracks.length === 0}
+              className="min-h-[42px] px-4 rounded-lg accent-bg text-sm font-medium flex items-center gap-2 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-50"
+            >
+              {artLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
+              <span>{artLoading ? 'Searching Art...' : 'Find Original Album Art'}</span>
+            </button>
+          </div>
+
+          {artProgress && (
+            <ProgressBar
+              label={artProgress.label}
+              detail={artProgress.detail}
+              current={artProgress.current}
+              total={artProgress.total}
+              percent={artProgress.percent}
+              status={artProgress.status}
+            />
+          )}
+
+          {artStatus && <p className="text-sm text-zinc-600 dark:text-zinc-400">{artStatus}</p>}
+
+          {artSuggestions.length > 0 && (
+            <div className="space-y-3 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {artSuggestions.map((item) => (
+                  <label
+                    key={item.trackId}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/60"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={item.selected}
+                      onChange={() => {
+                        tactile.toggle(!item.selected);
+                        setArtSuggestions((prev) =>
+                          prev.map((x) =>
+                            x.trackId === item.trackId ? { ...x, selected: !x.selected } : x
+                          )
+                        );
+                      }}
+                      className="w-4 h-4 accent-amber-500 shrink-0"
+                    />
+                    <img
+                      src={item.suggestedCoverUrl}
+                      alt={`${item.album} cover`}
+                      referrerPolicy="no-referrer"
+                      className="w-14 h-14 rounded-lg object-cover border border-zinc-200 dark:border-zinc-800 shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                        {item.title}
+                      </div>
+                      <div className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                        {item.artist} · {item.album}
+                      </div>
+                      <div className="text-[11px] text-emerald-600 dark:text-emerald-400 truncate mt-0.5">
+                        {item.sourceLabel}
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const chosen = artSuggestions.filter((s) => s.selected);
+                    if (chosen.length > 0) {
+                      tactile.success();
+                      onApplyArtworkUpdates(
+                        chosen.map((c) => ({ trackId: c.trackId, coverUrl: c.suggestedCoverUrl }))
+                      );
+                      setArtSuggestions([]);
+                      setArtStatus(`Applied original album art to ${chosen.length} track(s).`);
+                    }
+                  }}
+                  className="min-h-[44px] px-5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium flex items-center gap-2 active:scale-95 transition-transform duration-100"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Apply Selected Artworks</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Direct Manual Upload List (First 12 tracks or tracks in library) */}
+          <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-2.5">
+            <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+              Upload Custom Album Cover from Device
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-72 overflow-y-auto pr-1">
+              {tracks.slice(0, 30).map((t) => (
+                <div
+                  key={t.id}
+                  className="flex items-center justify-between gap-2.5 p-2.5 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-950/50"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <CoverArt src={t.coverUrl} alt={t.title} className="w-10 h-10 rounded-md" />
+                    <div className="min-w-0">
+                      <div className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                        {t.title}
+                      </div>
+                      <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
+                        {t.artist}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      tactile.tap();
+                      setUploadTargetTrackId(t.id);
+                      artFileInputRef.current?.click();
+                    }}
+                    className="min-h-[36px] px-2.5 rounded-md border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-medium flex items-center gap-1 shrink-0"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 4. Personalized Daily Recommendations */}
       {showMixes && (
         <section className="space-y-3.5">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -357,10 +1000,21 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
                 ) : (
                   <RefreshCw className="w-3.5 h-3.5" />
                 )}
-                <span>{user ? 'Refresh Mixes' : 'Sign in to Refresh'}</span>
+                <span>Refresh Mixes</span>
               </button>
             </div>
           </div>
+
+          {dailyProgress && (
+            <ProgressBar
+              label={dailyProgress.label}
+              detail={dailyProgress.detail}
+              current={dailyProgress.current}
+              total={dailyProgress.total}
+              percent={dailyProgress.percent}
+              status={dailyProgress.status}
+            />
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {dailyRecommendations.map((rec) => {
@@ -415,7 +1069,7 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
         </section>
       )}
 
-      {/* 2. Smart Playlist Generator + Dynamic Smart Playlists */}
+      {/* 5. Smart Playlist Generator + Dynamic Smart Playlists */}
       {showPlaylists && (
         <section className="space-y-4">
           <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-5 space-y-4">
@@ -426,9 +1080,7 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
                   <span>Create Smart Playlist</span>
                 </h3>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-                  {user
-                    ? `Describe a mood or sound profile for ${user.email}, or define dynamic rules.`
-                    : 'Rule-based playlists work offline anytime; sign in with Gmail for AI prompts.'}
+                  Describe a mood or sound profile for AI curation, or define dynamic rules.
                 </p>
               </div>
 
@@ -459,9 +1111,20 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
                 className="min-h-[44px] px-5 rounded-lg accent-bg text-sm font-medium flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-50"
               >
                 {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-                <span>{user ? 'Generate Mix' : 'Sign in & Generate'}</span>
+                <span>Generate Mix</span>
               </button>
             </form>
+
+            {playlistProgress && (
+              <ProgressBar
+                label={playlistProgress.label}
+                detail={playlistProgress.detail}
+                current={playlistProgress.current}
+                total={playlistProgress.total}
+                percent={playlistProgress.percent}
+                status={playlistProgress.status}
+              />
+            )}
 
             {showManualForm && (
               <form
@@ -591,88 +1254,6 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
               })}
             </div>
           </div>
-        </section>
-      )}
-
-      {/* 3. AI Tag Cleanup Section — strictly ONE green Apply Changes button */}
-      {showTags && (
-        <section className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-5 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="text-base font-display font-semibold text-zinc-900 dark:text-zinc-100">
-                AI Metadata & Tag Cleanup
-              </h3>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Clean messy filenames and normalize artist, album, and genre tags while preserving Lithuanian & Cyrillic scripts.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleScanTagsWithAi}
-              disabled={tagLoading}
-              className="min-h-[42px] px-4 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-sm font-medium flex items-center gap-2 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-50"
-            >
-              {tagLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-              <span>{user ? 'Scan Library Tags' : 'Sign in to Scan Tags'}</span>
-            </button>
-          </div>
-
-          {tagStatus && <p className="text-sm text-zinc-600 dark:text-zinc-400">{tagStatus}</p>}
-
-          {tagSuggestions.length > 0 && (
-            <div className="space-y-3 pt-2 border-t border-zinc-200 dark:border-zinc-800">
-              <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
-                {tagSuggestions.map((s) => (
-                  <label
-                    key={s.trackId}
-                    className="flex items-start gap-3 py-3 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/60 rounded-lg px-2"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={s.selected}
-                      onChange={() => {
-                        tactile.toggle(!s.selected);
-                        setTagSuggestions((prev) =>
-                          prev.map((item) =>
-                            item.trackId === s.trackId ? { ...item, selected: !item.selected } : item
-                          )
-                        );
-                      }}
-                      className="mt-1 w-4 h-4 accent-amber-500"
-                    />
-                    <div className="min-w-0 flex-1 text-xs space-y-1">
-                      <div className="text-zinc-500 line-through truncate">
-                        {s.currentArtist} — {s.currentTitle} ({s.currentAlbum})
-                      </div>
-                      <div className="text-zinc-900 dark:text-zinc-100 font-medium truncate">
-                        {s.suggestedArtist} — {s.suggestedTitle} ({s.suggestedAlbum} · {s.suggestedGenre})
-                      </div>
-                      <div className="text-zinc-500">{s.reason}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const chosen = tagSuggestions.filter((s) => s.selected);
-                    if (chosen.length > 0) {
-                      tactile.success();
-                      onApplyTagCleanups(chosen);
-                      setTagSuggestions([]);
-                      setTagStatus(`Updated ${chosen.length} track(s).`);
-                    }
-                  }}
-                  className="min-h-[44px] px-5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium flex items-center gap-2 active:scale-95 transition-transform duration-100"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>Apply Changes</span>
-                </button>
-              </div>
-            </div>
-          )}
         </section>
       )}
     </div>

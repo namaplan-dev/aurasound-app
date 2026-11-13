@@ -36,6 +36,8 @@ interface PlayerBarProps {
   onChangeVolume: (vol: number) => void;
   onToggleFavorite: (trackId: string) => void;
   onOpenNowPlaying: () => void;
+  onPeekSheet?: (dyNegative: number) => void;
+  onReleaseSheetPeek?: (shouldOpen: boolean) => void;
   onOpenEqualizer: () => void;
   onOpenCast: () => void;
   onOpenShare: () => void;
@@ -57,15 +59,25 @@ export const PlayerBar: React.FC<PlayerBarProps> = React.memo(
     onChangeVolume,
     onToggleFavorite,
     onOpenNowPlaying,
+    onPeekSheet,
+    onReleaseSheetPeek,
     onOpenEqualizer,
     onOpenCast,
     onOpenShare,
   }) => {
     const [progress, setProgress] = useState({ currentTime: 0, duration: track?.duration || 0 });
     const [dragTime, setDragTime] = useState<number | null>(null);
-    const [liftY, setLiftY] = useState(0);
-    const touchStartYRef = useRef<number | null>(null);
-    const swipedRef = useRef(false);
+    const footerRef = useRef<HTMLElement | null>(null);
+    const swipeStateRef = useRef<{
+      startX: number;
+      startY: number;
+      prevY: number;
+      prevTime: number;
+      velocityUp: number;
+      lastDy: number;
+      dragging: boolean;
+      aborted: boolean;
+    } | null>(null);
 
     useEffect(() => {
       return audioEngine.subscribeProgress((state) => {
@@ -80,44 +92,102 @@ export const PlayerBar: React.FC<PlayerBarProps> = React.memo(
     const pct = Math.min(100, Math.max(0, (displayTime / dur) * 100));
 
     const handleTouchStart = (e: React.TouchEvent) => {
+      if (e.touches.length !== 1) return;
       const target = e.target as HTMLElement;
       if (target.closest('input[type="range"]') || target.closest('button[data-no-swipe="true"]')) {
-        touchStartYRef.current = null;
+        swipeStateRef.current = null;
         return;
       }
-      touchStartYRef.current = e.touches[0].clientY;
-      swipedRef.current = false;
+      const touch = e.touches[0];
+      swipeStateRef.current = {
+        startX: touch.clientX,
+        startY: touch.clientY,
+        prevY: touch.clientY,
+        prevTime: performance.now(),
+        velocityUp: 0,
+        lastDy: 0,
+        dragging: false,
+        aborted: false,
+      };
+      if (footerRef.current) {
+        footerRef.current.style.transitionDuration = '0ms';
+      }
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
-      if (touchStartYRef.current === null) return;
-      const dy = e.touches[0].clientY - touchStartYRef.current;
-      if (dy < 0) {
-        setLiftY(Math.max(-44, dy * 0.45));
-        if (dy < -36 && !swipedRef.current) {
-          swipedRef.current = true;
-          touchStartYRef.current = null;
-          setLiftY(0);
-          onOpenNowPlaying();
+      const state = swipeStateRef.current;
+      if (!state || state.aborted || e.touches.length !== 1) return;
+
+      const touch = e.touches[0];
+      const now = performance.now();
+      const dx = Math.abs(touch.clientX - state.startX);
+      const dy = touch.clientY - state.startY;
+      const dt = Math.max(8, now - state.prevTime);
+      const instVelUp = (state.prevY - touch.clientY) / dt;
+      state.velocityUp = state.velocityUp * 0.45 + instVelUp * 0.55;
+      state.prevY = touch.clientY;
+      state.prevTime = now;
+
+      if (!state.dragging) {
+        if (dx > 14 && dx > Math.abs(dy)) {
+          state.aborted = true;
+          return;
         }
+        if (dy > -5) return;
+        state.dragging = true;
       }
+
+      const clampedDy = Math.min(0, dy);
+      state.lastDy = clampedDy;
+
+      if (footerRef.current) {
+        const follow = Math.max(-28, clampedDy * 0.22);
+        footerRef.current.style.transform = `translate3d(0, ${follow}px, 0)`;
+      }
+      onPeekSheet?.(clampedDy);
     };
 
-    const handleTouchEnd = () => {
-      touchStartYRef.current = null;
-      setLiftY(0);
+    const finishSwipe = () => {
+      const state = swipeStateRef.current;
+      swipeStateRef.current = null;
+
+      if (footerRef.current) {
+        footerRef.current.style.transitionDuration = '280ms';
+        footerRef.current.style.transform = 'translate3d(0, 0, 0)';
+      }
+
+      if (!state || !state.dragging) {
+        if (state && !state.dragging && state.lastDy < 0) {
+          onReleaseSheetPeek?.(false);
+        }
+        return;
+      }
+
+      const pulled = Math.abs(state.lastDy);
+      const vh = Math.max(480, window.innerHeight || 720);
+      const distanceThreshold = Math.min(140, vh * 0.18);
+      const shouldOpen =
+        pulled > distanceThreshold ||
+        (pulled > 24 && state.velocityUp > 0.36);
+
+      onReleaseSheetPeek?.(shouldOpen);
+      if (shouldOpen) {
+        onOpenNowPlaying();
+      }
     };
 
     return (
       <footer
+        ref={footerRef}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        onTouchEnd={finishSwipe}
+        onTouchCancel={finishSwipe}
         style={{
           bottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
-          transform: liftY !== 0 ? `translate3d(0, ${liftY}px, 0)` : undefined,
+          transform: 'translate3d(0, 0, 0)',
         }}
-        className="fixed left-2.5 right-2.5 sm:left-4 sm:right-4 z-40 rounded-2xl border border-zinc-200/90 dark:border-zinc-700/80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl shadow-[0_14px_40px_rgba(0,0,0,0.35)] transition-transform duration-150"
+        className="fixed left-2.5 right-2.5 sm:left-4 sm:right-4 z-40 rounded-2xl border border-zinc-200/90 dark:border-zinc-700/80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl shadow-[0_14px_40px_rgba(0,0,0,0.35)] will-change-transform transition-transform duration-250 ease-[cubic-bezier(0.22,1,0.36,1)]"
       >
         <div className="max-w-screen-2xl mx-auto px-3.5 sm:px-5 pt-2 pb-3.5 space-y-2.5">
           {/* Slide-Up Drag Handle */}
@@ -125,9 +195,9 @@ export const PlayerBar: React.FC<PlayerBarProps> = React.memo(
             type="button"
             onClick={onOpenNowPlaying}
             aria-label="Slide up or tap to open full screen player"
-            className="w-full flex flex-col items-center justify-center py-0.5 group cursor-grab active:cursor-grabbing"
+            className="touch-none w-full flex flex-col items-center justify-center py-1.5 group cursor-grab active:cursor-grabbing"
           >
-            <span className="w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-600 group-hover:bg-amber-500 transition-colors" />
+            <span className="w-12 h-1 rounded-full bg-zinc-300 dark:bg-zinc-600 group-hover:bg-amber-500 transition-colors" />
           </button>
 
           {/* Top Row: Cover Art, Track Metadata & Quick Expand */}
@@ -135,7 +205,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = React.memo(
             <button
               type="button"
               onClick={onOpenNowPlaying}
-              className="flex items-center gap-3 min-w-0 flex-1 text-left group active:scale-[0.99] transition-transform duration-100"
+              className="touch-none flex items-center gap-3 min-w-0 flex-1 text-left group active:scale-[0.99] transition-transform duration-100"
             >
               <CoverArt
                 src={track.coverUrl}

@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import {
   AppSettings,
+  AppTaskCategory,
+  AppTaskProgress,
   DailyRecommendation,
   EQPreset,
   NavigationTab,
@@ -67,12 +69,13 @@ import { EqualizerPanel } from './components/EqualizerPanel';
 import { SmartStudioView } from './components/SmartStudioView';
 import { SettingsCloudView } from './components/SettingsCloudView';
 import { PlayerBar } from './components/PlayerBar';
-import { NowPlayingView } from './components/NowPlayingView';
+import { NowPlayingSheetHandle, NowPlayingView } from './components/NowPlayingView';
 import { HomescreenWidget } from './components/HomescreenWidget';
 import { CastModal } from './components/CastModal';
 import { ShareModal } from './components/ShareModal';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { TaskProgressDock } from './components/TaskProgressDock';
 import { tactile } from './services/tactileFeedback';
 import { isNativeAndroidApp, scanAndroidDeviceLibrary } from './services/nativeScanner';
 import {
@@ -177,11 +180,79 @@ export default function App() {
   const [castOpen, setCastOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
-  // Import & Cloud status
+  // Import, Cloud & Global Task Progress state
   const [importingFiles, setImportingFiles] = useState(false);
   const [cacheStats, setCacheStats] = useState({ count: 0, totalBytes: 0 });
   const [syncBusy, setSyncBusy] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
+  const [activeTasks, setActiveTasks] = useState<AppTaskProgress[]>([]);
+  const [syncProgress, setSyncProgress] = useState<AppTaskProgress | null>(null);
+  const [storageProgress, setStorageProgress] = useState<AppTaskProgress | null>(null);
+  const taskCleanupTimersRef = useRef<Map<string, number>>(new Map());
+  const nowPlayingSheetRef = useRef<NowPlayingSheetHandle | null>(null);
+
+  const dismissTask = useCallback((taskId: string) => {
+    const existingTimer = taskCleanupTimersRef.current.get(taskId);
+    if (existingTimer) {
+      window.clearTimeout(existingTimer);
+      taskCleanupTimersRef.current.delete(taskId);
+    }
+    setActiveTasks((prev) => prev.filter((t) => t.id !== taskId));
+  }, []);
+
+  const reportTaskProgress = useCallback(
+    (
+      id: string,
+      category: AppTaskCategory,
+      title: string,
+      detail: string,
+      current: number,
+      total: number,
+      status: 'running' | 'done' | 'error' = 'running'
+    ) => {
+      const percent =
+        total > 0
+          ? Math.max(0, Math.min(100, Math.round((current / total) * 100)))
+          : status === 'done'
+          ? 100
+          : 0;
+      const entry: AppTaskProgress = {
+        id,
+        category,
+        title,
+        detail,
+        current,
+        total,
+        percent,
+        status,
+        updatedAt: Date.now(),
+      };
+
+      setActiveTasks((prev) => {
+        const idx = prev.findIndex((t) => t.id === id);
+        if (idx === -1) return [...prev.slice(-3), entry];
+        const next = [...prev];
+        next[idx] = entry;
+        return next;
+      });
+
+      if (category === 'cloud-sync') setSyncProgress(entry);
+      if (category === 'library-maintenance') setStorageProgress(entry);
+
+      const oldTimer = taskCleanupTimersRef.current.get(id);
+      if (oldTimer) {
+        window.clearTimeout(oldTimer);
+        taskCleanupTimersRef.current.delete(id);
+      }
+      if (status !== 'running') {
+        const timer = window.setTimeout(() => {
+          dismissTask(id);
+        }, status === 'done' ? 3800 : 6000);
+        taskCleanupTimersRef.current.set(id, timer);
+      }
+    },
+    [dismissTask]
+  );
 
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const filesInputRef = useRef<HTMLInputElement | null>(null);
@@ -236,9 +307,21 @@ export default function App() {
     settings.streamingQuality,
   ]);
 
-  // Persist library state
+  const tracksSaveTimerRef = useRef<number | null>(null);
+
+  // Debounce track persistence to avoid synchronous localStorage stalls on mobile UI
   useEffect(() => {
-    saveTracks(tracks);
+    if (tracksSaveTimerRef.current) {
+      window.clearTimeout(tracksSaveTimerRef.current);
+    }
+    tracksSaveTimerRef.current = window.setTimeout(() => {
+      saveTracks(tracks);
+    }, 350);
+    return () => {
+      if (tracksSaveTimerRef.current) {
+        window.clearTimeout(tracksSaveTimerRef.current);
+      }
+    };
   }, [tracks]);
   useEffect(() => {
     savePlaylists(playlists);
@@ -402,7 +485,6 @@ export default function App() {
       upcoming,
       Boolean(sess?.wasPlaying)
     );
-    audioEngine.prewarmTracks(tracks);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -418,11 +500,16 @@ export default function App() {
     });
 
     const handleLifecycleFlush = () => {
+      if (tracksSaveTimerRef.current) {
+        window.clearTimeout(tracksSaveTimerRef.current);
+        tracksSaveTimerRef.current = null;
+      }
+      saveTracks(tracksRef.current);
       persistSessionSnapshot(true);
     };
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        persistSessionSnapshot(true);
+        handleLifecycleFlush();
       }
     };
 
@@ -658,8 +745,25 @@ export default function App() {
         (file) => file.type.startsWith('audio/') || audioExts.test(file.name)
       );
 
+      if (audioFiles.length === 0) {
+        setImportingFiles(false);
+        return;
+      }
+
+      const taskId = `import_${Date.now()}`;
+      const totalFiles = audioFiles.length;
+      reportTaskProgress(
+        taskId,
+        'file-import',
+        'Importing Audio Files',
+        `Reading metadata for ${totalFiles} file(s)...`,
+        0,
+        totalFiles
+      );
+
       let totalAdded = 0;
-      const batchSize = 8;
+      let processed = 0;
+      const batchSize = 6;
 
       try {
         for (let i = 0; i < audioFiles.length; i += batchSize) {
@@ -671,6 +775,16 @@ export default function App() {
               void saveAudioBlobToCache(parsed.id, file);
               return parsed;
             })
+          );
+
+          processed += slice.length;
+          reportTaskProgress(
+            taskId,
+            'file-import',
+            'Importing Audio Files',
+            `Imported ${slice[slice.length - 1]?.name || 'audio'} (${processed}/${totalFiles})`,
+            processed,
+            totalFiles
           );
 
           if (parsedBatch.length > 0) {
@@ -690,20 +804,57 @@ export default function App() {
             void refreshCacheStats();
           }, 400);
         }
+        reportTaskProgress(
+          taskId,
+          'file-import',
+          'Import Complete',
+          `Added ${totalAdded} audio track(s) to library`,
+          totalFiles,
+          totalFiles,
+          'done'
+        );
+      } catch (err) {
+        reportTaskProgress(
+          taskId,
+          'file-import',
+          'Import Failed',
+          err instanceof Error ? err.message : 'Unable to import selected files.',
+          processed,
+          totalFiles,
+          'error'
+        );
       } finally {
         setImportingFiles(false);
       }
     },
-    [refreshCacheStats]
+    [refreshCacheStats, reportTaskProgress]
   );
 
   const handleScanNativeAndroid = useCallback(
     async (silentIfEmpty = false) => {
       if (!isNativeAndroidApp()) return 0;
+      const taskId = `native_scan_${Date.now()}`;
       setImportingFiles(true);
       setAudioError(null);
+      reportTaskProgress(
+        taskId,
+        'device-scan',
+        'Scanning Device Music Folders',
+        'Reading Android MediaStore index...',
+        0,
+        100
+      );
       try {
-        const scannedTracks = await scanAndroidDeviceLibrary();
+        const scannedTracks = await scanAndroidDeviceLibrary((prog) => {
+          reportTaskProgress(
+            taskId,
+            'device-scan',
+            'Scanning Device Music Folders',
+            prog.fileName || 'Scanning audio files...',
+            prog.current,
+            Math.max(1, prog.total)
+          );
+        });
         if (scannedTracks.length > 0) {
           setTracks((prev) => {
             const scannedByFp = new Map(scannedTracks.map((t) => [t.fingerprint, t]));
@@ -724,52 +875,82 @@ export default function App() {
             return brandNew.length > 0 ? [...brandNew, ...updatedPrev] : updatedPrev;
           });
           tactile.success();
-        } else if (!silentIfEmpty) {
-          setAudioError('No audio files were found in device storage yet.');
+          reportTaskProgress(
+            taskId,
+            'device-scan',
+            'Device Folder Scan Complete',
+            `Loaded ${scannedTracks.length} track(s) from device storage`,
+            scannedTracks.length,
+            scannedTracks.length,
+            'done'
+          );
+        } else {
+          if (!silentIfEmpty) {
+            setAudioError('No audio files were found in device storage yet.');
+          }
+          reportTaskProgress(
+            taskId,
+            'device-scan',
+            'Device Scan Finished',
+            'No music tracks found (clips shorter than 10s skipped)',
+            1,
+            1,
+            'done'
+          );
         }
         return scannedTracks.length;
       } catch (err) {
+        const msg =
+          err instanceof Error
+            ? err.message
+            : 'Audio permission is required to scan local music folders.';
         if (!silentIfEmpty) {
-          setAudioError(
-            err instanceof Error
-              ? err.message
-              : 'Audio permission is required to scan local music folders.'
-          );
+          setAudioError(msg);
         }
+        reportTaskProgress(taskId, 'device-scan', 'Device Scan Error', msg, 0, 1, 'error');
         return 0;
       } finally {
         setImportingFiles(false);
       }
     },
-    []
+    [reportTaskProgress]
   );
-
-  const autoScannedAndroidRef = useRef(false);
-  useEffect(() => {
-    if (!isNativeAndroidApp() || autoScannedAndroidRef.current) return;
-    autoScannedAndroidRef.current = true;
-    const hasNativeTracks = tracksRef.current.some((t) => t.source === 'local' && Boolean(t.nativeUri));
-    if (!hasNativeTracks) {
-      void handleScanNativeAndroid(true);
-    }
-  }, [handleScanNativeAndroid]);
 
   // Cloud Sync Actions
   const handleSignInGoogle = async () => {
+    const taskId = `auth_${Date.now()}`;
     try {
       setSyncBusy(true);
       setSyncMessage(null);
+      reportTaskProgress(
+        taskId,
+        'cloud-sync',
+        'Signing in with Gmail',
+        'Authorizing Google account...',
+        1,
+        2
+      );
       const signedUser = await signInWithGoogleAccount();
       tactile.success();
-      // Auto-check if cloud backup exists on sign-in
       const cloud = await restoreFromCloud(signedUser);
       if (cloud) {
         setSyncMessage(`Signed in as ${signedUser.email}. Cloud backup ready to restore or sync.`);
       } else {
         setSyncMessage(`Signed in as ${signedUser.email}.`);
       }
+      reportTaskProgress(
+        taskId,
+        'cloud-sync',
+        'Gmail Connected',
+        signedUser.email || 'Signed in',
+        2,
+        2,
+        'done'
+      );
     } catch (err) {
-      setSyncMessage(err instanceof Error ? err.message : 'Google sign-in cancelled or failed.');
+      const msg = err instanceof Error ? err.message : 'Google sign-in cancelled or failed.';
+      setSyncMessage(msg);
+      reportTaskProgress(taskId, 'cloud-sync', 'Gmail Sign-In Failed', msg, 2, 2, 'error');
     } finally {
       setSyncBusy(false);
     }
@@ -778,13 +959,34 @@ export default function App() {
   const handleBackupNow = useCallback(
     async (silent = false) => {
       if (!user) return;
-      if (!silent) setSyncBusy(true);
+      const taskId = `backup_${Date.now()}`;
+      if (!silent) {
+        setSyncBusy(true);
+        reportTaskProgress(
+          taskId,
+          'cloud-sync',
+          'Backing Up to Cloud',
+          'Packaging settings, playlists, EQ presets & ratings...',
+          1,
+          3
+        );
+      }
       try {
         const snapshotSettings: AppSettings = {
           ...settings,
           lastTrackFingerprint: currentTrack?.fingerprint || settings.lastTrackFingerprint,
           lastPositionSec: Math.round((audioEngine.getState().currentTime || currentTimeRef.current) * 10) / 10,
         };
+        if (!silent) {
+          reportTaskProgress(
+            taskId,
+            'cloud-sync',
+            'Backing Up to Cloud',
+            `Uploading snapshot for ${user.email}...`,
+            2,
+            3
+          );
+        }
         const ts = await backupToCloud({
           user,
           settings: snapshotSettings,
@@ -801,29 +1003,59 @@ export default function App() {
         });
         if (!silent) {
           tactile.success();
-          setSyncMessage(`Backed up to ${user.email} at ${new Date(ts).toLocaleTimeString()}.`);
+          const msg = `Backed up to ${user.email} at ${new Date(ts).toLocaleTimeString()}.`;
+          setSyncMessage(msg);
+          reportTaskProgress(taskId, 'cloud-sync', 'Cloud Backup Complete', msg, 3, 3, 'done');
         }
       } catch (err) {
         if (!silent) {
-          setSyncMessage(err instanceof Error ? err.message : 'Cloud backup failed.');
+          const msg = err instanceof Error ? err.message : 'Cloud backup failed.';
+          setSyncMessage(msg);
+          reportTaskProgress(taskId, 'cloud-sync', 'Cloud Backup Error', msg, 3, 3, 'error');
         }
       } finally {
         if (!silent) setSyncBusy(false);
       }
     },
-    [user, settings, currentTrack, eqPresets, playlists, smartPlaylists, tracks, dailyRecs, updateSettings]
+    [user, settings, currentTrack, eqPresets, playlists, smartPlaylists, tracks, dailyRecs, updateSettings, reportTaskProgress]
   );
 
   const handleRestoreNow = async () => {
     if (!user) return;
+    const taskId = `restore_${Date.now()}`;
     setSyncBusy(true);
     setSyncMessage(null);
+    reportTaskProgress(
+      taskId,
+      'cloud-sync',
+      'Restoring from Cloud',
+      `Fetching backup for ${user.email}...`,
+      1,
+      3
+    );
     try {
       const data = await restoreFromCloud(user);
       if (!data) {
         setSyncMessage('No cloud backup found for this Gmail account yet.');
+        reportTaskProgress(
+          taskId,
+          'cloud-sync',
+          'Cloud Restore',
+          'No cloud backup found for this account yet.',
+          3,
+          3,
+          'done'
+        );
         return;
       }
+      reportTaskProgress(
+        taskId,
+        'cloud-sync',
+        'Restoring from Cloud',
+        'Applying playlists, EQ presets & track ratings...',
+        2,
+        3
+      );
       if (data.settings) {
         updateSettings(data.settings);
       }
@@ -872,9 +1104,13 @@ export default function App() {
         }
       }
       tactile.success();
-      setSyncMessage(`Restored settings, playlists, EQ presets, and playback point from ${user.email}.`);
+      const msg = `Restored settings, playlists, EQ presets, and playback point from ${user.email}.`;
+      setSyncMessage(msg);
+      reportTaskProgress(taskId, 'cloud-sync', 'Cloud Restore Complete', msg, 3, 3, 'done');
     } catch (err) {
-      setSyncMessage(err instanceof Error ? err.message : 'Restore failed.');
+      const msg = err instanceof Error ? err.message : 'Restore failed.';
+      setSyncMessage(msg);
+      reportTaskProgress(taskId, 'cloud-sync', 'Cloud Restore Error', msg, 3, 3, 'error');
     } finally {
       setSyncBusy(false);
     }
@@ -1035,6 +1271,15 @@ export default function App() {
         const dirHandle = await picker({ mode: 'read' });
         const audioExts = /\.(flac|alac|wav|wave|mp3|m4a|aac|ogg|oga|opus)$/i;
         const collected: File[] = [];
+        const walkTaskId = `folder_walk_${Date.now()}`;
+        reportTaskProgress(
+          walkTaskId,
+          'device-scan',
+          'Scanning Music Folder',
+          `Opening "${dirHandle.name}"...`,
+          0,
+          0
+        );
 
         const walk = async (handle: {
           values: () => AsyncIterable<{
@@ -1052,6 +1297,16 @@ export default function App() {
                 configurable: true,
               });
               collected.push(f);
+              if (collected.length % 5 === 1) {
+                reportTaskProgress(
+                  walkTaskId,
+                  'device-scan',
+                  'Scanning Music Folder',
+                  `Found ${collected.length} track(s): ${entry.name}`,
+                  collected.length,
+                  collected.length + 5
+                );
+              }
             } else if (entry.kind === 'directory' && entry.values) {
               await walk(
                 entry as typeof handle,
@@ -1062,6 +1317,15 @@ export default function App() {
         };
 
         await walk(dirHandle, dirHandle.name);
+        reportTaskProgress(
+          walkTaskId,
+          'device-scan',
+          'Folder Scan Complete',
+          `Found ${collected.length} audio file(s)`,
+          Math.max(1, collected.length),
+          Math.max(1, collected.length),
+          'done'
+        );
         if (collected.length > 0) {
           await handleImportFiles(collected);
         }
@@ -1075,7 +1339,7 @@ export default function App() {
     }
 
     folderInputRef.current?.click();
-  }, [handleImportFiles, handleScanNativeAndroid]);
+  }, [handleImportFiles, handleScanNativeAndroid, reportTaskProgress]);
 
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
@@ -1395,6 +1659,25 @@ export default function App() {
                     })
                   );
                 }}
+                onRemoveDuplicateTracks={(trackIds: string[]) => {
+                  const removeSet = new Set(trackIds);
+                  setTracks((prev) => prev.filter((t) => !removeSet.has(t.id)));
+                  setQueue((prev) => prev.filter((t) => !removeSet.has(t.id)));
+                  if (currentTrackId && removeSet.has(currentTrackId)) {
+                    const remaining = tracksRef.current.filter((t) => !removeSet.has(t.id));
+                    setCurrentTrackId(remaining[0]?.id || null);
+                  }
+                }}
+                onApplyArtworkUpdates={(updates) => {
+                  const map = new Map(updates.map((u) => [u.trackId, u.coverUrl]));
+                  setTracks((prev) =>
+                    prev.map((t) => {
+                      const nextCover = map.get(t.id);
+                      return nextCover ? { ...t, coverUrl: nextCover } : t;
+                    })
+                  );
+                }}
+                onTaskProgress={reportTaskProgress}
               />
             )}
 
@@ -1461,6 +1744,8 @@ export default function App() {
                 cacheStats={cacheStats}
                 syncBusy={syncBusy}
                 syncMessage={syncMessage}
+                syncProgress={syncProgress}
+                storageProgress={storageProgress}
                 onUpdateSettings={updateSettings}
                 onSignInGoogle={() => void handleSignInGoogle()}
                 onSignOutGoogle={() => void signOutGoogleAccount()}
@@ -1468,6 +1753,15 @@ export default function App() {
                 onRestoreNow={() => void handleRestoreNow()}
                 onClearCache={() => {
                   tactile.tap();
+                  const taskId = `clear_cache_${Date.now()}`;
+                  reportTaskProgress(
+                    taskId,
+                    'library-maintenance',
+                    'Clearing Offline Cache',
+                    'Removing cached audio blobs...',
+                    1,
+                    2
+                  );
                   void clearAudioCache().then(() => {
                     setTracks((prev) =>
                       prev.map((t) =>
@@ -1475,10 +1769,29 @@ export default function App() {
                       )
                     );
                     void refreshCacheStats();
+                    reportTaskProgress(
+                      taskId,
+                      'library-maintenance',
+                      'Offline Cache Cleared',
+                      'Freed device offline storage',
+                      2,
+                      2,
+                      'done'
+                    );
                   });
                 }}
                 onRepairCyrillicLibrary={() => {
                   tactile.success();
+                  const taskId = `repair_${Date.now()}`;
+                  const total = tracksRef.current.length;
+                  reportTaskProgress(
+                    taskId,
+                    'library-maintenance',
+                    'Repairing Cyrillic & Mojibake Tags',
+                    `Fixing encoding across ${total} tracks...`,
+                    total,
+                    Math.max(1, total)
+                  );
                   setTracks((prev) =>
                     prev.map((t) => ({
                       ...t,
@@ -1489,6 +1802,15 @@ export default function App() {
                     }))
                   );
                   setSyncMessage('Scanned and repaired Cyrillic / Windows-1251 tags across library.');
+                  reportTaskProgress(
+                    taskId,
+                    'library-maintenance',
+                    'Tag Encoding Repair Complete',
+                    `Checked ${total} track(s)`,
+                    Math.max(1, total),
+                    Math.max(1, total),
+                    'done'
+                  );
                 }}
               />
             )}
@@ -1548,6 +1870,10 @@ export default function App() {
           tactile.sheet(true);
           setNowPlayingOpen(true);
         }}
+        onPeekSheet={(dyNeg) => nowPlayingSheetRef.current?.peekFromBottom(dyNeg)}
+        onReleaseSheetPeek={(commitOpen) =>
+          nowPlayingSheetRef.current?.releaseFromBottom(commitOpen)
+        }
         onOpenEqualizer={() => {
           tactile.tap();
           updateSettings({ activeTab: 'equalizer' });
@@ -1564,6 +1890,7 @@ export default function App() {
 
       {/* Fullscreen Now Playing Deck */}
       <NowPlayingView
+        ref={nowPlayingSheetRef}
         open={nowPlayingOpen}
         track={currentTrack}
         nextTrack={upcomingTrack}
@@ -1646,6 +1973,8 @@ export default function App() {
           setShareOpen(false);
         }}
       />
+
+      <TaskProgressDock tasks={activeTasks} onDismiss={dismissTask} />
 
       <OfflineIndicator />
     </div>

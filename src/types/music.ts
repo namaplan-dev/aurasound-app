@@ -184,3 +184,60 @@ export interface TagCleanupSuggestion {
   reason: string;
   selected: boolean;
 }
+
+export type AppTaskCategory =
+  | 'device-scan'
+  | 'file-import'
+  | 'ai-duplicates'
+  | 'ai-tags'
+  | 'ai-artwork'
+  | 'ai-playlist'
+  | 'ai-mixes'
+  | 'cloud-sync'
+  | 'library-maintenance';
+
+export interface AppTaskProgress {
+  id: string;
+  category: AppTaskCategory;
+  title: string;
+  detail: string;
+  current: number;
+  total: number;
+  percent: number;
+  status: 'running' | 'done' | 'error';
+  updatedAt: number;
+}
+
+export interface DuplicateItem {
+  trackId: string;
+  title: string;
+  artist: string;
+  album: string;
+  format: Track['format'];
+  bitDepth: number;
+  sampleRate: number;
+  bitrateKbps: number;
+  fileSize?: number;
+  duration: number;
+  isRecommendedKeep: boolean;
+  selectedForRemoval: boolean;
+}
+
+export interface DuplicateGroup {
+  groupId: string;
+  reason: string;
+  similarityScore: number;
+  items: DuplicateItem[];
+}
+
+export interface ArtworkSuggestion {
+  trackId: string;
+  title: string;
+  artist: string;
+  album: string;
+  currentCoverUrl: string;
+  suggestedCoverUrl: string;
+  sourceLabel: string;
+  selected: boolean;
+}
+

@@ -46,9 +46,11 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+html,
 body {
   font-family: var(--font-sans);
   overflow-x: hidden;
+  overscroll-behavior-y: contain;
   -webkit-tap-highlight-color: transparent;
 }
 

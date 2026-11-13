@@ -18,9 +18,10 @@ import {
   Volume2,
   Wrench,
 } from 'lucide-react';
-import { AppSettings, StreamingQuality, ThemeAccent } from '../types/music';
+import { AppSettings, AppTaskProgress, StreamingQuality, ThemeAccent } from '../types/music';
 import { tactile } from '../services/tactileFeedback';
 import { APP_VERSION } from '../version';
+import { ProgressBar } from './ProgressBar';
 
 type SettingsSection = 'all' | 'audio' | 'appearance' | 'storage' | 'cloud';
 
@@ -30,6 +31,8 @@ interface SettingsCloudViewProps {
   cacheStats: { count: number; totalBytes: number };
   syncBusy: boolean;
   syncMessage: string | null;
+  syncProgress?: AppTaskProgress | null;
+  storageProgress?: AppTaskProgress | null;
   onUpdateSettings: (patch: Partial<AppSettings>) => void;
   onSignInGoogle: () => void;
   onSignOutGoogle: () => void;
@@ -84,6 +87,8 @@ export const SettingsCloudView: React.FC<SettingsCloudViewProps> = ({
   cacheStats,
   syncBusy,
   syncMessage,
+  syncProgress,
+  storageProgress,
   onUpdateSettings,
   onSignInGoogle,
   onSignOutGoogle,
@@ -466,6 +471,17 @@ export const SettingsCloudView: React.FC<SettingsCloudViewProps> = ({
               <span>Repair Cyrillic / Mojibake Tags</span>
             </button>
           </div>
+
+          {storageProgress && (
+            <ProgressBar
+              label={storageProgress.title}
+              detail={storageProgress.detail}
+              current={storageProgress.current}
+              total={storageProgress.total}
+              percent={storageProgress.percent}
+              status={storageProgress.status}
+            />
+          )}
         </section>
       )}
 
@@ -543,6 +559,17 @@ export const SettingsCloudView: React.FC<SettingsCloudViewProps> = ({
               />
             </div>
           </div>
+
+          {syncProgress && (
+            <ProgressBar
+              label={syncProgress.title}
+              detail={syncProgress.detail}
+              current={syncProgress.current}
+              total={syncProgress.total}
+              percent={syncProgress.percent}
+              status={syncProgress.status}
+            />
+          )}
 
           {syncMessage && (
             <div className="text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-950 px-3 py-2 rounded-lg">

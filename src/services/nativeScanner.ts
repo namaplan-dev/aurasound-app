@@ -1,9 +1,11 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import type { PluginListenerHandle } from '@capacitor/core';
 import { Track } from '../types/music';
 import { createTrackFingerprint } from './metadataParser';
 import { repairMojibakeText } from '../utils/textNormalization';
+import defaultVinylCover from '../assets/images/album_nocturne_vinyl_1794587934959.jpg';
 
-const DEFAULT_FALLBACK_COVER = '/pwa-512x512.png';
+const DEFAULT_FALLBACK_COVER = defaultVinylCover;
 
 interface NativeScannedTrack {
   mediaId: number;
@@ -25,8 +27,18 @@ interface NativeScannedTrack {
   addedAt: number;
 }
 
+export interface NativeScanProgress {
+  current: number;
+  total: number;
+  fileName: string;
+}
+
 interface LocalMusicScannerPlugin {
   scanDeviceAudio(): Promise<{ tracks: NativeScannedTrack[]; count: number }>;
+  addListener(
+    eventName: 'scanProgress',
+    listenerFunc: (event: NativeScanProgress) => void
+  ): Promise<PluginListenerHandle>;
 }
 
 const LocalMusicScanner = registerPlugin<LocalMusicScannerPlugin>('LocalMusicScanner');
@@ -42,12 +54,41 @@ export function resolveNativePlaybackUrl(track: Track): string | null {
   return Capacitor.convertFileSrc(target);
 }
 
-export async function scanAndroidDeviceLibrary(): Promise<Track[]> {
+export async function scanAndroidDeviceLibrary(
+  onProgress?: (progress: NativeScanProgress) => void
+): Promise<Track[]> {
   if (!isNativeAndroidApp()) return [];
-  const res = await LocalMusicScanner.scanDeviceAudio();
-  const items = Array.isArray(res?.tracks) ? res.tracks : [];
 
-  return items.map((item) => {
+  let handle: PluginListenerHandle | null = null;
+  if (onProgress) {
+    try {
+      handle = await LocalMusicScanner.addListener('scanProgress', (ev) => {
+        onProgress({
+          current: ev?.current ?? 0,
+          total: ev?.total ?? 0,
+          fileName: ev?.fileName || 'Scanning audio files...',
+        });
+      });
+    } catch {
+      handle = null;
+    }
+  }
+
+  let res: { tracks: NativeScannedTrack[]; count: number };
+  try {
+    res = await LocalMusicScanner.scanDeviceAudio();
+  } finally {
+    if (handle) {
+      void handle.remove();
+    }
+  }
+
+  const items = Array.isArray(res?.tracks) ? res.tracks : [];
+  const totalItems = items.length;
+  const mapped: Track[] = [];
+
+  for (let i = 0; i < totalItems; i++) {
+    const item = items[i];
     const title = repairMojibakeText(item.title || item.fileName || 'Untitled Track');
     const artist = repairMojibakeText(item.artist || 'Unknown Artist');
     const album = repairMojibakeText(item.album || 'Local Collection');
@@ -57,7 +98,7 @@ export async function scanAndroidDeviceLibrary(): Promise<Track[]> {
       ? Capacitor.convertFileSrc(item.albumArtUri)
       : DEFAULT_FALLBACK_COVER;
 
-    return {
+    mapped.push({
       id: `android_${item.mediaId}_${fingerprint}`,
       title,
       artist,
@@ -81,6 +122,16 @@ export async function scanAndroidDeviceLibrary(): Promise<Track[]> {
       addedAt: item.addedAt || Date.now(),
       offlineCached: true,
       fingerprint,
-    };
-  });
+    });
+
+    if (onProgress && (i % 25 === 0 || i === totalItems - 1)) {
+      onProgress({
+        current: i + 1,
+        total: totalItems,
+        fileName: title,
+      });
+    }
+  }
+
+  return mapped;
 }

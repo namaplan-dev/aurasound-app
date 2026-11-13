@@ -21374,6 +21374,49 @@ var ChevronUp = createLucideIcon("chevron-up", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var CircleAlert = createLucideIcon("circle-alert", [
+	["circle", {
+		cx: "12",
+		cy: "12",
+		r: "10",
+		key: "1mglay"
+	}],
+	["line", {
+		x1: "12",
+		x2: "12",
+		y1: "8",
+		y2: "12",
+		key: "1pkeuh"
+	}],
+	["line", {
+		x1: "12",
+		x2: "12.01",
+		y1: "16",
+		y2: "16",
+		key: "4dfq90"
+	}]
+]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var CircleCheck = createLucideIcon("circle-check", [["circle", {
+	cx: "12",
+	cy: "12",
+	r: "10",
+	key: "1mglay"
+}], ["path", {
+	d: "m9 12 2 2 4-4",
+	key: "dzmm74"
+}]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var CloudDownload = createLucideIcon("cloud-download", [
 	["path", {
 		d: "M12 13v8l-4-4",
@@ -21418,6 +21461,31 @@ var Cloud = createLucideIcon("cloud", [["path", {
 	d: "M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z",
 	key: "p7xjir"
 }]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var CopyCheck = createLucideIcon("copy-check", [
+	["path", {
+		d: "m12 15 2 2 4-4",
+		key: "2c609p"
+	}],
+	["rect", {
+		width: "14",
+		height: "14",
+		x: "8",
+		y: "8",
+		rx: "2",
+		ry: "2",
+		key: "17jyea"
+	}],
+	["path", {
+		d: "M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2",
+		key: "zix9uf"
+	}]
+]);
 /**
 * @license lucide-react v0.546.0 - ISC
 *
@@ -21598,6 +21666,36 @@ var Heart = createLucideIcon("heart", [["path", {
 	d: "M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5",
 	key: "mvr1a0"
 }]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var ImagePlus = createLucideIcon("image-plus", [
+	["path", {
+		d: "M16 5h6",
+		key: "1vod17"
+	}],
+	["path", {
+		d: "M19 2v6",
+		key: "4bpg5p"
+	}],
+	["path", {
+		d: "M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5",
+		key: "1ue2ih"
+	}],
+	["path", {
+		d: "m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21",
+		key: "1xmnt7"
+	}],
+	["circle", {
+		cx: "9",
+		cy: "9",
+		r: "2",
+		key: "af1f0g"
+	}]
+]);
 /**
 * @license lucide-react v0.546.0 - ISC
 *
@@ -24223,7 +24321,7 @@ var SystemBarsPluginWeb = class extends WebPlugin {
 };
 registerPlugin("SystemBars", { web: () => new SystemBarsPluginWeb() });
 // src/services/nativeScanner.ts
-var DEFAULT_FALLBACK_COVER = "/pwa-512x512.png";
+var DEFAULT_FALLBACK_COVER = album_nocturne_vinyl_1794587934959_default;
 var LocalMusicScanner = registerPlugin("LocalMusicScanner");
 function isNativeAndroidApp() {
 	return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
@@ -24234,17 +24332,38 @@ function resolveNativePlaybackUrl(track) {
 	if (!target) return null;
 	return Capacitor.convertFileSrc(target);
 }
-async function scanAndroidDeviceLibrary() {
+async function scanAndroidDeviceLibrary(onProgress) {
 	if (!isNativeAndroidApp()) return [];
-	const res = await LocalMusicScanner.scanDeviceAudio();
-	return (Array.isArray(res?.tracks) ? res.tracks : []).map((item) => {
+	let handle = null;
+	if (onProgress) try {
+		handle = await LocalMusicScanner.addListener("scanProgress", (ev) => {
+			onProgress({
+				current: ev?.current ?? 0,
+				total: ev?.total ?? 0,
+				fileName: ev?.fileName || "Scanning audio files..."
+			});
+		});
+	} catch {
+		handle = null;
+	}
+	let res;
+	try {
+		res = await LocalMusicScanner.scanDeviceAudio();
+	} finally {
+		if (handle) handle.remove();
+	}
+	const items = Array.isArray(res?.tracks) ? res.tracks : [];
+	const totalItems = items.length;
+	const mapped = [];
+	for (let i = 0; i < totalItems; i++) {
+		const item = items[i];
 		const title = repairMojibakeText(item.title || item.fileName || "Untitled Track");
 		const artist = repairMojibakeText(item.artist || "Unknown Artist");
 		const album = repairMojibakeText(item.album || "Local Collection");
 		const genre = repairMojibakeText(item.genre || "Local Audio");
 		const fingerprint = createTrackFingerprint(title, artist, item.fileSize);
 		const coverUrl = item.albumArtUri ? Capacitor.convertFileSrc(item.albumArtUri) : DEFAULT_FALLBACK_COVER;
-		return {
+		mapped.push({
 			id: `android_${item.mediaId}_${fingerprint}`,
 			title,
 			artist,
@@ -24268,8 +24387,14 @@ async function scanAndroidDeviceLibrary() {
 			addedAt: item.addedAt || Date.now(),
 			offlineCached: true,
 			fingerprint
-		};
-	});
+		});
+		if (onProgress && (i % 25 === 0 || i === totalItems - 1)) onProgress({
+			current: i + 1,
+			total: totalItems,
+			fileName: title
+		});
+	}
+	return mapped;
 }
 // src/services/audioEngine.ts
 var synthBlobCache = /* @__PURE__ */ new Map();
@@ -53429,6 +53554,347 @@ function evaluateSmartPlaylist(tracks, smart) {
 	}
 	return ruleMatches;
 }
+// src/services/aiAssistantService.ts
+var DEFAULT_REMOTE_API_ORIGIN = "https://ais-pre-bulzh7ejs2pbrgp7btccwz-471055910043.europe-west2.run.app";
+function resolveApiUrl(path) {
+	if (Capacitor.isNativePlatform()) return `${DEFAULT_REMOTE_API_ORIGIN}${path}`;
+	return path;
+}
+function qualityScore(t) {
+	return ({
+		FLAC: 5e3,
+		ALAC: 4500,
+		WAV: 4200,
+		OGG: 2e3,
+		AAC: 1800,
+		MP3: 1e3
+	}[t.format] || 1e3) + (t.bitDepth || 16) * 20 + Math.round((t.sampleRate || 44100) / 1e3) * 5 + (t.bitrateKbps || 320) * .2;
+}
+function cleanTrackTitleForMatch(title) {
+	return normalizeForSearch(title.replace(/^\d{1,3}[\s._-]+/, "").replace(/\.(flac|alac|wav|wave|mp3|m4a|aac|ogg|opus)$/i, "").replace(/\([^)]*(remaster|live|acoustic|mono|stereo|deluxe|version|edit)[^)]*\)/gi, "").replace(/\[[^\]]*\]/g, "")).replace(/\s+/g, " ").trim();
+}
+async function runDuplicateScan(tracks, onProgress) {
+	const total = tracks.length;
+	if (total < 2) {
+		onProgress(total, total, "Need at least 2 tracks to scan for duplicates.");
+		return [];
+	}
+	const groupsByKey = /* @__PURE__ */ new Map();
+	const yieldFrame = () => new Promise((r) => setTimeout(r, 12));
+	const batchSize = 25;
+	for (let i = 0; i < total; i += batchSize) {
+		const slice = tracks.slice(i, i + batchSize);
+		for (const t of slice) {
+			const cleanTitle = cleanTrackTitleForMatch(t.title || t.fileName || "");
+			const cleanArtist = normalizeForSearch(t.artist === "Unknown Artist" ? "" : t.artist).trim();
+			const durBucket = Math.round((t.duration || 0) / 4);
+			const key = cleanArtist ? `${cleanArtist}::${cleanTitle}` : `${cleanTitle}::d${durBucket}`;
+			const bucket = groupsByKey.get(key) || [];
+			bucket.push(t);
+			groupsByKey.set(key, bucket);
+		}
+		onProgress(Math.min(i + slice.length, total), total, `Comparing titles, fingerprints & bitrates (${Math.min(i + slice.length, total)}/${total})`);
+		await yieldFrame();
+	}
+	const candidateGroups = [];
+	const trackMap = new Map(tracks.map((t) => [t.id, t]));
+	const alreadyGrouped = /* @__PURE__ */ new Set();
+	for (const [, items] of groupsByKey.entries()) {
+		if (items.length < 2) continue;
+		const sorted = [...items].sort((a, b) => qualityScore(b) - qualityScore(a));
+		const keep = sorted[0];
+		sorted.forEach((s) => alreadyGrouped.add(s.id));
+		candidateGroups.push({
+			groupId: `dup_local_${keep.id}`,
+			reason: "Matching title/artist across multiple audio files or formats",
+			similarityScore: 98,
+			items: sorted.map((t, idx) => ({
+				trackId: t.id,
+				title: t.title,
+				artist: t.artist,
+				album: t.album,
+				format: t.format,
+				bitDepth: t.bitDepth,
+				sampleRate: t.sampleRate,
+				bitrateKbps: t.bitrateKbps,
+				fileSize: t.fileSize,
+				duration: t.duration,
+				isRecommendedKeep: idx === 0,
+				selectedForRemoval: idx > 0
+			}))
+		});
+	}
+	const aiChunkSize = 50;
+	for (let i = 0; i < tracks.length; i += aiChunkSize) {
+		const chunk = tracks.slice(i, i + aiChunkSize);
+		onProgress(Math.min(i + chunk.length, total), total, `AI semantic duplicate check (${Math.min(i + chunk.length, total)}/${total})...`);
+		try {
+			const resp = await fetch(resolveApiUrl("/api/ai/duplicate-scan"), {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ tracks: chunk })
+			});
+			if (resp.ok) {
+				const data = await resp.json();
+				for (const g of data.groups || []) {
+					const valid = (g.trackIds || []).map((id) => trackMap.get(id)).filter((t) => Boolean(t));
+					if (valid.length < 2) continue;
+					if (valid.every((t) => alreadyGrouped.has(t.id))) continue;
+					const sorted = [...valid].sort((a, b) => {
+						if (a.id === g.keepTrackId) return -1;
+						if (b.id === g.keepTrackId) return 1;
+						return qualityScore(b) - qualityScore(a);
+					});
+					sorted.forEach((s) => alreadyGrouped.add(s.id));
+					candidateGroups.push({
+						groupId: `dup_ai_${sorted[0].id}`,
+						reason: g.reason || "AI-detected duplicate recording",
+						similarityScore: Math.min(100, Math.max(70, Math.round(g.similarityScore || 92))),
+						items: sorted.map((t, idx) => ({
+							trackId: t.id,
+							title: t.title,
+							artist: t.artist,
+							album: t.album,
+							format: t.format,
+							bitDepth: t.bitDepth,
+							sampleRate: t.sampleRate,
+							bitrateKbps: t.bitrateKbps,
+							fileSize: t.fileSize,
+							duration: t.duration,
+							isRecommendedKeep: idx === 0,
+							selectedForRemoval: idx > 0
+						}))
+					});
+				}
+			}
+		} catch {}
+	}
+	onProgress(total, total, `Duplicate scan finished (${candidateGroups.length} group(s) found)`);
+	return candidateGroups;
+}
+function localCleanupFallback(orig) {
+	let cleanTitle = repairMojibakeText(orig.title || orig.fileName || "").replace(/\.(flac|alac|wav|wave|mp3|m4a|aac|ogg|opus)$/i, "").replace(/_/g, " ").replace(/^\d{1,3}[\s.-]+/, "").replace(/\s+/g, " ").trim();
+	let cleanArtist = repairMojibakeText(orig.artist || "Unknown Artist").replace(/_/g, " ").replace(/\s+/g, " ").trim();
+	const cleanAlbum = repairMojibakeText(orig.album || "Local Collection").replace(/_/g, " ").replace(/\s+/g, " ").trim();
+	const cleanGenre = repairMojibakeText(orig.genre || "Audio").trim();
+	if (cleanArtist === "Unknown Artist" && cleanTitle.includes(" - ")) {
+		const [a, ...rest] = cleanTitle.split(" - ");
+		if (a.trim() && rest.join(" - ").trim()) {
+			cleanArtist = a.trim();
+			cleanTitle = rest.join(" - ").trim();
+		}
+	}
+	if (!(cleanTitle !== orig.title || cleanArtist !== orig.artist || cleanAlbum !== orig.album || cleanGenre !== orig.genre)) return null;
+	return {
+		trackId: orig.id,
+		currentTitle: orig.title,
+		currentArtist: orig.artist,
+		currentAlbum: orig.album,
+		currentGenre: orig.genre,
+		suggestedTitle: cleanTitle || orig.title,
+		suggestedArtist: cleanArtist || orig.artist,
+		suggestedAlbum: cleanAlbum || orig.album,
+		suggestedGenre: cleanGenre || orig.genre,
+		reason: "Normalized underscores, track numbers, encoding & artist/title formatting",
+		selected: true
+	};
+}
+async function runBatchedTagCleanupScan(tracks, onProgress) {
+	const total = tracks.length;
+	if (total === 0) return [];
+	const trackMap = new Map(tracks.map((t) => [t.id, t]));
+	const suggestionsById = /* @__PURE__ */ new Map();
+	const batchSize = 20;
+	for (let i = 0; i < total; i += batchSize) {
+		const chunk = tracks.slice(i, i + batchSize);
+		const doneCount = Math.min(i + chunk.length, total);
+		onProgress(doneCount - Math.ceil(chunk.length * .5), total, `AI analyzing tags for batch ${Math.floor(i / batchSize) + 1} (${doneCount}/${total} tracks)...`);
+		let serverSucceeded = false;
+		try {
+			const resp = await fetch(resolveApiUrl("/api/ai/tag-cleanup"), {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ tracks: chunk })
+			});
+			if (resp.ok) {
+				serverSucceeded = true;
+				const data = await resp.json();
+				for (const s of data.suggestions || []) {
+					const orig = trackMap.get(s.trackId);
+					if (!orig) continue;
+					suggestionsById.set(orig.id, {
+						trackId: orig.id,
+						currentTitle: orig.title,
+						currentArtist: orig.artist,
+						currentAlbum: orig.album,
+						currentGenre: orig.genre,
+						suggestedTitle: s.suggestedTitle || orig.title,
+						suggestedArtist: s.suggestedArtist || orig.artist,
+						suggestedAlbum: s.suggestedAlbum || orig.album,
+						suggestedGenre: s.suggestedGenre || orig.genre,
+						reason: s.reason || "AI normalized metadata tags",
+						selected: true
+					});
+				}
+			}
+		} catch {
+			serverSucceeded = false;
+		}
+		if (!serverSucceeded) for (const orig of chunk) {
+			const localFix = localCleanupFallback(orig);
+			if (localFix) suggestionsById.set(orig.id, localFix);
+		}
+		onProgress(doneCount, total, `Inspected ${doneCount} of ${total} tracks (${suggestionsById.size} improvement(s) found)`);
+	}
+	return Array.from(suggestionsById.values());
+}
+async function clientItunesCoverLookup(artist, album, title) {
+	const term = [artist && artist !== "Unknown Artist" ? artist : "", (album && album !== "Local Collection" && album !== "Unknown Album" ? album : "") || title].filter(Boolean).join(" ").trim();
+	if (!term) return null;
+	try {
+		const resp = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=album&limit=2`);
+		if (!resp.ok) return null;
+		const url = (await resp.json()).results?.[0]?.artworkUrl100;
+		if (!url) return null;
+		return {
+			coverUrl: url.replace("100x100bb", "600x600bb"),
+			sourceLabel: "Official Release Catalog"
+		};
+	} catch {
+		return null;
+	}
+}
+async function runOriginalAlbumArtScan(tracks, onProgress) {
+	const total = tracks.length;
+	if (total === 0) return [];
+	const trackMap = new Map(tracks.map((t) => [t.id, t]));
+	const found = [];
+	const batchSize = 6;
+	for (let i = 0; i < total; i += batchSize) {
+		const chunk = tracks.slice(i, i + batchSize);
+		const doneCount = Math.min(i + chunk.length, total);
+		onProgress(i, total, `Searching original album covers for "${chunk[0]?.title || "tracks"}" (${doneCount}/${total})...`);
+		let handledByServer = false;
+		try {
+			const resp = await fetch(resolveApiUrl("/api/ai/album-art"), {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ tracks: chunk })
+			});
+			if (resp.ok) {
+				handledByServer = true;
+				const data = await resp.json();
+				for (const r of data.results || []) {
+					const orig = trackMap.get(r.trackId);
+					if (!orig || !r.coverUrl) continue;
+					found.push({
+						trackId: orig.id,
+						title: orig.title,
+						artist: orig.artist,
+						album: orig.album,
+						currentCoverUrl: orig.coverUrl,
+						suggestedCoverUrl: r.coverUrl,
+						sourceLabel: r.sourceLabel || "Original Release Artwork",
+						selected: true
+					});
+				}
+			}
+		} catch {
+			handledByServer = false;
+		}
+		if (!handledByServer) for (let j = 0; j < chunk.length; j++) {
+			const t = chunk[j];
+			onProgress(i + j + 1, total, `Searching cover for "${t.artist} — ${t.title}" (${i + j + 1}/${total})`);
+			const match = await clientItunesCoverLookup(t.artist, t.album, t.title);
+			if (match) found.push({
+				trackId: t.id,
+				title: t.title,
+				artist: t.artist,
+				album: t.album,
+				currentCoverUrl: t.coverUrl,
+				suggestedCoverUrl: match.coverUrl,
+				sourceLabel: match.sourceLabel,
+				selected: true
+			});
+		}
+		onProgress(doneCount, total, `Checked ${doneCount} of ${total} tracks · Found ${found.length} original cover(s)`);
+	}
+	return found;
+}
+async function resizeArtworkFileToDataUrl(file, onProgress) {
+	onProgress?.(1, 4, `Reading image "${file.name}"...`);
+	const rawDataUrl = await new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => resolve(String(reader.result || ""));
+		reader.onerror = () => reject(/* @__PURE__ */ new Error("Failed to read selected artwork image."));
+		reader.readAsDataURL(file);
+	});
+	onProgress?.(2, 4, "Decoding artwork dimensions...");
+	const img = await new Promise((resolve, reject) => {
+		const el = new Image();
+		el.onload = () => resolve(el);
+		el.onerror = () => reject(/* @__PURE__ */ new Error("Unsupported artwork image format."));
+		el.src = rawDataUrl;
+	});
+	onProgress?.(3, 4, "Optimizing cover art to 512×512 hi-res JPEG...");
+	const size = Math.min(512, Math.max(img.width, img.height, 256));
+	const canvas = document.createElement("canvas");
+	canvas.width = size;
+	canvas.height = size;
+	const ctx = canvas.getContext("2d");
+	if (!ctx) return rawDataUrl;
+	const scale = Math.max(size / img.width, size / img.height);
+	const drawW = img.width * scale;
+	const drawH = img.height * scale;
+	const dx = (size - drawW) / 2;
+	const dy = (size - drawH) / 2;
+	ctx.drawImage(img, dx, dy, drawW, drawH);
+	const optimized = canvas.toDataURL("image/jpeg", .86);
+	onProgress?.(4, 4, "Original album cover ready to apply.");
+	return optimized;
+}
+// src/components/ProgressBar.tsx
+var ProgressBar = ({ label, detail, current, total, percent, status = "running", compact = false }) => {
+	const clampedPct = Math.max(0, Math.min(100, Math.round(percent)));
+	const countLabel = total > 0 ? `${Math.min(current, total)} / ${total}` : `${clampedPct}%`;
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		role: "progressbar",
+		"aria-label": label,
+		"aria-valuemin": 0,
+		"aria-valuemax": 100,
+		"aria-valuenow": clampedPct,
+		className: `rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/90 dark:bg-zinc-900/80 ${compact ? "px-3 py-2 space-y-1.5" : "px-4 py-3 space-y-2"}`,
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex items-center justify-between gap-3",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-center gap-2 min-w-0",
+					children: [status === "done" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheck, { className: "w-4 h-4 text-emerald-500 shrink-0" }) : status === "error" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleAlert, { className: "w-4 h-4 text-red-500 shrink-0" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "w-4 h-4 accent-text animate-spin shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						className: "text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate",
+						children: label
+					})]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-center gap-2 shrink-0 text-[11px] font-mono-tabular text-zinc-600 dark:text-zinc-300",
+					children: [total > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: countLabel }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+						className: "font-semibold",
+						children: [clampedPct, "%"]
+					})]
+				})]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: `h-full rounded-full transition-[width] duration-200 ease-out ${status === "done" ? "bg-emerald-500" : status === "error" ? "bg-red-500" : "accent-bg"}`,
+					style: { width: `${clampedPct}%` }
+				})
+			}),
+			detail && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "text-[11px] text-zinc-500 dark:text-zinc-400 truncate",
+				children: detail
+			})
+		]
+	});
+};
 // src/components/SmartStudioView.tsx
 var STUDIO_SECTIONS = [
 	{
@@ -53446,14 +53912,24 @@ var STUDIO_SECTIONS = [
 	{
 		id: "tags",
 		label: "Tag Cleanup"
+	},
+	{
+		id: "duplicates",
+		label: "Duplicates"
+	},
+	{
+		id: "artwork",
+		label: "Album Art"
 	}
 ];
-var SmartStudioView = ({ user, tracks, smartPlaylists, dailyRecommendations, onSignInGoogle, onPlayTracks, onAddSmartPlaylist, onDeleteSmartPlaylist, onUpdateDailyRecommendations, onApplyTagCleanups }) => {
+var SmartStudioView = ({ user, tracks, smartPlaylists, dailyRecommendations, onSignInGoogle, onPlayTracks, onAddSmartPlaylist, onDeleteSmartPlaylist, onUpdateDailyRecommendations, onApplyTagCleanups, onRemoveDuplicateTracks, onApplyArtworkUpdates, onTaskProgress }) => {
 	const [section, setSection] = (0, import_react.useState)("all");
 	const [aiPrompt, setAiPrompt] = (0, import_react.useState)("");
 	const [aiLoading, setAiLoading] = (0, import_react.useState)(false);
+	const [playlistProgress, setPlaylistProgress] = (0, import_react.useState)(null);
 	const [aiError, setAiError] = (0, import_react.useState)(null);
 	const [dailyLoading, setDailyLoading] = (0, import_react.useState)(false);
+	const [dailyProgress, setDailyProgress] = (0, import_react.useState)(null);
 	const [showManualForm, setShowManualForm] = (0, import_react.useState)(false);
 	const [manualName, setManualName] = (0, import_react.useState)("");
 	const [manualGenre, setManualGenre] = (0, import_react.useState)("");
@@ -53461,18 +53937,38 @@ var SmartStudioView = ({ user, tracks, smartPlaylists, dailyRecommendations, onS
 	const [manualMinRating, setManualMinRating] = (0, import_react.useState)(0);
 	const [manualFavOnly, setManualFavOnly] = (0, import_react.useState)(false);
 	const [tagLoading, setTagLoading] = (0, import_react.useState)(false);
+	const [tagProgress, setTagProgress] = (0, import_react.useState)(null);
 	const [tagSuggestions, setTagSuggestions] = (0, import_react.useState)([]);
 	const [tagStatus, setTagStatus] = (0, import_react.useState)(null);
+	const [dupLoading, setDupLoading] = (0, import_react.useState)(false);
+	const [dupProgress, setDupProgress] = (0, import_react.useState)(null);
+	const [dupGroups, setDupGroups] = (0, import_react.useState)([]);
+	const [dupStatus, setDupStatus] = (0, import_react.useState)(null);
+	const [artLoading, setArtLoading] = (0, import_react.useState)(false);
+	const [artProgress, setArtProgress] = (0, import_react.useState)(null);
+	const [artSuggestions, setArtSuggestions] = (0, import_react.useState)([]);
+	const [artStatus, setArtStatus] = (0, import_react.useState)(null);
+	const [uploadTargetTrackId, setUploadTargetTrackId] = (0, import_react.useState)(null);
+	const artFileInputRef = (0, import_react.useRef)(null);
+	const report = (setter, taskId, category, label, detail, current, total, status = "running") => {
+		setter({
+			label,
+			detail,
+			current,
+			total,
+			percent: total > 0 ? Math.round(current / total * 100) : status === "done" ? 100 : 0,
+			status
+		});
+		onTaskProgress(taskId, category, label, detail, current, total, status);
+	};
 	const handleGenerateAiPlaylist = async (e) => {
 		e.preventDefault();
-		if (!user) {
-			onSignInGoogle();
-			return;
-		}
 		const clean = aiPrompt.trim();
 		if (!clean) return;
+		const taskId = `ai_pl_${Date.now()}`;
 		setAiLoading(true);
 		setAiError(null);
+		report(setPlaylistProgress, taskId, "ai-playlist", "AI Smart Playlist", "Collecting listening history & library profile...", 1, 3);
 		try {
 			const recent = [...tracks].sort((a, b) => (b.lastPlayedAt || 0) - (a.lastPlayedAt || 0)).slice(0, 15).map((t) => ({
 				title: t.title,
@@ -53480,7 +53976,8 @@ var SmartStudioView = ({ user, tracks, smartPlaylists, dailyRecommendations, onS
 				genre: t.genre,
 				playCount: t.playCount
 			}));
-			const resp = await fetch("/api/ai/smart-playlist", {
+			report(setPlaylistProgress, taskId, "ai-playlist", "AI Smart Playlist", `Curating playlist for "${clean.slice(0, 32)}"...`, 2, 3);
+			const resp = await fetch(resolveApiUrl("/api/ai/smart-playlist"), {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -53495,7 +53992,7 @@ var SmartStudioView = ({ user, tracks, smartPlaylists, dailyRecommendations, onS
 				field: r.field,
 				value: r.field === "minRating" || r.field === "minPlayCount" || r.field === "minSampleRate" ? Number(r.value) || 0 : r.field === "favorite" ? r.value === "true" : String(r.value)
 			})) : [];
-			onAddSmartPlaylist({
+			const created = {
 				id: `smart_ai_${Date.now().toString(36)}`,
 				name: data.name || clean.slice(0, 36),
 				description: data.description || "AI-curated smart playlist.",
@@ -53506,22 +54003,24 @@ var SmartStudioView = ({ user, tracks, smartPlaylists, dailyRecommendations, onS
 				dynamicUpdate: true,
 				createdAt: Date.now(),
 				updatedAt: Date.now()
-			});
+			};
+			onAddSmartPlaylist(created);
 			tactile.success();
 			setAiPrompt("");
+			report(setPlaylistProgress, taskId, "ai-playlist", "AI Smart Playlist Ready", `Created "${created.name}"`, 3, 3, "done");
 		} catch (err) {
-			setAiError(err instanceof Error ? err.message : "Unable to generate smart playlist.");
+			const msg = err instanceof Error ? err.message : "Unable to generate smart playlist.";
+			setAiError(msg);
+			report(setPlaylistProgress, taskId, "ai-playlist", "AI Playlist Error", msg, 3, 3, "error");
 		} finally {
 			setAiLoading(false);
 		}
 	};
 	const handleRefreshDailyMixes = async () => {
-		if (!user) {
-			onSignInGoogle();
-			return;
-		}
+		const taskId = `ai_mix_${Date.now()}`;
 		setDailyLoading(true);
 		setAiError(null);
+		report(setDailyProgress, taskId, "ai-mixes", "Refreshing Daily Mixes", "Analyzing top genres and favorite artists...", 1, 3);
 		try {
 			const genreCounts = /* @__PURE__ */ new Map();
 			const artistCounts = /* @__PURE__ */ new Map();
@@ -53531,7 +54030,8 @@ var SmartStudioView = ({ user, tracks, smartPlaylists, dailyRecommendations, onS
 			});
 			const topGenres = [...genreCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([g]) => g);
 			const favoriteArtists = [...artistCounts.keys()].slice(0, 6);
-			const resp = await fetch("/api/ai/daily-mix", {
+			report(setDailyProgress, taskId, "ai-mixes", "Refreshing Daily Mixes", "Composing 3 personalized mixes with AI...", 2, 3);
+			const resp = await fetch(resolveApiUrl("/api/ai/daily-mix"), {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -53551,8 +54051,11 @@ var SmartStudioView = ({ user, tracks, smartPlaylists, dailyRecommendations, onS
 				onUpdateDailyRecommendations(mixes);
 				tactile.success();
 			}
+			report(setDailyProgress, taskId, "ai-mixes", "Daily Mixes Updated", `Generated ${mixes.length} tailored mixes`, 3, 3, "done");
 		} catch (err) {
-			setAiError(err instanceof Error ? err.message : "Daily mix refresh failed.");
+			const msg = err instanceof Error ? err.message : "Daily mix refresh failed.";
+			setAiError(msg);
+			report(setDailyProgress, taskId, "ai-mixes", "Daily Mixes Error", msg, 3, 3, "error");
 		} finally {
 			setDailyLoading(false);
 		}
@@ -53598,53 +54101,115 @@ var SmartStudioView = ({ user, tracks, smartPlaylists, dailyRecommendations, onS
 		setShowManualForm(false);
 	};
 	const handleScanTagsWithAi = async () => {
-		if (!user) {
-			onSignInGoogle();
-			return;
-		}
+		if (tracks.length === 0) return;
+		const taskId = `ai_tags_${Date.now()}`;
 		setTagLoading(true);
 		setTagStatus(null);
 		setAiError(null);
+		report(setTagProgress, taskId, "ai-tags", "AI Song Tag Cleanup", `Preparing ${tracks.length} tracks...`, 0, tracks.length);
 		try {
-			const resp = await fetch("/api/ai/tag-cleanup", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ tracks })
+			const mapped = await runBatchedTagCleanupScan(tracks, (current, total, detail) => {
+				report(setTagProgress, taskId, "ai-tags", "AI Song Tag Cleanup", detail, current, total);
 			});
-			const data = await resp.json();
-			if (!resp.ok) throw new Error(data.error || "Tag scan failed.");
-			const trackMap = new Map(tracks.map((t) => [t.id, t]));
-			const mapped = (data.suggestions || []).map((s) => {
-				const orig = trackMap.get(s.trackId);
-				if (!orig) return null;
-				return {
-					trackId: s.trackId,
-					currentTitle: orig.title,
-					currentArtist: orig.artist,
-					currentAlbum: orig.album,
-					currentGenre: orig.genre,
-					suggestedTitle: s.suggestedTitle || orig.title,
-					suggestedArtist: s.suggestedArtist || orig.artist,
-					suggestedAlbum: s.suggestedAlbum || orig.album,
-					suggestedGenre: s.suggestedGenre || orig.genre,
-					reason: s.reason || "Normalized metadata",
-					selected: true
-				};
-			}).filter((item) => item !== null);
 			setTagSuggestions(mapped);
 			if (mapped.length === 0) setTagStatus("All scanned tracks already have clean metadata tags.");
+			else tactile.success();
+			report(setTagProgress, taskId, "ai-tags", "Tag Cleanup Scan Complete", `Found ${mapped.length} track(s) with suggested tag fixes`, tracks.length, tracks.length, "done");
 		} catch (err) {
-			setAiError(err instanceof Error ? err.message : "Unable to scan library tags.");
+			const msg = err instanceof Error ? err.message : "Unable to scan library tags.";
+			setAiError(msg);
+			report(setTagProgress, taskId, "ai-tags", "Tag Scan Error", msg, 0, tracks.length, "error");
 		} finally {
 			setTagLoading(false);
+		}
+	};
+	const handleScanDuplicatesWithAi = async () => {
+		if (tracks.length === 0) return;
+		const taskId = `ai_dups_${Date.now()}`;
+		setDupLoading(true);
+		setDupStatus(null);
+		setAiError(null);
+		report(setDupProgress, taskId, "ai-duplicates", "AI Duplicate Scanner", `Inspecting ${tracks.length} tracks...`, 0, tracks.length);
+		try {
+			const foundGroups = await runDuplicateScan(tracks, (current, total, detail) => {
+				report(setDupProgress, taskId, "ai-duplicates", "AI Duplicate Scanner", detail, current, total);
+			});
+			setDupGroups(foundGroups);
+			if (foundGroups.length === 0) setDupStatus("No duplicate tracks detected across your library.");
+			else tactile.success();
+			report(setDupProgress, taskId, "ai-duplicates", "Duplicate Scan Complete", `Found ${foundGroups.length} duplicate group(s)`, tracks.length, tracks.length, "done");
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : "Duplicate scan failed.";
+			setAiError(msg);
+			report(setDupProgress, taskId, "ai-duplicates", "Duplicate Scan Error", msg, 0, tracks.length, "error");
+		} finally {
+			setDupLoading(false);
+		}
+	};
+	const handleFindOriginalAlbumArt = async () => {
+		if (tracks.length === 0) return;
+		const taskId = `ai_art_${Date.now()}`;
+		setArtLoading(true);
+		setArtStatus(null);
+		setAiError(null);
+		report(setArtProgress, taskId, "ai-artwork", "AI Original Album Art Finder", `Preparing ${tracks.length} tracks for artwork matching...`, 0, tracks.length);
+		try {
+			const found = await runOriginalAlbumArtScan(tracks, (current, total, detail) => {
+				report(setArtProgress, taskId, "ai-artwork", "AI Original Album Art Finder", detail, current, total);
+			});
+			setArtSuggestions(found);
+			if (found.length === 0) setArtStatus("No new official album covers matched automatically. You can upload custom cover images below.");
+			else tactile.success();
+			report(setArtProgress, taskId, "ai-artwork", "Album Art Lookup Complete", `Found ${found.length} original album cover(s)`, tracks.length, tracks.length, "done");
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : "Failed to search original album art.";
+			setAiError(msg);
+			report(setArtProgress, taskId, "ai-artwork", "Album Art Lookup Error", msg, 0, tracks.length, "error");
+		} finally {
+			setArtLoading(false);
+		}
+	};
+	const handleManualArtworkFileSelected = async (file) => {
+		if (!file || !uploadTargetTrackId) return;
+		const targetTrack = tracks.find((t) => t.id === uploadTargetTrackId);
+		const taskId = `art_upload_${Date.now()}`;
+		try {
+			const optimizedUrl = await resizeArtworkFileToDataUrl(file, (current, total, detail) => {
+				report(setArtProgress, taskId, "ai-artwork", `Uploading Cover Art${targetTrack ? `: ${targetTrack.title}` : ""}`, detail, current, total, current === total ? "done" : "running");
+			});
+			onApplyArtworkUpdates([{
+				trackId: uploadTargetTrackId,
+				coverUrl: optimizedUrl
+			}]);
+			tactile.success();
+			setArtStatus(`Uploaded & applied original cover art to "${targetTrack?.title || "track"}".`);
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : "Artwork upload failed.";
+			setAiError(msg);
+			report(setArtProgress, taskId, "ai-artwork", "Artwork Upload Failed", msg, 0, 4, "error");
+		} finally {
+			setUploadTargetTrackId(null);
 		}
 	};
 	const showMixes = section === "all" || section === "mixes";
 	const showPlaylists = section === "all" || section === "playlists";
 	const showTags = section === "all" || section === "tags";
+	const showDuplicates = section === "all" || section === "duplicates";
+	const showArtwork = section === "all" || section === "artwork";
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "space-y-6 max-w-5xl",
 		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+				ref: artFileInputRef,
+				type: "file",
+				accept: "image/*",
+				className: "hidden",
+				onChange: (e) => {
+					const file = e.target.files?.[0] || null;
+					e.target.value = "";
+					handleManualArtworkFileSelected(file);
+				}
+			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 				className: "flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-4",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
@@ -53652,7 +54217,7 @@ var SmartStudioView = ({ user, tracks, smartPlaylists, dailyRecommendations, onS
 					children: "Smart Studio"
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 					className: "text-sm text-zinc-500 dark:text-zinc-400",
-					children: "Daily personalized mixes, dynamic smart playlists, and library tag cleanup."
+					children: "AI duplicate scanner, tag cleanup, original album art lookup/upload, daily mixes, and smart playlists."
 				})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 					className: "flex flex-wrap items-center gap-2",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
@@ -53678,90 +54243,453 @@ var SmartStudioView = ({ user, tracks, smartPlaylists, dailyRecommendations, onS
 				className: "p-3.5 rounded-xl border border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 text-sm text-red-700 dark:text-red-300",
 				children: aiError
 			}),
-			showMixes && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
-				className: "space-y-3.5",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "flex flex-wrap items-center justify-between gap-3",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-						className: "text-base font-display font-semibold text-zinc-900 dark:text-zinc-100",
-						children: "Daily Mixes"
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex flex-wrap items-center gap-2",
-						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+			showDuplicates && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+				className: "rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-5 space-y-4",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex flex-wrap items-center justify-between gap-3",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
+							className: "text-base font-display font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CopyCheck, { className: "w-4 h-4 accent-text" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "AI Duplicate Track Scanner" })]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-xs text-zinc-500 dark:text-zinc-400 mt-0.5",
+							children: "Detects duplicate songs across folders and formats, keeping the highest lossless bit-depth copy."
+						})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "button",
+							onClick: handleScanDuplicatesWithAi,
+							disabled: dupLoading || tracks.length < 2,
+							className: "min-h-[42px] px-4 rounded-lg accent-bg text-sm font-medium flex items-center gap-2 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-50",
+							children: [dupLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "w-4 h-4 animate-spin" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CopyCheck, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: dupLoading ? "Scanning..." : "Scan for Duplicates" })]
+						})]
+					}),
+					dupProgress && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ProgressBar, {
+						label: dupProgress.label,
+						detail: dupProgress.detail,
+						current: dupProgress.current,
+						total: dupProgress.total,
+						percent: dupProgress.percent,
+						status: dupProgress.status
+					}),
+					dupStatus && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "text-sm text-zinc-600 dark:text-zinc-400",
+						children: dupStatus
+					}),
+					dupGroups.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "space-y-4 pt-2 border-t border-zinc-200 dark:border-zinc-800",
+						children: [dupGroups.map((group) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "rounded-xl border border-zinc-200 dark:border-zinc-800 p-3.5 space-y-2",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "text-xs text-zinc-500 dark:text-zinc-400 font-mono-tabular",
+								children: [
+									group.reason,
+									" · ",
+									group.similarityScore,
+									"% match"
+								]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "divide-y divide-zinc-200/70 dark:divide-zinc-800/70",
+								children: group.items.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+									className: "flex items-center justify-between gap-3 py-2 cursor-pointer",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center gap-3 min-w-0",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+											type: "checkbox",
+											checked: item.selectedForRemoval,
+											onChange: () => {
+												tactile.toggle(!item.selectedForRemoval);
+												setDupGroups((prev) => prev.map((g) => g.groupId !== group.groupId ? g : {
+													...g,
+													items: g.items.map((x) => x.trackId === item.trackId ? {
+														...x,
+														selectedForRemoval: !x.selectedForRemoval
+													} : x)
+												}));
+											},
+											className: "w-4 h-4 accent-amber-500 shrink-0"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "min-w-0",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+												className: "text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate",
+												children: item.title
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+												className: "text-xs text-zinc-500 dark:text-zinc-400 truncate font-mono-tabular",
+												children: [
+													item.artist,
+													" · ",
+													item.format,
+													" ",
+													item.bitDepth,
+													"b/",
+													Math.round(item.sampleRate / 1e3),
+													"kHz · ",
+													item.bitrateKbps,
+													" kbps"
+												]
+											})]
+										})]
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: `text-xs font-medium shrink-0 ${item.isRecommendedKeep && !item.selectedForRemoval ? "text-emerald-600 dark:text-emerald-400" : item.selectedForRemoval ? "text-rose-600 dark:text-rose-400" : "text-zinc-500"}`,
+										children: item.selectedForRemoval ? "Remove Copy" : item.isRecommendedKeep ? "Keep Master" : "Keep"
+									})]
+								}, item.trackId))
+							})]
+						}, group.groupId)), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "flex justify-end",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 								type: "button",
-								disabled: tracks.length === 0,
-								onClick: () => onPlayTracks(tracks, false),
-								className: "min-h-[38px] px-3 rounded-lg accent-bg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-40",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Play, { className: "w-3.5 h-3.5 fill-current" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Play All" })]
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-								type: "button",
-								disabled: tracks.length === 0,
-								onClick: () => onPlayTracks(tracks, true),
-								className: "min-h-[38px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-40",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Shuffle, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Play All Random" })]
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-								type: "button",
-								onClick: handleRefreshDailyMixes,
-								disabled: dailyLoading,
-								className: "min-h-[38px] px-3.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-medium flex items-center gap-2 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-50",
-								children: [dailyLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "w-3.5 h-3.5 animate-spin" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RefreshCw, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: user ? "Refresh Mixes" : "Sign in to Refresh" })]
+								onClick: () => {
+									const idsToRemove = dupGroups.flatMap((g) => g.items.filter((i) => i.selectedForRemoval).map((i) => i.trackId));
+									if (idsToRemove.length > 0) {
+										tactile.success();
+										onRemoveDuplicateTracks(idsToRemove);
+										setDupGroups([]);
+										setDupStatus(`Removed ${idsToRemove.length} duplicate track(s) while keeping master copies.`);
+									}
+								},
+								className: "min-h-[44px] px-5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium flex items-center gap-2 active:scale-95 transition-transform duration-100",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Remove Selected Duplicates" })]
 							})
-						]
-					})]
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-					className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4",
-					children: dailyRecommendations.map((rec) => {
-						const trackSet = new Set(rec.matchedTrackIds);
-						const matched = tracks.filter((t) => trackSet.has(t.id) || rec.suggestedSearchTerms.some((term) => t.genre.toLowerCase().includes(term.toLowerCase())));
-						return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-4 flex flex-col justify-between gap-4",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "text-xs text-zinc-500 dark:text-zinc-400",
+						})]
+					})
+				]
+			}),
+			showTags && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+				className: "rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-5 space-y-4",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex flex-wrap items-center justify-between gap-3",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+							className: "text-base font-display font-semibold text-zinc-900 dark:text-zinc-100",
+							children: "AI Metadata & Tag Cleanup"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-xs text-zinc-500 dark:text-zinc-400",
+							children: "Clean messy filenames and fix artist, title, album, and genre tags while preserving Lithuanian & Cyrillic scripts."
+						})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "button",
+							onClick: handleScanTagsWithAi,
+							disabled: tagLoading || tracks.length === 0,
+							className: "min-h-[42px] px-4 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-sm font-medium flex items-center gap-2 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-50",
+							children: [tagLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "w-4 h-4 animate-spin" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(WandSparkles, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: tagLoading ? "Scanning Tags..." : "Scan & Fix Tags" })]
+						})]
+					}),
+					tagProgress && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ProgressBar, {
+						label: tagProgress.label,
+						detail: tagProgress.detail,
+						current: tagProgress.current,
+						total: tagProgress.total,
+						percent: tagProgress.percent,
+						status: tagProgress.status
+					}),
+					tagStatus && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "text-sm text-zinc-600 dark:text-zinc-400",
+						children: tagStatus
+					}),
+					tagSuggestions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "space-y-3 pt-2 border-t border-zinc-200 dark:border-zinc-800",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "divide-y divide-zinc-200 dark:divide-zinc-800",
+							children: tagSuggestions.map((s) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+								className: "flex items-start gap-3 py-3 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/60 rounded-lg px-2",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+									type: "checkbox",
+									checked: s.selected,
+									onChange: () => {
+										tactile.toggle(!s.selected);
+										setTagSuggestions((prev) => prev.map((item) => item.trackId === s.trackId ? {
+											...item,
+											selected: !item.selected
+										} : item));
+									},
+									className: "mt-1 w-4 h-4 accent-amber-500"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "min-w-0 flex-1 text-xs space-y-1",
 									children: [
-										rec.mood,
-										" · ",
-										rec.genre,
-										" ·",
-										" ",
-										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-											className: "font-mono-tabular",
-											children: [matched.length, " tracks"]
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "text-zinc-500 line-through truncate",
+											children: [
+												s.currentArtist,
+												" — ",
+												s.currentTitle,
+												" (",
+												s.currentAlbum,
+												")"
+											]
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "text-zinc-900 dark:text-zinc-100 font-medium truncate",
+											children: [
+												s.suggestedArtist,
+												" — ",
+												s.suggestedTitle,
+												" (",
+												s.suggestedAlbum,
+												" · ",
+												s.suggestedGenre,
+												")"
+											]
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+											className: "text-zinc-500",
+											children: s.reason
 										})
 									]
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
-									className: "mt-1 text-base font-display font-semibold text-zinc-900 dark:text-zinc-100",
-									children: rec.title
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-									className: "mt-1 text-sm text-zinc-600 dark:text-zinc-400",
-									children: rec.subtitle
-								})
-							] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "flex items-center gap-2",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-									type: "button",
-									disabled: matched.length === 0,
-									onClick: () => onPlayTracks(matched, false),
-									className: "flex-1 min-h-[40px] px-3 rounded-lg accent-bg text-xs font-medium flex items-center justify-center gap-1.5 active:scale-95 transition-transform duration-100 disabled:opacity-40",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Play, { className: "w-3.5 h-3.5 fill-current" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Play All" })]
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-									type: "button",
-									disabled: matched.length === 0,
-									onClick: () => onPlayTracks(matched, true),
-									"aria-label": `Shuffle ${rec.title}`,
-									title: "Play Random",
-									className: "min-w-[40px] min-h-[40px] rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center active:scale-95 transition-transform duration-100 disabled:opacity-40",
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Shuffle, { className: "w-3.5 h-3.5" })
 								})]
-							})]
-						}, rec.id);
+							}, s.trackId))
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "flex justify-end",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								onClick: () => {
+									const chosen = tagSuggestions.filter((s) => s.selected);
+									if (chosen.length > 0) {
+										tactile.success();
+										onApplyTagCleanups(chosen);
+										setTagSuggestions([]);
+										setTagStatus(`Updated ${chosen.length} track(s).`);
+									}
+								},
+								className: "min-h-[44px] px-5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium flex items-center gap-2 active:scale-95 transition-transform duration-100",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Apply Changes" })]
+							})
+						})]
 					})
-				})]
+				]
+			}),
+			showArtwork && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+				className: "rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-5 space-y-4",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex flex-wrap items-center justify-between gap-3",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
+							className: "text-base font-display font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ImagePlus, { className: "w-4 h-4 accent-text" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "AI Original Album Art Finder & Uploader" })]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-xs text-zinc-500 dark:text-zinc-400",
+							children: "Matches songs to original album releases via AI & Cover Art Archive, or lets you upload custom covers from your device."
+						})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "button",
+							onClick: handleFindOriginalAlbumArt,
+							disabled: artLoading || tracks.length === 0,
+							className: "min-h-[42px] px-4 rounded-lg accent-bg text-sm font-medium flex items-center gap-2 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-50",
+							children: [artLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "w-4 h-4 animate-spin" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ImagePlus, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: artLoading ? "Searching Art..." : "Find Original Album Art" })]
+						})]
+					}),
+					artProgress && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ProgressBar, {
+						label: artProgress.label,
+						detail: artProgress.detail,
+						current: artProgress.current,
+						total: artProgress.total,
+						percent: artProgress.percent,
+						status: artProgress.status
+					}),
+					artStatus && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "text-sm text-zinc-600 dark:text-zinc-400",
+						children: artStatus
+					}),
+					artSuggestions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "space-y-3 pt-2 border-t border-zinc-200 dark:border-zinc-800",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "grid grid-cols-1 md:grid-cols-2 gap-3",
+							children: artSuggestions.map((item) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+								className: "flex items-center gap-3 p-3 rounded-xl border border-zinc-200 dark:border-zinc-800 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/60",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+										type: "checkbox",
+										checked: item.selected,
+										onChange: () => {
+											tactile.toggle(!item.selected);
+											setArtSuggestions((prev) => prev.map((x) => x.trackId === item.trackId ? {
+												...x,
+												selected: !x.selected
+											} : x));
+										},
+										className: "w-4 h-4 accent-amber-500 shrink-0"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+										src: item.suggestedCoverUrl,
+										alt: `${item.album} cover`,
+										referrerPolicy: "no-referrer",
+										className: "w-14 h-14 rounded-lg object-cover border border-zinc-200 dark:border-zinc-800 shrink-0"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "min-w-0 flex-1",
+										children: [
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+												className: "text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate",
+												children: item.title
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+												className: "text-xs text-zinc-500 dark:text-zinc-400 truncate",
+												children: [
+													item.artist,
+													" · ",
+													item.album
+												]
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+												className: "text-[11px] text-emerald-600 dark:text-emerald-400 truncate mt-0.5",
+												children: item.sourceLabel
+											})
+										]
+									})
+								]
+							}, item.trackId))
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "flex justify-end",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								onClick: () => {
+									const chosen = artSuggestions.filter((s) => s.selected);
+									if (chosen.length > 0) {
+										tactile.success();
+										onApplyArtworkUpdates(chosen.map((c) => ({
+											trackId: c.trackId,
+											coverUrl: c.suggestedCoverUrl
+										})));
+										setArtSuggestions([]);
+										setArtStatus(`Applied original album art to ${chosen.length} track(s).`);
+									}
+								},
+								className: "min-h-[44px] px-5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium flex items-center gap-2 active:scale-95 transition-transform duration-100",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Apply Selected Artworks" })]
+							})
+						})]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-2.5",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "text-xs font-medium text-zinc-500 dark:text-zinc-400",
+							children: "Upload Custom Album Cover from Device"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-72 overflow-y-auto pr-1",
+							children: tracks.slice(0, 30).map((t) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center justify-between gap-2.5 p-2.5 rounded-lg border border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-950/50",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "flex items-center gap-2.5 min-w-0",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CoverArt, {
+										src: t.coverUrl,
+										alt: t.title,
+										className: "w-10 h-10 rounded-md"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "min-w-0",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+											className: "text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate",
+											children: t.title
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+											className: "text-[11px] text-zinc-500 dark:text-zinc-400 truncate",
+											children: t.artist
+										})]
+									})]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+									type: "button",
+									onClick: () => {
+										tactile.tap();
+										setUploadTargetTrackId(t.id);
+										artFileInputRef.current?.click();
+									},
+									className: "min-h-[36px] px-2.5 rounded-md border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-medium flex items-center gap-1 shrink-0",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Upload, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Upload" })]
+								})]
+							}, t.id))
+						})]
+					})
+				]
+			}),
+			showMixes && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+				className: "space-y-3.5",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex flex-wrap items-center justify-between gap-3",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+							className: "text-base font-display font-semibold text-zinc-900 dark:text-zinc-100",
+							children: "Daily Mixes"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex flex-wrap items-center gap-2",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+									type: "button",
+									disabled: tracks.length === 0,
+									onClick: () => onPlayTracks(tracks, false),
+									className: "min-h-[38px] px-3 rounded-lg accent-bg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-40",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Play, { className: "w-3.5 h-3.5 fill-current" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Play All" })]
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+									type: "button",
+									disabled: tracks.length === 0,
+									onClick: () => onPlayTracks(tracks, true),
+									className: "min-h-[38px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-40",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Shuffle, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Play All Random" })]
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+									type: "button",
+									onClick: handleRefreshDailyMixes,
+									disabled: dailyLoading,
+									className: "min-h-[38px] px-3.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-medium flex items-center gap-2 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-50",
+									children: [dailyLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "w-3.5 h-3.5 animate-spin" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RefreshCw, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Refresh Mixes" })]
+								})
+							]
+						})]
+					}),
+					dailyProgress && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ProgressBar, {
+						label: dailyProgress.label,
+						detail: dailyProgress.detail,
+						current: dailyProgress.current,
+						total: dailyProgress.total,
+						percent: dailyProgress.percent,
+						status: dailyProgress.status
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4",
+						children: dailyRecommendations.map((rec) => {
+							const trackSet = new Set(rec.matchedTrackIds);
+							const matched = tracks.filter((t) => trackSet.has(t.id) || rec.suggestedSearchTerms.some((term) => t.genre.toLowerCase().includes(term.toLowerCase())));
+							return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-4 flex flex-col justify-between gap-4",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "text-xs text-zinc-500 dark:text-zinc-400",
+										children: [
+											rec.mood,
+											" · ",
+											rec.genre,
+											" ·",
+											" ",
+											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+												className: "font-mono-tabular",
+												children: [matched.length, " tracks"]
+											})
+										]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h4", {
+										className: "mt-1 text-base font-display font-semibold text-zinc-900 dark:text-zinc-100",
+										children: rec.title
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										className: "mt-1 text-sm text-zinc-600 dark:text-zinc-400",
+										children: rec.subtitle
+									})
+								] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "flex items-center gap-2",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+										type: "button",
+										disabled: matched.length === 0,
+										onClick: () => onPlayTracks(matched, false),
+										className: "flex-1 min-h-[40px] px-3 rounded-lg accent-bg text-xs font-medium flex items-center justify-center gap-1.5 active:scale-95 transition-transform duration-100 disabled:opacity-40",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Play, { className: "w-3.5 h-3.5 fill-current" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Play All" })]
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										disabled: matched.length === 0,
+										onClick: () => onPlayTracks(matched, true),
+										"aria-label": `Shuffle ${rec.title}`,
+										title: "Play Random",
+										className: "min-w-[40px] min-h-[40px] rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-center active:scale-95 transition-transform duration-100 disabled:opacity-40",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Shuffle, { className: "w-3.5 h-3.5" })
+									})]
+								})]
+							}, rec.id);
+						})
+					})
+				]
 			}),
 			showPlaylists && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
 				className: "space-y-4",
@@ -53775,7 +54703,7 @@ var SmartStudioView = ({ user, tracks, smartPlaylists, dailyRecommendations, onS
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sparkles, { className: "w-4 h-4 accent-text" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Create Smart Playlist" })]
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 								className: "text-xs text-zinc-500 dark:text-zinc-400 mt-0.5",
-								children: user ? `Describe a mood or sound profile for ${user.email}, or define dynamic rules.` : "Rule-based playlists work offline anytime; sign in with Gmail for AI prompts."
+								children: "Describe a mood or sound profile for AI curation, or define dynamic rules."
 							})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 								type: "button",
 								onClick: () => {
@@ -53799,8 +54727,16 @@ var SmartStudioView = ({ user, tracks, smartPlaylists, dailyRecommendations, onS
 								type: "submit",
 								disabled: aiLoading,
 								className: "min-h-[44px] px-5 rounded-lg accent-bg text-sm font-medium flex items-center justify-center gap-2 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-50",
-								children: [aiLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "w-4 h-4 animate-spin" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(WandSparkles, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: user ? "Generate Mix" : "Sign in & Generate" })]
+								children: [aiLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "w-4 h-4 animate-spin" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(WandSparkles, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Generate Mix" })]
 							})]
+						}),
+						playlistProgress && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ProgressBar, {
+							label: playlistProgress.label,
+							detail: playlistProgress.detail,
+							current: playlistProgress.current,
+							total: playlistProgress.total,
+							percent: playlistProgress.percent,
+							status: playlistProgress.status
 						}),
 						showManualForm && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
 							onSubmit: handleCreateManualSmartPlaylist,
@@ -53967,106 +54903,12 @@ var SmartStudioView = ({ user, tracks, smartPlaylists, dailyRecommendations, onS
 						})
 					})]
 				})]
-			}),
-			showTags && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
-				className: "rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-5 space-y-4",
-				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex flex-wrap items-center justify-between gap-3",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-							className: "text-base font-display font-semibold text-zinc-900 dark:text-zinc-100",
-							children: "AI Metadata & Tag Cleanup"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-							className: "text-xs text-zinc-500 dark:text-zinc-400",
-							children: "Clean messy filenames and normalize artist, album, and genre tags while preserving Lithuanian & Cyrillic scripts."
-						})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-							type: "button",
-							onClick: handleScanTagsWithAi,
-							disabled: tagLoading,
-							className: "min-h-[42px] px-4 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-sm font-medium flex items-center gap-2 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-50",
-							children: [tagLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "w-4 h-4 animate-spin" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(WandSparkles, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: user ? "Scan Library Tags" : "Sign in to Scan Tags" })]
-						})]
-					}),
-					tagStatus && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-						className: "text-sm text-zinc-600 dark:text-zinc-400",
-						children: tagStatus
-					}),
-					tagSuggestions.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "space-y-3 pt-2 border-t border-zinc-200 dark:border-zinc-800",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							className: "divide-y divide-zinc-200 dark:divide-zinc-800",
-							children: tagSuggestions.map((s) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
-								className: "flex items-start gap-3 py-3 cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/60 rounded-lg px-2",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-									type: "checkbox",
-									checked: s.selected,
-									onChange: () => {
-										tactile.toggle(!s.selected);
-										setTagSuggestions((prev) => prev.map((item) => item.trackId === s.trackId ? {
-											...item,
-											selected: !item.selected
-										} : item));
-									},
-									className: "mt-1 w-4 h-4 accent-amber-500"
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "min-w-0 flex-1 text-xs space-y-1",
-									children: [
-										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											className: "text-zinc-500 line-through truncate",
-											children: [
-												s.currentArtist,
-												" — ",
-												s.currentTitle,
-												" (",
-												s.currentAlbum,
-												")"
-											]
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											className: "text-zinc-900 dark:text-zinc-100 font-medium truncate",
-											children: [
-												s.suggestedArtist,
-												" — ",
-												s.suggestedTitle,
-												" (",
-												s.suggestedAlbum,
-												" · ",
-												s.suggestedGenre,
-												")"
-											]
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-											className: "text-zinc-500",
-											children: s.reason
-										})
-									]
-								})]
-							}, s.trackId))
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							className: "flex justify-end",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-								type: "button",
-								onClick: () => {
-									const chosen = tagSuggestions.filter((s) => s.selected);
-									if (chosen.length > 0) {
-										tactile.success();
-										onApplyTagCleanups(chosen);
-										setTagSuggestions([]);
-										setTagStatus(`Updated ${chosen.length} track(s).`);
-									}
-								},
-								className: "min-h-[44px] px-5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium flex items-center gap-2 active:scale-95 transition-transform duration-100",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Apply Changes" })]
-							})
-						})]
-					})
-				]
 			})
 		]
 	});
 };
 // src/version.ts
-var APP_VERSION = "v1.2.0";
+var APP_VERSION = "v1.4.1";
 // src/components/SettingsCloudView.tsx
 var ACCENTS = [
 	{
@@ -54126,7 +54968,7 @@ var ToggleSwitch = ({ checked, label, onChange }) => /* @__PURE__ */ (0, import_
 	className: `relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-150 ${checked ? "accent-bg" : "bg-zinc-300 dark:bg-zinc-700"}`,
 	children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-150 ${checked ? "translate-x-6" : "translate-x-1"}` })
 });
-var SettingsCloudView = ({ user, settings, cacheStats, syncBusy, syncMessage, onUpdateSettings, onSignInGoogle, onSignOutGoogle, onBackupNow, onRestoreNow, onClearCache, onRepairCyrillicLibrary }) => {
+var SettingsCloudView = ({ user, settings, cacheStats, syncBusy, syncMessage, syncProgress, storageProgress, onUpdateSettings, onSignInGoogle, onSignOutGoogle, onBackupNow, onRestoreNow, onClearCache, onRepairCyrillicLibrary }) => {
 	const [section, setSection] = (0, import_react.useState)("all");
 	const formatMb = (bytes) => `${(bytes / 1048576).toFixed(1)} MB`;
 	const showAudio = section === "all" || section === "audio";
@@ -54484,6 +55326,14 @@ var SettingsCloudView = ({ user, settings, cacheStats, syncBusy, syncMessage, on
 							className: "min-h-[42px] px-4 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-medium flex items-center gap-2 active:scale-95 transition-transform duration-100",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Wrench, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Repair Cyrillic / Mojibake Tags" })]
 						})]
+					}),
+					storageProgress && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ProgressBar, {
+						label: storageProgress.title,
+						detail: storageProgress.detail,
+						current: storageProgress.current,
+						total: storageProgress.total,
+						percent: storageProgress.percent,
+						status: storageProgress.status
 					})
 				]
 			}),
@@ -54549,6 +55399,14 @@ var SettingsCloudView = ({ user, settings, cacheStats, syncBusy, syncMessage, on
 							})
 						]
 					}),
+					syncProgress && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ProgressBar, {
+						label: syncProgress.title,
+						detail: syncProgress.detail,
+						current: syncProgress.current,
+						total: syncProgress.total,
+						percent: syncProgress.percent,
+						status: syncProgress.status
+					}),
 					syncMessage && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 						className: "text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-950 px-3 py-2 rounded-lg",
 						children: syncMessage
@@ -54559,15 +55417,14 @@ var SettingsCloudView = ({ user, settings, cacheStats, syncBusy, syncMessage, on
 	});
 };
 // src/components/PlayerBar.tsx
-var PlayerBar = import_react.memo(({ track, isPlaying, isLoading, shuffle, repeatMode, volume, onTogglePlay, onPrev, onNext, onToggleShuffle, onCycleRepeat, onChangeVolume, onToggleFavorite, onOpenNowPlaying, onOpenEqualizer, onOpenCast, onOpenShare }) => {
+var PlayerBar = import_react.memo(({ track, isPlaying, isLoading, shuffle, repeatMode, volume, onTogglePlay, onPrev, onNext, onToggleShuffle, onCycleRepeat, onChangeVolume, onToggleFavorite, onOpenNowPlaying, onPeekSheet, onReleaseSheetPeek, onOpenEqualizer, onOpenCast, onOpenShare }) => {
 	const [progress, setProgress] = (0, import_react.useState)({
 		currentTime: 0,
 		duration: track?.duration || 0
 	});
 	const [dragTime, setDragTime] = (0, import_react.useState)(null);
-	const [liftY, setLiftY] = (0, import_react.useState)(0);
-	const touchStartYRef = (0, import_react.useRef)(null);
-	const swipedRef = (0, import_react.useRef)(false);
+	const footerRef = (0, import_react.useRef)(null);
+	const swipeStateRef = (0, import_react.useRef)(null);
 	(0, import_react.useEffect)(() => {
 		return audioEngine.subscribeProgress((state) => {
 			setProgress(state);
@@ -54578,40 +55435,81 @@ var PlayerBar = import_react.memo(({ track, isPlaying, isLoading, shuffle, repea
 	const displayTime = dragTime !== null ? dragTime : progress.currentTime;
 	const pct = Math.min(100, Math.max(0, displayTime / dur * 100));
 	const handleTouchStart = (e) => {
+		if (e.touches.length !== 1) return;
 		const target = e.target;
 		if (target.closest("input[type=\"range\"]") || target.closest("button[data-no-swipe=\"true\"]")) {
-			touchStartYRef.current = null;
+			swipeStateRef.current = null;
 			return;
 		}
-		touchStartYRef.current = e.touches[0].clientY;
-		swipedRef.current = false;
+		const touch = e.touches[0];
+		swipeStateRef.current = {
+			startX: touch.clientX,
+			startY: touch.clientY,
+			prevY: touch.clientY,
+			prevTime: performance.now(),
+			velocityUp: 0,
+			lastDy: 0,
+			dragging: false,
+			aborted: false
+		};
+		if (footerRef.current) footerRef.current.style.transitionDuration = "0ms";
 	};
 	const handleTouchMove = (e) => {
-		if (touchStartYRef.current === null) return;
-		const dy = e.touches[0].clientY - touchStartYRef.current;
-		if (dy < 0) {
-			setLiftY(Math.max(-44, dy * .45));
-			if (dy < -36 && !swipedRef.current) {
-				swipedRef.current = true;
-				touchStartYRef.current = null;
-				setLiftY(0);
-				onOpenNowPlaying();
+		const state = swipeStateRef.current;
+		if (!state || state.aborted || e.touches.length !== 1) return;
+		const touch = e.touches[0];
+		const now = performance.now();
+		const dx = Math.abs(touch.clientX - state.startX);
+		const dy = touch.clientY - state.startY;
+		const dt = Math.max(8, now - state.prevTime);
+		const instVelUp = (state.prevY - touch.clientY) / dt;
+		state.velocityUp = state.velocityUp * .45 + instVelUp * .55;
+		state.prevY = touch.clientY;
+		state.prevTime = now;
+		if (!state.dragging) {
+			if (dx > 14 && dx > Math.abs(dy)) {
+				state.aborted = true;
+				return;
 			}
+			if (dy > -5) return;
+			state.dragging = true;
 		}
+		const clampedDy = Math.min(0, dy);
+		state.lastDy = clampedDy;
+		if (footerRef.current) {
+			const follow = Math.max(-28, clampedDy * .22);
+			footerRef.current.style.transform = `translate3d(0, ${follow}px, 0)`;
+		}
+		onPeekSheet?.(clampedDy);
 	};
-	const handleTouchEnd = () => {
-		touchStartYRef.current = null;
-		setLiftY(0);
+	const finishSwipe = () => {
+		const state = swipeStateRef.current;
+		swipeStateRef.current = null;
+		if (footerRef.current) {
+			footerRef.current.style.transitionDuration = "280ms";
+			footerRef.current.style.transform = "translate3d(0, 0, 0)";
+		}
+		if (!state || !state.dragging) {
+			if (state && !state.dragging && state.lastDy < 0) onReleaseSheetPeek?.(false);
+			return;
+		}
+		const pulled = Math.abs(state.lastDy);
+		const vh = Math.max(480, window.innerHeight || 720);
+		const shouldOpen = pulled > Math.min(140, vh * .18) || pulled > 24 && state.velocityUp > .36;
+		onReleaseSheetPeek?.(shouldOpen);
+		if (shouldOpen) onOpenNowPlaying();
 	};
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("footer", {
+		ref: footerRef,
 		onTouchStart: handleTouchStart,
 		onTouchMove: handleTouchMove,
-		onTouchEnd: handleTouchEnd,
+		onTouchEnd: finishSwipe,
+		onTouchCancel: finishSwipe,
 		style: {
 			bottom: "calc(1rem + env(safe-area-inset-bottom, 0px))",
-			transform: liftY !== 0 ? `translate3d(0, ${liftY}px, 0)` : void 0
+			transform: "translate3d(0, 0, 0)"
 		},
-		className: "fixed left-2.5 right-2.5 sm:left-4 sm:right-4 z-40 rounded-2xl border border-zinc-200/90 dark:border-zinc-700/80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl shadow-[0_14px_40px_rgba(0,0,0,0.35)] transition-transform duration-150",
+		className: "fixed left-2.5 right-2.5 sm:left-4 sm:right-4 z-40 rounded-2xl border border-zinc-200/90 dark:border-zinc-700/80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl shadow-[0_14px_40px_rgba(0,0,0,0.35)] will-change-transform transition-transform duration-250 ease-[cubic-bezier(0.22,1,0.36,1)]",
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 			className: "max-w-screen-2xl mx-auto px-3.5 sm:px-5 pt-2 pb-3.5 space-y-2.5",
 			children: [
@@ -54619,15 +55517,15 @@ var PlayerBar = import_react.memo(({ track, isPlaying, isLoading, shuffle, repea
 					type: "button",
 					onClick: onOpenNowPlaying,
 					"aria-label": "Slide up or tap to open full screen player",
-					className: "w-full flex flex-col items-center justify-center py-0.5 group cursor-grab active:cursor-grabbing",
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-600 group-hover:bg-amber-500 transition-colors" })
+					className: "touch-none w-full flex flex-col items-center justify-center py-1.5 group cursor-grab active:cursor-grabbing",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-12 h-1 rounded-full bg-zinc-300 dark:bg-zinc-600 group-hover:bg-amber-500 transition-colors" })
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 					className: "flex items-center justify-between gap-3",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 						type: "button",
 						onClick: onOpenNowPlaying,
-						className: "flex items-center gap-3 min-w-0 flex-1 text-left group active:scale-[0.99] transition-transform duration-100",
+						className: "touch-none flex items-center gap-3 min-w-0 flex-1 text-left group active:scale-[0.99] transition-transform duration-100",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CoverArt, {
 							src: track.coverUrl,
 							alt: track.title,
@@ -54839,21 +55737,59 @@ var PlayerBar = import_react.memo(({ track, isPlaying, isLoading, shuffle, repea
 	});
 });
 // src/components/NowPlayingView.tsx
-var NowPlayingView = import_react.memo(({ open, track, nextTrack, isPlaying, shuffle, repeatMode, volume, lowBatteryMode, streamingQuality, onClose, onTogglePlay, onPrev, onNext, onToggleShuffle, onCycleRepeat, onChangeVolume, onToggleFavorite, onRateTrack, onOpenEqualizer, onOpenCast, onOpenShare, onGoToAlbum, onGoToArtist }) => {
+var NowPlayingView = import_react.memo(import_react.forwardRef(({ open, track, nextTrack, isPlaying, shuffle, repeatMode, volume, lowBatteryMode, streamingQuality, onClose, onTogglePlay, onPrev, onNext, onToggleShuffle, onCycleRepeat, onChangeVolume, onToggleFavorite, onRateTrack, onOpenEqualizer, onOpenCast, onOpenShare, onGoToAlbum, onGoToArtist }, ref) => {
 	const [progress, setProgress] = (0, import_react.useState)({
 		currentTime: 0,
 		duration: track?.duration || 0
 	});
 	const [dragTime, setDragTime] = (0, import_react.useState)(null);
-	const [dragOffsetY, setDragOffsetY] = (0, import_react.useState)(0);
-	const [isDraggingSheet, setIsDraggingSheet] = (0, import_react.useState)(false);
 	const canvasRef = (0, import_react.useRef)(null);
+	const backdropRef = (0, import_react.useRef)(null);
+	const sheetRef = (0, import_react.useRef)(null);
 	const scrollRef = (0, import_react.useRef)(null);
-	const touchStartRef = (0, import_react.useRef)(null);
+	const dragStateRef = (0, import_react.useRef)(null);
+	(0, import_react.useImperativeHandle)(ref, () => ({
+		peekFromBottom: (dyNegative) => {
+			const clamped = Math.min(0, dyNegative);
+			const vh = Math.max(480, window.innerHeight || 720);
+			const progressRatio = Math.min(1, Math.max(0, Math.abs(clamped) / vh));
+			if (backdropRef.current) {
+				backdropRef.current.style.transitionDuration = "0ms";
+				backdropRef.current.style.opacity = String(progressRatio);
+			}
+			if (sheetRef.current) {
+				sheetRef.current.style.transitionDuration = "0ms";
+				sheetRef.current.style.borderTopLeftRadius = "24px";
+				sheetRef.current.style.borderTopRightRadius = "24px";
+				sheetRef.current.style.transform = `translate3d(0, calc(100% + ${clamped}px), 0)`;
+			}
+		},
+		releaseFromBottom: (commitOpen) => {
+			if (backdropRef.current) {
+				backdropRef.current.style.transitionDuration = "360ms";
+				backdropRef.current.style.opacity = commitOpen ? "1" : "0";
+			}
+			if (sheetRef.current) {
+				sheetRef.current.style.transitionDuration = "360ms";
+				sheetRef.current.style.borderTopLeftRadius = commitOpen ? "0px" : "24px";
+				sheetRef.current.style.borderTopRightRadius = commitOpen ? "0px" : "24px";
+				sheetRef.current.style.transform = commitOpen ? "translate3d(0, 0, 0)" : "translate3d(0, 100%, 0)";
+			}
+		}
+	}));
 	(0, import_react.useEffect)(() => {
+		if (backdropRef.current) {
+			backdropRef.current.style.transitionDuration = "";
+			backdropRef.current.style.opacity = open ? "1" : "0";
+		}
+		if (sheetRef.current) {
+			sheetRef.current.style.transitionDuration = "";
+			sheetRef.current.style.borderTopLeftRadius = open ? "0px" : "24px";
+			sheetRef.current.style.borderTopRightRadius = open ? "0px" : "24px";
+			sheetRef.current.style.transform = open ? "translate3d(0, 0, 0)" : "translate3d(0, 100%, 0)";
+		}
+		dragStateRef.current = null;
 		if (!open) return;
-		setDragOffsetY(0);
-		setIsDraggingSheet(false);
 		return audioEngine.subscribeProgress(setProgress);
 	}, [open]);
 	(0, import_react.useEffect)(() => {
@@ -54869,20 +55805,22 @@ var NowPlayingView = import_react.memo(({ open, track, nextTrack, isPlaying, shu
 		let rafId = 0;
 		const bins = /* @__PURE__ */ new Uint8Array(64);
 		const draw = () => {
-			const canvas = canvasRef.current;
-			if (canvas) {
-				const ctx = canvas.getContext("2d");
-				if (ctx) {
-					audioEngine.getFrequencyData(bins);
-					ctx.clearRect(0, 0, canvas.width, canvas.height);
-					const barCount = 32;
-					const barW = canvas.width / barCount;
-					ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#d97706";
-					for (let i = 0; i < barCount; i++) {
-						const val = bins[i] || 0;
-						const h = Math.max(3, val / 255 * canvas.height);
-						ctx.globalAlpha = .35 + val / 255 * .65;
-						ctx.fillRect(i * barW + 2, canvas.height - h, Math.max(2, barW - 4), h);
+			if (!document.hidden) {
+				const canvas = canvasRef.current;
+				if (canvas) {
+					const ctx = canvas.getContext("2d");
+					if (ctx) {
+						audioEngine.getFrequencyData(bins);
+						ctx.clearRect(0, 0, canvas.width, canvas.height);
+						const barCount = 32;
+						const barW = canvas.width / barCount;
+						ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#d97706";
+						for (let i = 0; i < barCount; i++) {
+							const val = bins[i] || 0;
+							const h = Math.max(3, val / 255 * canvas.height);
+							ctx.globalAlpha = .35 + val / 255 * .65;
+							ctx.fillRect(i * barW + 2, canvas.height - h, Math.max(2, barW - 4), h);
+						}
 					}
 				}
 			}
@@ -54899,56 +55837,122 @@ var NowPlayingView = import_react.memo(({ open, track, nextTrack, isPlaying, shu
 	const dur = progress.duration || track.duration || 1;
 	const displayTime = dragTime !== null ? dragTime : progress.currentTime;
 	const handleTouchStart = (e) => {
+		if (!open || e.touches.length !== 1) return;
 		const target = e.target;
 		if (target.closest("input[type=\"range\"]")) return;
 		const scrollTop = scrollRef.current?.scrollTop || 0;
 		const onHandleArea = Boolean(target.closest("[data-sheet-handle=\"true\"]"));
-		if (scrollTop > 4 && !onHandleArea) return;
-		touchStartRef.current = {
-			y: e.touches[0].clientY,
-			time: performance.now()
+		if (scrollTop > 2 && !onHandleArea) return;
+		const now = performance.now();
+		const touch = e.touches[0];
+		dragStateRef.current = {
+			startX: touch.clientX,
+			startY: touch.clientY,
+			prevY: touch.clientY,
+			prevTime: now,
+			velocityY: 0,
+			active: false,
+			aborted: false,
+			lastOffset: 0
 		};
-		setIsDraggingSheet(true);
 	};
 	const handleTouchMove = (e) => {
-		if (!touchStartRef.current) return;
-		const dy = e.touches[0].clientY - touchStartRef.current.y;
-		if (dy > 0) setDragOffsetY(dy);
-		else setDragOffsetY(0);
+		const state = dragStateRef.current;
+		if (!state || state.aborted || e.touches.length !== 1) return;
+		const touch = e.touches[0];
+		const now = performance.now();
+		const dx = Math.abs(touch.clientX - state.startX);
+		const dy = touch.clientY - state.startY;
+		const dt = Math.max(8, now - state.prevTime);
+		const instVel = (touch.clientY - state.prevY) / dt;
+		state.velocityY = state.velocityY * .45 + instVel * .55;
+		state.prevY = touch.clientY;
+		state.prevTime = now;
+		if (!state.active) {
+			if (dx > 14 && dx > Math.abs(dy)) {
+				state.aborted = true;
+				return;
+			}
+			if (Math.abs(dy) < 5) return;
+			const target = e.target;
+			const onHandleArea = Boolean(target.closest("[data-sheet-handle=\"true\"]"));
+			const scrollTop = scrollRef.current?.scrollTop || 0;
+			if (!onHandleArea && (dy < 0 || scrollTop > 2)) {
+				state.aborted = true;
+				return;
+			}
+			state.active = true;
+			if (backdropRef.current) backdropRef.current.style.transitionDuration = "0ms";
+			if (sheetRef.current) sheetRef.current.style.transitionDuration = "0ms";
+		}
+		const offset = dy >= 0 ? dy : Math.max(-22, dy * .16);
+		state.lastOffset = offset;
+		const vh = Math.max(480, window.innerHeight || 720);
+		if (backdropRef.current) {
+			const opacity = offset > 0 ? Math.max(0, 1 - offset / vh) : 1;
+			backdropRef.current.style.opacity = String(opacity);
+		}
+		if (sheetRef.current) {
+			const radius = offset > 0 ? Math.min(24, offset * .25) : 0;
+			sheetRef.current.style.borderTopLeftRadius = `${radius}px`;
+			sheetRef.current.style.borderTopRightRadius = `${radius}px`;
+			sheetRef.current.style.transform = `translate3d(0, ${offset}px, 0)`;
+		}
 	};
-	const handleTouchEnd = () => {
-		if (!touchStartRef.current) {
-			setIsDraggingSheet(false);
-			setDragOffsetY(0);
+	const finishSheetDrag = () => {
+		const state = dragStateRef.current;
+		dragStateRef.current = null;
+		if (!state || !state.active) {
+			if (backdropRef.current) {
+				backdropRef.current.style.transitionDuration = "";
+				backdropRef.current.style.opacity = open ? "1" : "0";
+			}
+			if (sheetRef.current) {
+				sheetRef.current.style.transitionDuration = "";
+				sheetRef.current.style.borderTopLeftRadius = open ? "0px" : "24px";
+				sheetRef.current.style.borderTopRightRadius = open ? "0px" : "24px";
+				sheetRef.current.style.transform = open ? "translate3d(0, 0, 0)" : "translate3d(0, 100%, 0)";
+			}
 			return;
 		}
-		const elapsed = Math.max(16, performance.now() - touchStartRef.current.time);
-		const velocity = dragOffsetY / elapsed;
-		const shouldClose = dragOffsetY > 90 || dragOffsetY > 42 && velocity > .45;
-		touchStartRef.current = null;
-		setIsDraggingSheet(false);
-		setDragOffsetY(0);
+		const vh = Math.max(480, window.innerHeight || 720);
+		const distanceThreshold = Math.min(190, vh * .26);
+		const shouldClose = state.lastOffset > distanceThreshold || state.lastOffset > 32 && state.velocityY > .42;
+		if (backdropRef.current) {
+			backdropRef.current.style.transitionDuration = "360ms";
+			backdropRef.current.style.opacity = shouldClose ? "0" : "1";
+		}
+		if (sheetRef.current) {
+			sheetRef.current.style.transitionDuration = "360ms";
+			sheetRef.current.style.borderTopLeftRadius = shouldClose ? "24px" : "0px";
+			sheetRef.current.style.borderTopRightRadius = shouldClose ? "24px" : "0px";
+			sheetRef.current.style.transform = shouldClose ? "translate3d(0, 100%, 0)" : "translate3d(0, 0, 0)";
+		}
 		if (shouldClose) onClose();
 	};
-	const transformValue = open ? `translate3d(0, ${dragOffsetY}px, 0)` : "translate3d(0, 100%, 0)";
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		ref: scrollRef,
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		ref: backdropRef,
+		"aria-hidden": "true",
+		style: { opacity: open ? 1 : 0 },
+		className: "fixed inset-0 z-[45] bg-black/45 pointer-events-none transition-opacity duration-350"
+	}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		ref: sheetRef,
 		"aria-hidden": !open,
 		onTouchStart: handleTouchStart,
 		onTouchMove: handleTouchMove,
-		onTouchEnd: handleTouchEnd,
+		onTouchEnd: finishSheetDrag,
+		onTouchCancel: finishSheetDrag,
 		style: {
-			transform: transformValue,
-			paddingTop: "env(safe-area-inset-top, 0px)",
-			paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom, 0px))"
+			transform: open ? "translate3d(0, 0, 0)" : "translate3d(0, 100%, 0)",
+			paddingTop: "env(safe-area-inset-top, 0px)"
 		},
-		className: `fixed inset-0 z-50 bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-y-auto ${isDraggingSheet ? "" : "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"} ${open ? "pointer-events-auto" : "pointer-events-none"}`,
+		className: `fixed inset-0 z-50 bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-hidden shadow-[0_-16px_48px_rgba(0,0,0,0.4)] will-change-transform transition-[transform,border-radius] duration-350 ease-[cubic-bezier(0.22,1,0.36,1)] ${open ? "pointer-events-auto" : "pointer-events-none"}`,
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 			"data-sheet-handle": "true",
-			className: "sticky top-0 z-10 bg-zinc-50/95 dark:bg-zinc-950/95 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800/80 shrink-0",
+			className: "touch-none select-none z-10 bg-zinc-50/95 dark:bg-zinc-950/95 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800/80 shrink-0",
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				className: "pt-2.5 pb-1 flex justify-center",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-12 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700" })
+				className: "pt-3 pb-1.5 flex justify-center",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-12 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-600" })
 			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 				className: "flex items-center justify-between px-4 sm:px-8 h-14",
 				children: [
@@ -54994,216 +55998,222 @@ var NowPlayingView = import_react.memo(({ open, track, nextTrack, isPlaying, shu
 					})
 				]
 			})]
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "flex-1 max-w-4xl w-full mx-auto px-5 py-6 sm:py-10 flex flex-col lg:flex-row items-center gap-7 lg:gap-12 justify-center",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "w-full max-w-[320px] sm:max-w-[380px] flex flex-col items-center gap-4",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CoverArt, {
-					src: track.coverUrl,
-					alt: track.title,
-					className: "w-full aspect-square rounded-2xl shadow-xl border border-zinc-200/50 dark:border-zinc-800"
-				}), !lowBatteryMode && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("canvas", {
-					ref: canvasRef,
-					width: 360,
-					height: 44,
-					className: "w-full h-11 rounded-lg opacity-90"
-				})]
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "w-full max-w-md flex flex-col gap-5",
-				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex items-start justify-between gap-4",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "min-w-0",
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			ref: scrollRef,
+			style: { paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" },
+			className: "flex-1 min-h-0 overflow-y-auto overscroll-y-contain",
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "max-w-4xl w-full min-h-full mx-auto px-5 py-6 sm:py-10 flex flex-col lg:flex-row items-center gap-7 lg:gap-12 justify-center",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					"data-sheet-handle": "true",
+					className: "touch-none w-full max-w-[320px] sm:max-w-[380px] flex flex-col items-center gap-4",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CoverArt, {
+						src: track.coverUrl,
+						alt: track.title,
+						className: "w-full aspect-square rounded-2xl shadow-xl border border-zinc-200/50 dark:border-zinc-800"
+					}), !lowBatteryMode && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("canvas", {
+						ref: canvasRef,
+						width: 360,
+						height: 44,
+						className: "w-full h-11 rounded-lg opacity-90"
+					})]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "w-full max-w-md flex flex-col gap-5",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-start justify-between gap-4",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "min-w-0",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+										className: "text-2xl font-display font-bold text-zinc-900 dark:text-zinc-100 leading-tight",
+										children: track.title
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-600 dark:text-zinc-400",
+										children: [
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+												type: "button",
+												onClick: () => {
+													onGoToArtist(track.artist);
+													onClose();
+												},
+												className: "hover:underline font-medium text-zinc-800 dark:text-zinc-200",
+												children: track.artist
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+												"aria-hidden": "true",
+												children: "·"
+											}),
+											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+												type: "button",
+												onClick: () => {
+													onGoToAlbum(track.album);
+													onClose();
+												},
+												className: "hover:underline",
+												children: track.album
+											})
+										]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "mt-1 text-xs text-zinc-500 dark:text-zinc-400 font-mono-tabular",
+										children: [
+											track.genre,
+											" · ",
+											track.bitrateKbps,
+											" kbps"
+										]
+									})
+								]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								type: "button",
+								"aria-label": track.favorite ? "Remove favorite" : "Favorite track",
+								onClick: () => onToggleFavorite(track.id),
+								className: "min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-90 transition-transform duration-100 shrink-0",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Heart, { className: `w-5 h-5 ${track.favorite ? "fill-rose-500 text-rose-500" : "text-zinc-400"}` })
+							})]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "flex items-center gap-1",
 							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
-									className: "text-2xl font-display font-bold text-zinc-900 dark:text-zinc-100 leading-tight",
-									children: track.title
+								1,
+								2,
+								3,
+								4,
+								5
+							].map((star) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								type: "button",
+								"aria-label": `Rate ${star} stars`,
+								onClick: () => onRateTrack(track.id, track.rating === star ? 0 : star),
+								className: "min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-90 transition-transform duration-100",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Star, { className: `w-5 h-5 ${star <= track.rating ? "fill-amber-400 text-amber-400" : "text-zinc-300 dark:text-zinc-700"}` })
+							}, star))
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "space-y-1.5",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+								type: "range",
+								"aria-label": "Seek timeline",
+								min: 0,
+								max: dur,
+								step: .5,
+								value: Math.min(displayTime, dur),
+								onChange: (e) => {
+									const val = parseFloat(e.target.value);
+									setDragTime(val);
+									audioEngine.seek(val);
+								},
+								onPointerUp: () => setDragTime(null),
+								onKeyUp: () => setDragTime(null),
+								className: "w-full accent-amber-500 cursor-pointer"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex justify-between text-xs font-mono-tabular text-zinc-500 dark:text-zinc-400",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: formatDuration(displayTime) }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: formatDuration(dur) })]
+							})]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center justify-between",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									"aria-label": "Shuffle",
+									onClick: onToggleShuffle,
+									className: `min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl active:scale-90 transition-transform duration-100 ${shuffle ? "accent-text bg-zinc-200/60 dark:bg-zinc-800" : "text-zinc-500"}`,
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Shuffle, { className: "w-5 h-5" })
 								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-zinc-600 dark:text-zinc-400",
-									children: [
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-											type: "button",
-											onClick: () => {
-												onGoToArtist(track.artist);
-												onClose();
-											},
-											className: "hover:underline font-medium text-zinc-800 dark:text-zinc-200",
-											children: track.artist
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-											"aria-hidden": "true",
-											children: "·"
-										}),
-										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-											type: "button",
-											onClick: () => {
-												onGoToAlbum(track.album);
-												onClose();
-											},
-											className: "hover:underline",
-											children: track.album
-										})
-									]
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									"aria-label": "Previous",
+									onClick: onPrev,
+									className: "min-w-[48px] min-h-[48px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipBack, { className: "w-6 h-6" })
 								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "mt-1 text-xs text-zinc-500 dark:text-zinc-400 font-mono-tabular",
-									children: [
-										track.genre,
-										" · ",
-										track.bitrateKbps,
-										" kbps"
-									]
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									"aria-label": isPlaying ? "Pause" : "Play",
+									onClick: onTogglePlay,
+									className: "w-16 h-16 rounded-full accent-bg flex items-center justify-center shadow-lg active:scale-90 transition-transform duration-100",
+									children: isPlaying ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pause, { className: "w-7 h-7 fill-current" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Play, { className: "w-7 h-7 fill-current ml-0.5" })
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									"aria-label": "Next",
+									onClick: onNext,
+									className: "min-w-[48px] min-h-[48px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipForward, { className: "w-6 h-6" })
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									"aria-label": "Repeat",
+									onClick: onCycleRepeat,
+									className: `min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl active:scale-90 transition-transform duration-100 ${repeatMode !== "off" ? "accent-text bg-zinc-200/60 dark:bg-zinc-800" : "text-zinc-500"}`,
+									children: repeatMode === "one" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Repeat1, { className: "w-5 h-5" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Repeat, { className: "w-5 h-5" })
 								})
 							]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						}),
+						nextTrack && nextTrack.id !== track.id && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 							type: "button",
-							"aria-label": track.favorite ? "Remove favorite" : "Favorite track",
-							onClick: () => onToggleFavorite(track.id),
-							className: "min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-90 transition-transform duration-100 shrink-0",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Heart, { className: `w-5 h-5 ${track.favorite ? "fill-rose-500 text-rose-500" : "text-zinc-400"}` })
-						})]
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						className: "flex items-center gap-1",
-						children: [
-							1,
-							2,
-							3,
-							4,
-							5
-						].map((star) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							type: "button",
-							"aria-label": `Rate ${star} stars`,
-							onClick: () => onRateTrack(track.id, track.rating === star ? 0 : star),
-							className: "min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-90 transition-transform duration-100",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Star, { className: `w-5 h-5 ${star <= track.rating ? "fill-amber-400 text-amber-400" : "text-zinc-300 dark:text-zinc-700"}` })
-						}, star))
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "space-y-1.5",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-							type: "range",
-							"aria-label": "Seek timeline",
-							min: 0,
-							max: dur,
-							step: .5,
-							value: Math.min(displayTime, dur),
-							onChange: (e) => {
-								const val = parseFloat(e.target.value);
-								setDragTime(val);
-								audioEngine.seek(val);
-							},
-							onPointerUp: () => setDragTime(null),
-							onKeyUp: () => setDragTime(null),
-							className: "w-full accent-amber-500 cursor-pointer"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "flex justify-between text-xs font-mono-tabular text-zinc-500 dark:text-zinc-400",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: formatDuration(displayTime) }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: formatDuration(dur) })]
-						})]
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex items-center justify-between",
-						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								"aria-label": "Shuffle",
-								onClick: onToggleShuffle,
-								className: `min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl active:scale-90 transition-transform duration-100 ${shuffle ? "accent-text bg-zinc-200/60 dark:bg-zinc-800" : "text-zinc-500"}`,
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Shuffle, { className: "w-5 h-5" })
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								"aria-label": "Previous",
-								onClick: onPrev,
-								className: "min-w-[48px] min-h-[48px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipBack, { className: "w-6 h-6" })
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								"aria-label": isPlaying ? "Pause" : "Play",
-								onClick: onTogglePlay,
-								className: "w-16 h-16 rounded-full accent-bg flex items-center justify-center shadow-lg active:scale-90 transition-transform duration-100",
-								children: isPlaying ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pause, { className: "w-7 h-7 fill-current" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Play, { className: "w-7 h-7 fill-current ml-0.5" })
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								"aria-label": "Next",
-								onClick: onNext,
-								className: "min-w-[48px] min-h-[48px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipForward, { className: "w-6 h-6" })
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								"aria-label": "Repeat",
-								onClick: onCycleRepeat,
-								className: `min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl active:scale-90 transition-transform duration-100 ${repeatMode !== "off" ? "accent-text bg-zinc-200/60 dark:bg-zinc-800" : "text-zinc-500"}`,
-								children: repeatMode === "one" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Repeat1, { className: "w-5 h-5" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Repeat, { className: "w-5 h-5" })
-							})
-						]
-					}),
-					nextTrack && nextTrack.id !== track.id && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-						type: "button",
-						onClick: onNext,
-						className: "text-left text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 truncate pt-1 transition-colors",
-						children: [
-							"Up Next: ",
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "font-medium text-zinc-700 dark:text-zinc-300",
-								children: nextTrack.title
-							}),
-							" · ",
-							nextTrack.artist
-						]
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "pt-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center gap-3",
-						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "flex items-center gap-1.5 flex-1",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							onClick: onNext,
+							className: "text-left text-xs text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 truncate pt-1 transition-colors",
+							children: [
+								"Up Next: ",
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "font-medium text-zinc-700 dark:text-zinc-300",
+									children: nextTrack.title
+								}),
+								" · ",
+								nextTrack.artist
+							]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "pt-3 border-t border-zinc-200 dark:border-zinc-800 flex items-center gap-3",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "flex items-center gap-1.5 flex-1",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										"aria-label": volume === 0 ? "Unmute" : "Mute",
+										onClick: () => {
+											tactile.tap();
+											onChangeVolume(volume === 0 ? .8 : 0);
+										},
+										className: "min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 dark:hover:bg-zinc-800",
+										children: volume === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(VolumeX, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Volume2, { className: "w-4 h-4" })
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+										type: "range",
+										"aria-label": "Master Volume",
+										min: 0,
+										max: 1,
+										step: .01,
+										value: volume,
+										onChange: (e) => onChangeVolume(parseFloat(e.target.value)),
+										className: "w-full accent-amber-500 cursor-pointer"
+									})]
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 									type: "button",
-									"aria-label": volume === 0 ? "Unmute" : "Mute",
 									onClick: () => {
-										tactile.tap();
-										onChangeVolume(volume === 0 ? .8 : 0);
+										onClose();
+										onOpenEqualizer();
 									},
-									className: "min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 dark:hover:bg-zinc-800",
-									children: volume === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(VolumeX, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Volume2, { className: "w-4 h-4" })
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-									type: "range",
-									"aria-label": "Master Volume",
-									min: 0,
-									max: 1,
-									step: .01,
-									value: volume,
-									onChange: (e) => onChangeVolume(parseFloat(e.target.value)),
-									className: "w-full accent-amber-500 cursor-pointer"
-								})]
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-								type: "button",
-								onClick: () => {
-									onClose();
-									onOpenEqualizer();
-								},
-								className: "min-h-[42px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium flex items-center gap-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-95 transition-transform duration-100 whitespace-nowrap",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SlidersVertical, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "EQ" })]
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-								type: "button",
-								onClick: onOpenCast,
-								className: "min-h-[42px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium flex items-center gap-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-95 transition-transform duration-100 whitespace-nowrap",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Cast, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Output" })]
-							})
-						]
-					})
-				]
-			})]
+									className: "min-h-[42px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium flex items-center gap-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-95 transition-transform duration-100 whitespace-nowrap",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SlidersVertical, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "EQ" })]
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+									type: "button",
+									onClick: onOpenCast,
+									className: "min-h-[42px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium flex items-center gap-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-95 transition-transform duration-100 whitespace-nowrap",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Cast, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Output" })]
+								})
+							]
+						})
+					]
+				})]
+			})
 		})]
-	});
-});
+	})] });
+}));
 // src/components/HomescreenWidget.tsx
 var HomescreenWidget = import_react.memo(({ visible, variant = "top-bar", track, isPlaying, onTogglePlay, onPrev, onNext, onToggleFavorite, onChangeVariant, onExpand, onClose }) => {
 	if (!visible || !track) return null;
@@ -55805,6 +56815,33 @@ var OfflineIndicator = () => {
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(WifiOff, { className: "w-3.5 h-3.5 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Offline — Playing cached library" })]
 	});
 };
+// src/components/TaskProgressDock.tsx
+var TaskProgressDock = ({ tasks, onDismiss }) => {
+	if (tasks.length === 0) return null;
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		"aria-live": "polite",
+		className: "fixed left-3 right-3 sm:left-auto sm:right-5 sm:w-[400px] z-[60] space-y-2 pointer-events-none",
+		style: { top: "calc(0.75rem + env(safe-area-inset-top, 0px))" },
+		children: tasks.map((task) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "relative pointer-events-auto rounded-xl bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl shadow-[0_12px_36px_rgba(0,0,0,0.28)]",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ProgressBar, {
+				compact: true,
+				label: task.title,
+				detail: task.detail,
+				current: task.current,
+				total: task.total,
+				percent: task.percent,
+				status: task.status
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+				type: "button",
+				onClick: () => onDismiss(task.id),
+				"aria-label": `Dismiss ${task.title}`,
+				className: "absolute top-1.5 right-1.5 w-6 h-6 rounded-md flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-3.5 h-3.5" })
+			})]
+		}, task.id))
+	});
+};
 // src/services/nativeWidget.ts
 var AuraWidget = registerPlugin("AuraWidget");
 function isAndroidNative() {
@@ -55945,6 +56982,52 @@ function App() {
 	});
 	const [syncBusy, setSyncBusy] = (0, import_react.useState)(false);
 	const [syncMessage, setSyncMessage] = (0, import_react.useState)(null);
+	const [activeTasks, setActiveTasks] = (0, import_react.useState)([]);
+	const [syncProgress, setSyncProgress] = (0, import_react.useState)(null);
+	const [storageProgress, setStorageProgress] = (0, import_react.useState)(null);
+	const taskCleanupTimersRef = (0, import_react.useRef)(/* @__PURE__ */ new Map());
+	const nowPlayingSheetRef = (0, import_react.useRef)(null);
+	const dismissTask = (0, import_react.useCallback)((taskId) => {
+		const existingTimer = taskCleanupTimersRef.current.get(taskId);
+		if (existingTimer) {
+			window.clearTimeout(existingTimer);
+			taskCleanupTimersRef.current.delete(taskId);
+		}
+		setActiveTasks((prev) => prev.filter((t) => t.id !== taskId));
+	}, []);
+	const reportTaskProgress = (0, import_react.useCallback)((id, category, title, detail, current, total, status = "running") => {
+		const entry = {
+			id,
+			category,
+			title,
+			detail,
+			current,
+			total,
+			percent: total > 0 ? Math.max(0, Math.min(100, Math.round(current / total * 100))) : status === "done" ? 100 : 0,
+			status,
+			updatedAt: Date.now()
+		};
+		setActiveTasks((prev) => {
+			const idx = prev.findIndex((t) => t.id === id);
+			if (idx === -1) return [...prev.slice(-3), entry];
+			const next = [...prev];
+			next[idx] = entry;
+			return next;
+		});
+		if (category === "cloud-sync") setSyncProgress(entry);
+		if (category === "library-maintenance") setStorageProgress(entry);
+		const oldTimer = taskCleanupTimersRef.current.get(id);
+		if (oldTimer) {
+			window.clearTimeout(oldTimer);
+			taskCleanupTimersRef.current.delete(id);
+		}
+		if (status !== "running") {
+			const timer = window.setTimeout(() => {
+				dismissTask(id);
+			}, status === "done" ? 3800 : 6e3);
+			taskCleanupTimersRef.current.set(id, timer);
+		}
+	}, [dismissTask]);
 	const folderInputRef = (0, import_react.useRef)(null);
 	const filesInputRef = (0, import_react.useRef)(null);
 	const autoBackupTimerRef = (0, import_react.useRef)(null);
@@ -55986,8 +57069,15 @@ function App() {
 		settings.gaplessPlayback,
 		settings.streamingQuality
 	]);
+	const tracksSaveTimerRef = (0, import_react.useRef)(null);
 	(0, import_react.useEffect)(() => {
-		saveTracks(tracks);
+		if (tracksSaveTimerRef.current) window.clearTimeout(tracksSaveTimerRef.current);
+		tracksSaveTimerRef.current = window.setTimeout(() => {
+			saveTracks(tracks);
+		}, 350);
+		return () => {
+			if (tracksSaveTimerRef.current) window.clearTimeout(tracksSaveTimerRef.current);
+		};
 	}, [tracks]);
 	(0, import_react.useEffect)(() => {
 		savePlaylists(playlists);
@@ -56107,7 +57197,6 @@ function App() {
 		const idx = queue.findIndex((t) => t.id === trackToRestore.id);
 		const upcoming = idx >= 0 && idx + 1 < queue.length ? queue[idx + 1] : queue[0] || null;
 		audioEngine.restoreTrackPosition(trackToRestore, restoredSec, upcoming, Boolean(sess?.wasPlaying));
-		audioEngine.prewarmTracks(tracks);
 	}, []);
 	(0, import_react.useEffect)(() => {
 		const unsubProgress = audioEngine.subscribeProgress(({ currentTime }) => {
@@ -56119,10 +57208,15 @@ function App() {
 			}
 		});
 		const handleLifecycleFlush = () => {
+			if (tracksSaveTimerRef.current) {
+				window.clearTimeout(tracksSaveTimerRef.current);
+				tracksSaveTimerRef.current = null;
+			}
+			saveTracks(tracksRef.current);
 			persistSessionSnapshot(true);
 		};
 		const handleVisibilityChange = () => {
-			if (document.visibilityState === "hidden") persistSessionSnapshot(true);
+			if (document.visibilityState === "hidden") handleLifecycleFlush();
 		};
 		window.addEventListener("beforeunload", handleLifecycleFlush);
 		window.addEventListener("pagehide", handleLifecycleFlush);
@@ -56336,8 +57430,16 @@ function App() {
 		setImportingFiles(true);
 		const audioExts = /\.(flac|alac|wav|wave|mp3|m4a|aac|ogg|oga|opus)$/i;
 		const audioFiles = Array.from(fileList).filter((file) => file.type.startsWith("audio/") || audioExts.test(file.name));
+		if (audioFiles.length === 0) {
+			setImportingFiles(false);
+			return;
+		}
+		const taskId = `import_${Date.now()}`;
+		const totalFiles = audioFiles.length;
+		reportTaskProgress(taskId, "file-import", "Importing Audio Files", `Reading metadata for ${totalFiles} file(s)...`, 0, totalFiles);
 		let totalAdded = 0;
-		const batchSize = 8;
+		let processed = 0;
+		const batchSize = 6;
 		try {
 			for (let i = 0; i < audioFiles.length; i += batchSize) {
 				const slice = audioFiles.slice(i, i + batchSize);
@@ -56347,6 +57449,8 @@ function App() {
 					saveAudioBlobToCache(parsed.id, file);
 					return parsed;
 				}));
+				processed += slice.length;
+				reportTaskProgress(taskId, "file-import", "Importing Audio Files", `Imported ${slice[slice.length - 1]?.name || "audio"} (${processed}/${totalFiles})`, processed, totalFiles);
 				if (parsedBatch.length > 0) {
 					totalAdded += parsedBatch.length;
 					setTracks((prev) => {
@@ -56363,16 +57467,23 @@ function App() {
 					refreshCacheStats();
 				}, 400);
 			}
+			reportTaskProgress(taskId, "file-import", "Import Complete", `Added ${totalAdded} audio track(s) to library`, totalFiles, totalFiles, "done");
+		} catch (err) {
+			reportTaskProgress(taskId, "file-import", "Import Failed", err instanceof Error ? err.message : "Unable to import selected files.", processed, totalFiles, "error");
 		} finally {
 			setImportingFiles(false);
 		}
-	}, [refreshCacheStats]);
+	}, [refreshCacheStats, reportTaskProgress]);
 	const handleScanNativeAndroid = (0, import_react.useCallback)(async (silentIfEmpty = false) => {
 		if (!isNativeAndroidApp()) return 0;
+		const taskId = `native_scan_${Date.now()}`;
 		setImportingFiles(true);
 		setAudioError(null);
+		reportTaskProgress(taskId, "device-scan", "Scanning Device Music Folders", "Reading Android MediaStore index...", 0, 100);
 		try {
-			const scannedTracks = await scanAndroidDeviceLibrary();
+			const scannedTracks = await scanAndroidDeviceLibrary((prog) => {
+				reportTaskProgress(taskId, "device-scan", "Scanning Device Music Folders", prog.fileName || "Scanning audio files...", prog.current, Math.max(1, prog.total));
+			});
 			if (scannedTracks.length > 0) {
 				setTracks((prev) => {
 					const scannedByFp = new Map(scannedTracks.map((t) => [t.fingerprint, t]));
@@ -56393,44 +57504,54 @@ function App() {
 					return brandNew.length > 0 ? [...brandNew, ...updatedPrev] : updatedPrev;
 				});
 				tactile.success();
-			} else if (!silentIfEmpty) setAudioError("No audio files were found in device storage yet.");
+				reportTaskProgress(taskId, "device-scan", "Device Folder Scan Complete", `Loaded ${scannedTracks.length} track(s) from device storage`, scannedTracks.length, scannedTracks.length, "done");
+			} else {
+				if (!silentIfEmpty) setAudioError("No audio files were found in device storage yet.");
+				reportTaskProgress(taskId, "device-scan", "Device Scan Finished", "No music tracks found (clips shorter than 10s skipped)", 1, 1, "done");
+			}
 			return scannedTracks.length;
 		} catch (err) {
-			if (!silentIfEmpty) setAudioError(err instanceof Error ? err.message : "Audio permission is required to scan local music folders.");
+			const msg = err instanceof Error ? err.message : "Audio permission is required to scan local music folders.";
+			if (!silentIfEmpty) setAudioError(msg);
+			reportTaskProgress(taskId, "device-scan", "Device Scan Error", msg, 0, 1, "error");
 			return 0;
 		} finally {
 			setImportingFiles(false);
 		}
-	}, []);
-	const autoScannedAndroidRef = (0, import_react.useRef)(false);
-	(0, import_react.useEffect)(() => {
-		if (!isNativeAndroidApp() || autoScannedAndroidRef.current) return;
-		autoScannedAndroidRef.current = true;
-		if (!tracksRef.current.some((t) => t.source === "local" && Boolean(t.nativeUri))) handleScanNativeAndroid(true);
-	}, [handleScanNativeAndroid]);
+	}, [reportTaskProgress]);
 	const handleSignInGoogle = async () => {
+		const taskId = `auth_${Date.now()}`;
 		try {
 			setSyncBusy(true);
 			setSyncMessage(null);
+			reportTaskProgress(taskId, "cloud-sync", "Signing in with Gmail", "Authorizing Google account...", 1, 2);
 			const signedUser = await signInWithGoogleAccount();
 			tactile.success();
 			if (await restoreFromCloud(signedUser)) setSyncMessage(`Signed in as ${signedUser.email}. Cloud backup ready to restore or sync.`);
 			else setSyncMessage(`Signed in as ${signedUser.email}.`);
+			reportTaskProgress(taskId, "cloud-sync", "Gmail Connected", signedUser.email || "Signed in", 2, 2, "done");
 		} catch (err) {
-			setSyncMessage(err instanceof Error ? err.message : "Google sign-in cancelled or failed.");
+			const msg = err instanceof Error ? err.message : "Google sign-in cancelled or failed.";
+			setSyncMessage(msg);
+			reportTaskProgress(taskId, "cloud-sync", "Gmail Sign-In Failed", msg, 2, 2, "error");
 		} finally {
 			setSyncBusy(false);
 		}
 	};
 	const handleBackupNow = (0, import_react.useCallback)(async (silent = false) => {
 		if (!user) return;
-		if (!silent) setSyncBusy(true);
+		const taskId = `backup_${Date.now()}`;
+		if (!silent) {
+			setSyncBusy(true);
+			reportTaskProgress(taskId, "cloud-sync", "Backing Up to Cloud", "Packaging settings, playlists, EQ presets & ratings...", 1, 3);
+		}
 		try {
 			const snapshotSettings = {
 				...settings,
 				lastTrackFingerprint: currentTrack?.fingerprint || settings.lastTrackFingerprint,
 				lastPositionSec: Math.round((audioEngine.getState().currentTime || currentTimeRef.current) * 10) / 10
 			};
+			if (!silent) reportTaskProgress(taskId, "cloud-sync", "Backing Up to Cloud", `Uploading snapshot for ${user.email}...`, 2, 3);
 			const ts = await backupToCloud({
 				user,
 				settings: snapshotSettings,
@@ -56447,10 +57568,16 @@ function App() {
 			});
 			if (!silent) {
 				tactile.success();
-				setSyncMessage(`Backed up to ${user.email} at ${new Date(ts).toLocaleTimeString()}.`);
+				const msg = `Backed up to ${user.email} at ${new Date(ts).toLocaleTimeString()}.`;
+				setSyncMessage(msg);
+				reportTaskProgress(taskId, "cloud-sync", "Cloud Backup Complete", msg, 3, 3, "done");
 			}
 		} catch (err) {
-			if (!silent) setSyncMessage(err instanceof Error ? err.message : "Cloud backup failed.");
+			if (!silent) {
+				const msg = err instanceof Error ? err.message : "Cloud backup failed.";
+				setSyncMessage(msg);
+				reportTaskProgress(taskId, "cloud-sync", "Cloud Backup Error", msg, 3, 3, "error");
+			}
 		} finally {
 			if (!silent) setSyncBusy(false);
 		}
@@ -56463,18 +57590,23 @@ function App() {
 		smartPlaylists,
 		tracks,
 		dailyRecs,
-		updateSettings
+		updateSettings,
+		reportTaskProgress
 	]);
 	const handleRestoreNow = async () => {
 		if (!user) return;
+		const taskId = `restore_${Date.now()}`;
 		setSyncBusy(true);
 		setSyncMessage(null);
+		reportTaskProgress(taskId, "cloud-sync", "Restoring from Cloud", `Fetching backup for ${user.email}...`, 1, 3);
 		try {
 			const data = await restoreFromCloud(user);
 			if (!data) {
 				setSyncMessage("No cloud backup found for this Gmail account yet.");
+				reportTaskProgress(taskId, "cloud-sync", "Cloud Restore", "No cloud backup found for this account yet.", 3, 3, "done");
 				return;
 			}
+			reportTaskProgress(taskId, "cloud-sync", "Restoring from Cloud", "Applying playlists, EQ presets & track ratings...", 2, 3);
 			if (data.settings) updateSettings(data.settings);
 			if (Array.isArray(data.eqPresets)) setEqPresets((prev) => {
 				return [...prev.filter((p) => p.isBuiltIn), ...data.eqPresets];
@@ -56510,9 +57642,13 @@ function App() {
 				}
 			}
 			tactile.success();
-			setSyncMessage(`Restored settings, playlists, EQ presets, and playback point from ${user.email}.`);
+			const msg = `Restored settings, playlists, EQ presets, and playback point from ${user.email}.`;
+			setSyncMessage(msg);
+			reportTaskProgress(taskId, "cloud-sync", "Cloud Restore Complete", msg, 3, 3, "done");
 		} catch (err) {
-			setSyncMessage(err instanceof Error ? err.message : "Restore failed.");
+			const msg = err instanceof Error ? err.message : "Restore failed.";
+			setSyncMessage(msg);
+			reportTaskProgress(taskId, "cloud-sync", "Cloud Restore Error", msg, 3, 3, "error");
 		} finally {
 			setSyncBusy(false);
 		}
@@ -56626,6 +57762,8 @@ function App() {
 			const dirHandle = await picker({ mode: "read" });
 			const audioExts = /\.(flac|alac|wav|wave|mp3|m4a|aac|ogg|oga|opus)$/i;
 			const collected = [];
+			const walkTaskId = `folder_walk_${Date.now()}`;
+			reportTaskProgress(walkTaskId, "device-scan", "Scanning Music Folder", `Opening "${dirHandle.name}"...`, 0, 0);
 			const walk = async (handle, prefix) => {
 				for await (const entry of handle.values()) if (entry.kind === "file" && entry.getFile && audioExts.test(entry.name)) {
 					const f = await entry.getFile();
@@ -56634,16 +57772,22 @@ function App() {
 						configurable: true
 					});
 					collected.push(f);
+					if (collected.length % 5 === 1) reportTaskProgress(walkTaskId, "device-scan", "Scanning Music Folder", `Found ${collected.length} track(s): ${entry.name}`, collected.length, collected.length + 5);
 				} else if (entry.kind === "directory" && entry.values) await walk(entry, `${prefix}/${entry.name}`);
 			};
 			await walk(dirHandle, dirHandle.name);
+			reportTaskProgress(walkTaskId, "device-scan", "Folder Scan Complete", `Found ${collected.length} audio file(s)`, Math.max(1, collected.length), Math.max(1, collected.length), "done");
 			if (collected.length > 0) await handleImportFiles(collected);
 			return;
 		} catch (err) {
 			if (err instanceof DOMException && err.name === "AbortError") return;
 		}
 		folderInputRef.current?.click();
-	}, [handleImportFiles, handleScanNativeAndroid]);
+	}, [
+		handleImportFiles,
+		handleScanNativeAndroid,
+		reportTaskProgress
+	]);
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100",
 		children: [
@@ -56896,7 +58040,27 @@ function App() {
 												genre: s.suggestedGenre
 											};
 										}));
-									}
+									},
+									onRemoveDuplicateTracks: (trackIds) => {
+										const removeSet = new Set(trackIds);
+										setTracks((prev) => prev.filter((t) => !removeSet.has(t.id)));
+										setQueue((prev) => prev.filter((t) => !removeSet.has(t.id)));
+										if (currentTrackId && removeSet.has(currentTrackId)) {
+											const remaining = tracksRef.current.filter((t) => !removeSet.has(t.id));
+											setCurrentTrackId(remaining[0]?.id || null);
+										}
+									},
+									onApplyArtworkUpdates: (updates) => {
+										const map = new Map(updates.map((u) => [u.trackId, u.coverUrl]));
+										setTracks((prev) => prev.map((t) => {
+											const nextCover = map.get(t.id);
+											return nextCover ? {
+												...t,
+												coverUrl: nextCover
+											} : t;
+										}));
+									},
+									onTaskProgress: reportTaskProgress
 								}),
 								settings.activeTab === "equalizer" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EqualizerPanel, {
 									enabled: settings.eqEnabled,
@@ -56974,6 +58138,8 @@ function App() {
 									cacheStats,
 									syncBusy,
 									syncMessage,
+									syncProgress,
+									storageProgress,
 									onUpdateSettings: updateSettings,
 									onSignInGoogle: () => void handleSignInGoogle(),
 									onSignOutGoogle: () => void signOutGoogleAccount(),
@@ -56981,16 +58147,22 @@ function App() {
 									onRestoreNow: () => void handleRestoreNow(),
 									onClearCache: () => {
 										tactile.tap();
+										const taskId = `clear_cache_${Date.now()}`;
+										reportTaskProgress(taskId, "library-maintenance", "Clearing Offline Cache", "Removing cached audio blobs...", 1, 2);
 										clearAudioCache().then(() => {
 											setTracks((prev) => prev.map((t) => t.source === "local" ? {
 												...t,
 												offlineCached: false
 											} : t));
 											refreshCacheStats();
+											reportTaskProgress(taskId, "library-maintenance", "Offline Cache Cleared", "Freed device offline storage", 2, 2, "done");
 										});
 									},
 									onRepairCyrillicLibrary: () => {
 										tactile.success();
+										const taskId = `repair_${Date.now()}`;
+										const total = tracksRef.current.length;
+										reportTaskProgress(taskId, "library-maintenance", "Repairing Cyrillic & Mojibake Tags", `Fixing encoding across ${total} tracks...`, total, Math.max(1, total));
 										setTracks((prev) => prev.map((t) => ({
 											...t,
 											title: repairMojibakeText(t.title),
@@ -56999,6 +58171,7 @@ function App() {
 											genre: repairMojibakeText(t.genre)
 										})));
 										setSyncMessage("Scanned and repaired Cyrillic / Windows-1251 tags across library.");
+										reportTaskProgress(taskId, "library-maintenance", "Tag Encoding Repair Complete", `Checked ${total} track(s)`, Math.max(1, total), Math.max(1, total), "done");
 									}
 								})
 							]
@@ -57050,6 +58223,8 @@ function App() {
 					tactile.sheet(true);
 					setNowPlayingOpen(true);
 				},
+				onPeekSheet: (dyNeg) => nowPlayingSheetRef.current?.peekFromBottom(dyNeg),
+				onReleaseSheetPeek: (commitOpen) => nowPlayingSheetRef.current?.releaseFromBottom(commitOpen),
 				onOpenEqualizer: () => {
 					tactile.tap();
 					updateSettings({ activeTab: "equalizer" });
@@ -57064,6 +58239,7 @@ function App() {
 				}
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(NowPlayingView, {
+				ref: nowPlayingSheetRef,
 				open: nowPlayingOpen,
 				track: currentTrack,
 				nextTrack: upcomingTrack,
@@ -57137,6 +58313,10 @@ function App() {
 					tactile.sheet(false);
 					setShareOpen(false);
 				}
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(TaskProgressDock, {
+				tasks: activeTasks,
+				onDismiss: dismissTask
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(OfflineIndicator, {})
 		]

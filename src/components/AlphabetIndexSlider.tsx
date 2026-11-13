@@ -4,6 +4,7 @@ import { tactile } from '../services/tactileFeedback';
 
 interface AlphabetIndexSliderProps {
   letters: string[];
+  populatedLetters?: Set<string>;
   activeLetter?: string;
   onSelectLetter: (letter: string) => void;
 }
@@ -21,20 +22,26 @@ export const AlphabetIndexSlider: React.FC<AlphabetIndexSliderProps> = React.mem
     const [dragRatio, setDragRatio] = useState<number | null>(null);
     const lastEmittedRef = useRef<string | null>(null);
     const isDraggingRef = useRef(false);
+    const activePointerIdRef = useRef<number | null>(null);
 
     const resolveFromClientY = useCallback(
       (clientY: number) => {
         const rail = railRef.current;
         if (!rail || letters.length === 0) return null;
+        if (letters.length === 1) {
+          return { letter: letters[0], idx: 0, ratio: 0.5 };
+        }
         const rect = rail.getBoundingClientRect();
-        const ratio = Math.max(0, Math.min(1, (clientY - rect.top) / Math.max(1, rect.height)));
+        const pad = 12;
+        const innerHeight = Math.max(1, rect.height - pad * 2);
+        const ratio = Math.max(0, Math.min(1, (clientY - (rect.top + pad)) / innerHeight));
         const idx = Math.min(letters.length - 1, Math.floor(ratio * letters.length));
         return { letter: letters[idx], idx, ratio };
       },
       [letters]
     );
 
-    const handlePointer = useCallback(
+    const emitLetter = useCallback(
       (clientY: number, isInitialGrab: boolean) => {
         const resolved = resolveFromClientY(clientY);
         if (!resolved) return;
@@ -43,17 +50,15 @@ export const AlphabetIndexSlider: React.FC<AlphabetIndexSliderProps> = React.mem
         setDraggingLetter(letter);
         setDragRatio(ratio);
 
-        if (lastEmittedRef.current !== letter) {
+        if (isInitialGrab || lastEmittedRef.current !== letter) {
           lastEmittedRef.current = letter;
-          const isBoundary = letter === '#' || letter === 'A' || letter === 'А';
+          const isBoundary = idx === 0 || idx === letters.length - 1;
           if (isInitialGrab) {
             tactile.sliderGrab();
           } else {
             tactile.sliderDetent(idx / Math.max(1, letters.length - 1), isBoundary);
           }
           onSelectLetter(letter);
-        } else if (isInitialGrab) {
-          tactile.sliderGrab();
         }
       },
       [letters.length, onSelectLetter, resolveFromClientY]
@@ -62,6 +67,7 @@ export const AlphabetIndexSlider: React.FC<AlphabetIndexSliderProps> = React.mem
     useEffect(() => {
       return () => {
         isDraggingRef.current = false;
+        activePointerIdRef.current = null;
       };
     }, []);
 
@@ -76,19 +82,21 @@ export const AlphabetIndexSlider: React.FC<AlphabetIndexSliderProps> = React.mem
 
     const currentLetter = draggingLetter || activeLetter || letters[0];
     const thumbRatio =
-      dragRatio !== null
+      letters.length === 1
+        ? 0.5
+        : dragRatio !== null
         ? dragRatio
-        : letters.length <= 1
-        ? 0
-        : activeIdx / (letters.length - 1);
-    const clampedPct = Math.max(6, Math.min(94, thumbRatio * 100));
+        : activeIdx / Math.max(1, letters.length - 1);
+    const clampedPct = letters.length === 1 ? 50 : Math.max(8, Math.min(92, thumbRatio * 100));
 
-    // Keep track labels readable while full pointer precision spans every bucket
-    const step = letters.length > 36 ? 2 : 1;
+    const step = letters.length > 28 ? 2 : 1;
 
     return (
-      <div className="relative h-full min-h-0 flex items-center select-none shrink-0 z-20 pr-0.5 sm:pr-1">
-        {/* Enlarged floating popup letter indicator while sliding */}
+      <div
+        style={{ touchAction: 'none' }}
+        className="relative h-full min-h-0 flex items-center select-none shrink-0 z-20 touch-none"
+      >
+        {/* Floating enlarged popup letter indicator while sliding */}
         {draggingLetter && (
           <div
             aria-hidden="true"
@@ -104,7 +112,7 @@ export const AlphabetIndexSlider: React.FC<AlphabetIndexSliderProps> = React.mem
           </div>
         )}
 
-        {/* Rail Container */}
+        {/* Rail Container displaying ONLY letters that have items */}
         <div
           ref={railRef}
           role="slider"
@@ -114,6 +122,7 @@ export const AlphabetIndexSlider: React.FC<AlphabetIndexSliderProps> = React.mem
           aria-valuenow={activeIdx}
           aria-valuetext={currentLetter}
           tabIndex={0}
+          style={{ touchAction: 'none' }}
           onKeyDown={(e) => {
             if (e.key === 'ArrowDown' && activeIdx < letters.length - 1) {
               e.preventDefault();
@@ -129,56 +138,65 @@ export const AlphabetIndexSlider: React.FC<AlphabetIndexSliderProps> = React.mem
           }}
           onPointerDown={(e) => {
             e.preventDefault();
-            e.currentTarget.setPointerCapture(e.pointerId);
+            e.stopPropagation();
             isDraggingRef.current = true;
-            handlePointer(e.clientY, true);
+            activePointerIdRef.current = e.pointerId;
+            try {
+              e.currentTarget.setPointerCapture(e.pointerId);
+            } catch {
+              // ignore when pointer capture unavailable
+            }
+            emitLetter(e.clientY, true);
           }}
           onPointerMove={(e) => {
-            if (isDraggingRef.current || e.buttons > 0) {
-              handlePointer(e.clientY, false);
+            if (!isDraggingRef.current && e.buttons === 0) return;
+            if (activePointerIdRef.current !== null && e.pointerId !== activePointerIdRef.current) {
+              return;
             }
+            e.preventDefault();
+            e.stopPropagation();
+            emitLetter(e.clientY, false);
           }}
-          onPointerUp={() => {
+          onPointerUp={(e) => {
+            e.stopPropagation();
             if (isDraggingRef.current) {
               tactile.sliderRelease();
             }
             isDraggingRef.current = false;
+            activePointerIdRef.current = null;
             setDraggingLetter(null);
             setDragRatio(null);
             lastEmittedRef.current = null;
           }}
           onPointerCancel={() => {
             isDraggingRef.current = false;
+            activePointerIdRef.current = null;
             setDraggingLetter(null);
             setDragRatio(null);
             lastEmittedRef.current = null;
           }}
-          className="relative flex flex-col items-center justify-between py-2.5 px-1.5 w-8 sm:w-9 rounded-full bg-zinc-200/80 dark:bg-zinc-900/90 border border-zinc-300/80 dark:border-zinc-700/80 touch-none cursor-grab active:cursor-grabbing h-full max-h-[480px] min-h-[140px]"
+          className={`relative flex flex-col items-center ${
+            letters.length <= 5 ? 'justify-evenly' : 'justify-between'
+          } py-2.5 px-1.5 w-9 sm:w-10 rounded-full bg-zinc-200/85 dark:bg-zinc-900/95 border border-zinc-300/80 dark:border-zinc-700/80 touch-none cursor-grab active:cursor-grabbing h-full max-h-[460px] min-h-[56px]`}
         >
-          {/* Letter indices along the track */}
           {letters.map((letter, idx) => {
-            const isShown =
-              idx % step === 0 ||
-              letter === '#' ||
-              letter === 'А' ||
-              letter === 'Я' ||
-              letter === 'Z';
+            const isShown = idx % step === 0 || idx === 0 || idx === letters.length - 1;
             const isActive = currentLetter === letter;
             if (!isShown && !isActive) {
               return (
                 <span
                   key={letter}
-                  className="w-1 h-1 rounded-full bg-zinc-400/50 dark:bg-zinc-600/60 pointer-events-none"
+                  className="w-1 h-1 rounded-full bg-zinc-500/60 pointer-events-none"
                 />
               );
             }
             return (
               <span
                 key={letter}
-                className={`text-[10px] leading-none font-mono-tabular pointer-events-none transition-opacity ${
+                className={`text-[11px] font-semibold leading-none font-mono-tabular pointer-events-none transition-opacity ${
                   isActive
                     ? 'opacity-0'
-                    : 'text-zinc-500 dark:text-zinc-400'
+                    : 'text-zinc-800 dark:text-zinc-200'
                 }`}
               >
                 {letter}
@@ -186,11 +204,11 @@ export const AlphabetIndexSlider: React.FC<AlphabetIndexSliderProps> = React.mem
             );
           })}
 
-          {/* Easy-to-spot Sculpted Tactile Slider Handle */}
+          {/* Tactile Slider Handle */}
           <div
             aria-hidden="true"
             style={{ top: `${clampedPct}%` }}
-            className={`absolute left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex flex-col items-center justify-center rounded-xl border shadow-lg transition-transform duration-100 ${
+            className={`absolute left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex flex-col items-center justify-center rounded-xl border shadow-lg transition-transform duration-75 ${
               draggingLetter
                 ? 'w-11 h-12 sm:w-12 sm:h-14 accent-bg border-white/60 scale-110 shadow-xl'
                 : 'w-9 h-10 sm:w-10 sm:h-11 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border-zinc-300 dark:border-zinc-600'

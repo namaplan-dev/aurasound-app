@@ -77,7 +77,7 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
     const el = rackSlotRef.current;
     if (!el || page !== 'rack') return;
     const update = () => {
-      const h = Math.max(84, Math.min(200, Math.floor(el.getBoundingClientRect().height - 54)));
+      const h = Math.max(52, Math.min(200, Math.floor(el.getBoundingClientRect().height - 78)));
       setRackHeight(h);
     };
     update();
@@ -116,21 +116,19 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
   };
 
   return (
-    <div className="h-full min-h-0 flex flex-col gap-3 overflow-hidden">
+    <div className="h-full min-h-0 flex flex-col gap-2 overflow-hidden">
       {/* Header */}
-      <div className="shrink-0 flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-zinc-200 dark:border-zinc-800">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg sm:text-xl font-display font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-              {page === 'rack' ? '10-Band Equalizer' : 'Sound Presets'}
-            </h2>
-            <span className="text-xs font-mono-tabular text-zinc-500 dark:text-zinc-400 truncate">
-              · {activePreset ? activePreset.name : 'Custom'}
-            </span>
-          </div>
+      <div className="shrink-0 flex items-center justify-between gap-2 pb-2 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="min-w-0 flex items-baseline gap-1.5">
+          <h2 className="text-base sm:text-xl font-display font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+            {page === 'rack' ? '10-Band EQ' : 'Presets'}
+          </h2>
+          <span className="text-[11px] sm:text-xs font-mono-tabular text-zinc-500 dark:text-zinc-400 truncate">
+            · {activePreset ? activePreset.name : 'Custom'}
+          </span>
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {onChangePage && (
             <div className="inline-flex items-center p-0.5 rounded-lg bg-zinc-200/75 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
               <button
@@ -139,7 +137,7 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
                   tactile.tap();
                   onChangePage('rack');
                 }}
-                className={`min-h-[32px] px-2.5 rounded-md text-xs font-medium transition-colors ${
+                className={`min-h-[28px] sm:min-h-[32px] px-2 sm:px-2.5 rounded-md text-xs font-medium transition-colors ${
                   page === 'rack'
                     ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm'
                     : 'text-zinc-500'
@@ -153,7 +151,7 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
                   tactile.tap();
                   onChangePage('presets');
                 }}
-                className={`min-h-[32px] px-2.5 rounded-md text-xs font-medium transition-colors ${
+                className={`min-h-[28px] sm:min-h-[32px] px-2 sm:px-2.5 rounded-md text-xs font-medium transition-colors ${
                   page === 'presets'
                     ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm'
                     : 'text-zinc-500'
@@ -170,13 +168,13 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
               tactile.toggle(!enabled);
               onToggleEnabled();
             }}
-            className={`min-h-[36px] px-3 rounded-lg text-xs font-medium active:scale-95 transition-all duration-100 whitespace-nowrap shrink-0 ${
+            className={`min-h-[32px] sm:min-h-[36px] px-2.5 sm:px-3 rounded-lg text-xs font-medium active:scale-95 transition-all duration-100 whitespace-nowrap shrink-0 ${
               enabled
                 ? 'accent-bg'
                 : 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300'
             }`}
           >
-            {enabled ? 'Active' : 'Bypassed'}
+            {enabled ? 'Active' : 'Bypass'}
           </button>
           <button
             type="button"
@@ -184,19 +182,19 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
               tactile.eqDetent();
               onResetFlat();
             }}
-            className="min-h-[36px] px-2.5 rounded-lg text-xs font-medium border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 flex items-center gap-1.5 active:scale-95 transition-transform duration-100 whitespace-nowrap shrink-0"
+            className="min-h-[32px] sm:min-h-[36px] px-2 sm:px-2.5 rounded-lg text-xs font-medium border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 flex items-center gap-1 active:scale-95 transition-transform duration-100 whitespace-nowrap shrink-0"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>Flat</span>
+            <span className="hidden xs:inline sm:inline">Flat</span>
           </button>
         </div>
       </div>
 
       {page === 'rack' ? (
-        <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col gap-2 overflow-hidden">
           {/* Compact Frequency Curve Visualization */}
-          <div className="shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 px-3.5 py-2.5">
-            <div className="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">
+          <div className="shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 px-3 py-1.5 sm:py-2 [@media(max-height:520px)]:hidden">
+            <div className="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400 mb-0.5">
               <span className="flex items-center gap-1.5">
                 <Sliders className="w-3.5 h-3.5" />
                 <span>Target Response Curve</span>
@@ -205,7 +203,7 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
                 Preamp {preampDb > 0 ? `+${preampDb.toFixed(1)}` : preampDb.toFixed(1)} dB
               </span>
             </div>
-            <svg viewBox="0 0 600 80" className="w-full h-14 sm:h-20 [@media(max-height:520px)]:h-10 overflow-visible">
+            <svg viewBox="0 0 600 80" className="w-full h-11 sm:h-16 overflow-visible">
               <line x1="0" y1="40" x2="600" y2="40" stroke="currentColor" className="text-zinc-200 dark:text-zinc-800" strokeDasharray="4 4" />
               <line x1="0" y1="12" x2="600" y2="12" stroke="currentColor" className="text-zinc-100 dark:text-zinc-800/50" />
               <line x1="0" y1="68" x2="600" y2="68" stroke="currentColor" className="text-zinc-100 dark:text-zinc-800/50" />
@@ -220,7 +218,7 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
             </svg>
           </div>
 
-          {/* Mobile Band Bank Switcher (eliminates horizontal scroll on narrow phones) */}
+          {/* Mobile Band Bank Switcher */}
           <div className="sm:hidden shrink-0 flex items-center justify-between gap-2">
             <div className="flex-1 grid grid-cols-2 p-0.5 rounded-lg bg-zinc-200/75 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
               <button
@@ -229,7 +227,7 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
                   tactile.tap();
                   setMobileBank('low');
                 }}
-                className={`min-h-[34px] rounded-md text-xs font-medium transition-colors ${
+                className={`min-h-[30px] rounded-md text-xs font-medium transition-colors ${
                   mobileBank === 'low'
                     ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm'
                     : 'text-zinc-500'
@@ -243,7 +241,7 @@ export const EqualizerPanel: React.FC<EqualizerPanelProps> = ({
                   tactile.tap();
                   setMobileBank('high');
                 }}
-                className={`min-h-[34px] rounded-md text-xs font-medium transition-colors ${
+                className={`min-h-[30px] rounded-md text-xs font-medium transition-colors ${
                   mobileBank === 'high'
                     ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm'
                     : 'text-zinc-500'

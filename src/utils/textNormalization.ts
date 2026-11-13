@@ -188,15 +188,33 @@ export function getAlphabetBucket(label: string): string {
   return '#';
 }
 
+const SCRIPT_INDEX_ORDER: string[] = [...LATIN_LETTERS, ...CYRILLIC_LETTERS];
+const BUCKET_RANK_MAP = new Map<string, number>(
+  SCRIPT_INDEX_ORDER.map((ch, index) => [ch, index])
+);
+
 export function extractAvailableLetters(labels: string[]): string[] {
-  let hasCyrillic = false;
+  const present = new Set<string>();
   for (const label of labels) {
-    if (/[А-Яа-яЁё]/.test(label)) {
-      hasCyrillic = true;
-      break;
-    }
+    if (!label) continue;
+    present.add(getAlphabetBucket(label));
   }
-  return hasCyrillic ? [...LATIN_LETTERS, ...CYRILLIC_LETTERS] : LATIN_LETTERS;
+  return [...present].sort(
+    (a, b) => (BUCKET_RANK_MAP.get(a) ?? 999) - (BUCKET_RANK_MAP.get(b) ?? 999)
+  );
+}
+
+export function compareLibraryLabels(a: string, b: string): number {
+  const bucketA = getAlphabetBucket(a);
+  const bucketB = getAlphabetBucket(b);
+  const rankA = BUCKET_RANK_MAP.get(bucketA) ?? 999;
+  const rankB = BUCKET_RANK_MAP.get(bucketB) ?? 999;
+  if (rankA !== rankB) return rankA - rankB;
+
+  const normA = normalizeForSearch(a);
+  const normB = normalizeForSearch(b);
+  if (normA !== normB) return normA.localeCompare(normB, 'en');
+  return a.localeCompare(b);
 }
 
 export function formatDuration(seconds: number): string {

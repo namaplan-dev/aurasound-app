@@ -59,6 +59,7 @@ export function loadSettings(): AppSettings {
   if (activeTab === 'studio') activeTab = 'studio-mixes';
   else if (activeTab === 'equalizer') activeTab = 'eq-rack';
   else if (activeTab === 'settings') activeTab = 'settings-audio';
+  else if (activeTab === 'settings-appearance') activeTab = 'settings-theme';
 
   return {
     ...DEFAULT_SETTINGS,

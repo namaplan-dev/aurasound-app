@@ -686,7 +686,7 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
   const meta = PAGE_TITLES[page];
 
   return (
-    <div className="h-full min-h-0 flex flex-col gap-3 max-w-6xl overflow-hidden">
+    <div className="h-full min-h-0 flex flex-col gap-2 max-w-6xl overflow-hidden">
       <input
         ref={artFileInputRef}
         type="file"
@@ -700,20 +700,22 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
       />
 
       {/* Page Header */}
-      <div className="shrink-0 flex flex-wrap items-center justify-between gap-2.5 pb-2.5 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="shrink-0 flex items-center justify-between gap-2 pb-2 border-b border-zinc-200 dark:border-zinc-800">
         <div className="min-w-0">
-          <h2 className="text-lg sm:text-xl font-display font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+          <h2 className="text-base sm:text-xl font-display font-semibold text-zinc-900 dark:text-zinc-100 truncate">
             {meta.title}
           </h2>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{meta.subtitle}</p>
+          <p className="hidden sm:block text-xs text-zinc-500 dark:text-zinc-400 truncate">
+            {meta.subtitle}
+          </p>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
           {!user && (
             <button
               type="button"
               onClick={onSignInGoogle}
-              className="min-h-[36px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-medium whitespace-nowrap"
+              className="hidden sm:inline-flex min-h-[34px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-medium whitespace-nowrap"
             >
               Sign in with Gmail
             </button>
@@ -907,7 +909,8 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
                   return (
                     <div
                       key={rec.id}
-                      className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-4 flex flex-col justify-between gap-3 h-[156px]"
+                      style={{ height: `${Math.max(114, mixLayout.cellHeight - 6)}px` }}
+                      className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-3 sm:p-4 flex flex-col justify-between gap-2 overflow-hidden"
                     >
                       <div className="min-w-0">
                         <div className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
@@ -968,10 +971,10 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
               playlistViewTab === 'create' ? 'flex' : 'hidden lg:flex'
             }`}
           >
-            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-4 space-y-3">
+            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-3 sm:p-4 space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="text-sm font-display font-semibold flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 accent-text" />
+                <h3 className="text-xs sm:text-sm font-display font-semibold flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 accent-text" />
                   <span>New Smart Playlist</span>
                 </h3>
                 <div className="inline-flex items-center p-0.5 rounded-lg bg-zinc-200/75 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
@@ -981,7 +984,7 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
                       tactile.tap();
                       setCreatorMode('ai');
                     }}
-                    className={`min-h-[28px] px-2 rounded-md text-xs font-medium ${
+                    className={`min-h-[26px] px-2 rounded-md text-xs font-medium ${
                       creatorMode === 'ai'
                         ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm'
                         : 'text-zinc-500'
@@ -995,7 +998,7 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
                       tactile.tap();
                       setCreatorMode('rules');
                     }}
-                    className={`min-h-[28px] px-2 rounded-md text-xs font-medium ${
+                    className={`min-h-[26px] px-2 rounded-md text-xs font-medium ${
                       creatorMode === 'rules'
                         ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm'
                         : 'text-zinc-500'
@@ -1007,65 +1010,65 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
               </div>
 
               {creatorMode === 'ai' ? (
-                <form onSubmit={handleGenerateAiPlaylist} className="space-y-2.5">
+                <form onSubmit={handleGenerateAiPlaylist} className="space-y-2">
                   <input
                     type="text"
                     value={aiPrompt}
                     onChange={(e) => setAiPrompt(e.target.value)}
                     placeholder="e.g. Rainy evening ambient in lossless FLAC..."
-                    className="w-full min-h-[42px] px-3 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none"
+                    className="w-full min-h-[38px] px-3 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm focus:outline-none"
                   />
                   <button
                     type="submit"
                     disabled={aiLoading}
-                    className="w-full min-h-[42px] px-4 rounded-lg accent-bg text-sm font-medium flex items-center justify-center gap-2 active:scale-95 transition-transform duration-100 disabled:opacity-50"
+                    className="w-full min-h-[38px] px-4 rounded-lg accent-bg text-xs sm:text-sm font-medium flex items-center justify-center gap-2 active:scale-95 transition-transform duration-100 disabled:opacity-50"
                   >
                     {aiLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
                     <span>Generate Smart Mix</span>
                   </button>
                 </form>
               ) : (
-                <form onSubmit={handleCreateManualSmartPlaylist} className="space-y-2.5">
-                  <input
-                    type="text"
-                    value={manualName}
-                    onChange={(e) => setManualName(e.target.value)}
-                    placeholder="Playlist Name"
-                    required
-                    className="w-full min-h-[40px] px-3 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm"
-                  />
+                <form onSubmit={handleCreateManualSmartPlaylist} className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={manualName}
+                      onChange={(e) => setManualName(e.target.value)}
+                      placeholder="Playlist Name"
+                      required
+                      className="min-h-[36px] px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs sm:text-sm"
+                    />
                     <input
                       type="text"
                       value={manualGenre}
                       onChange={(e) => setManualGenre(e.target.value)}
                       placeholder="Genre"
-                      className="min-h-[40px] px-3 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm"
+                      className="min-h-[36px] px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs sm:text-sm"
                     />
-                    <select
-                      value={manualFormat}
-                      onChange={(e) => setManualFormat(e.target.value)}
-                      className="min-h-[40px] px-3 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm"
-                    >
-                      <option value="">Any Format</option>
-                      <option value="FLAC">FLAC Only</option>
-                      <option value="ALAC">ALAC Only</option>
-                      <option value="WAV">WAV Only</option>
-                      <option value="MP3">MP3 Only</option>
-                    </select>
                   </div>
                   <div className="flex items-center gap-2">
                     <select
+                      value={manualFormat}
+                      onChange={(e) => setManualFormat(e.target.value)}
+                      className="flex-1 min-h-[36px] px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs sm:text-sm"
+                    >
+                      <option value="">Any Format</option>
+                      <option value="FLAC">FLAC</option>
+                      <option value="ALAC">ALAC</option>
+                      <option value="WAV">WAV</option>
+                      <option value="MP3">MP3</option>
+                    </select>
+                    <select
                       value={manualMinRating}
                       onChange={(e) => setManualMinRating(Number(e.target.value))}
-                      className="flex-1 min-h-[40px] px-3 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-sm"
+                      className="flex-1 min-h-[36px] px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs sm:text-sm"
                     >
                       <option value={0}>Any Rating</option>
-                      <option value={3}>3★ & up</option>
-                      <option value={4}>4★ & up</option>
-                      <option value={5}>5★ Only</option>
+                      <option value={3}>3★+</option>
+                      <option value={4}>4★+</option>
+                      <option value={5}>5★</option>
                     </select>
-                    <label className="flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer shrink-0">
+                    <label className="flex items-center gap-1 text-xs text-zinc-600 dark:text-zinc-400 cursor-pointer shrink-0">
                       <input
                         type="checkbox"
                         checked={manualFavOnly}
@@ -1080,7 +1083,7 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
                   </div>
                   <button
                     type="submit"
-                    className="w-full min-h-[40px] px-4 rounded-lg accent-bg text-sm font-medium flex items-center justify-center gap-1.5"
+                    className="w-full min-h-[36px] px-4 rounded-lg accent-bg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Create Rule Playlist</span>
@@ -1123,7 +1126,8 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
                     return (
                       <div
                         key={sp.id}
-                        className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-3.5 flex items-start justify-between gap-3 h-[112px]"
+                        style={{ height: `${Math.max(88, spLayout.cellHeight - 4)}px` }}
+                        className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-3 flex items-start justify-between gap-3 overflow-hidden"
                       >
                         <div className="min-w-0">
                           <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">

@@ -106,6 +106,7 @@ export const NowPlayingView = React.memo(
       const queueViewportRef = useRef<HTMLDivElement | null>(null);
 
       const dragStateRef = useRef<{
+        pointerId: number;
         startX: number;
         startY: number;
         prevY: number;
@@ -113,7 +114,9 @@ export const NowPlayingView = React.memo(
         velocityY: number;
         active: boolean;
         aborted: boolean;
+        captured: boolean;
         lastOffset: number;
+        rafId: number | null;
       } | null>(null);
 
       const queueLayout = useViewportPageSize(queueViewportRef, {
@@ -132,7 +135,7 @@ export const NowPlayingView = React.memo(
       useImperativeHandle(ref, () => ({
         peekFromBottom: (dyNegative: number) => {
           const clamped = Math.min(0, dyNegative);
-          const vh = Math.max(480, window.innerHeight || 720);
+          const vh = Math.max(460, window.innerHeight || 720);
           const progressRatio = Math.min(1, Math.max(0, Math.abs(clamped) / vh));
           if (backdropRef.current) {
             backdropRef.current.style.transitionDuration = '0ms';
@@ -147,11 +150,11 @@ export const NowPlayingView = React.memo(
         },
         releaseFromBottom: (commitOpen: boolean) => {
           if (backdropRef.current) {
-            backdropRef.current.style.transitionDuration = '360ms';
+            backdropRef.current.style.transitionDuration = '320ms';
             backdropRef.current.style.opacity = commitOpen ? '1' : '0';
           }
           if (sheetRef.current) {
-            sheetRef.current.style.transitionDuration = '360ms';
+            sheetRef.current.style.transitionDuration = '320ms';
             sheetRef.current.style.borderTopLeftRadius = commitOpen ? '0px' : '24px';
             sheetRef.current.style.borderTopRightRadius = commitOpen ? '0px' : '24px';
             sheetRef.current.style.transform = commitOpen
@@ -163,11 +166,11 @@ export const NowPlayingView = React.memo(
 
       useEffect(() => {
         if (backdropRef.current) {
-          backdropRef.current.style.transitionDuration = '';
+          backdropRef.current.style.transitionDuration = '320ms';
           backdropRef.current.style.opacity = open ? '1' : '0';
         }
         if (sheetRef.current) {
-          sheetRef.current.style.transitionDuration = '';
+          sheetRef.current.style.transitionDuration = '320ms';
           sheetRef.current.style.borderTopLeftRadius = open ? '0px' : '24px';
           sheetRef.current.style.borderTopRightRadius = open ? '0px' : '24px';
           sheetRef.current.style.transform = open
@@ -227,37 +230,38 @@ export const NowPlayingView = React.memo(
       const dur = progress.duration || track.duration || 1;
       const displayTime = dragTime !== null ? dragTime : progress.currentTime;
 
-      const handleTouchStart = (e: React.TouchEvent) => {
-        if (!open || e.touches.length !== 1) return;
+      const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!open) return;
+        if (e.button !== 0 && e.pointerType === 'mouse') return;
         const target = e.target as HTMLElement;
         if (target.closest('input[type="range"]')) return;
 
-        const now = performance.now();
-        const touch = e.touches[0];
         dragStateRef.current = {
-          startX: touch.clientX,
-          startY: touch.clientY,
-          prevY: touch.clientY,
-          prevTime: now,
+          pointerId: e.pointerId,
+          startX: e.clientX,
+          startY: e.clientY,
+          prevY: e.clientY,
+          prevTime: performance.now(),
           velocityY: 0,
           active: false,
           aborted: false,
+          captured: false,
           lastOffset: 0,
+          rafId: null,
         };
       };
 
-      const handleTouchMove = (e: React.TouchEvent) => {
+      const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
         const state = dragStateRef.current;
-        if (!state || state.aborted || e.touches.length !== 1) return;
+        if (!state || state.aborted || e.pointerId !== state.pointerId) return;
 
-        const touch = e.touches[0];
         const now = performance.now();
-        const dx = Math.abs(touch.clientX - state.startX);
-        const dy = touch.clientY - state.startY;
+        const dx = Math.abs(e.clientX - state.startX);
+        const dy = e.clientY - state.startY;
         const dt = Math.max(8, now - state.prevTime);
-        const instVel = (touch.clientY - state.prevY) / dt;
+        const instVel = (e.clientY - state.prevY) / dt;
         state.velocityY = state.velocityY * 0.45 + instVel * 0.55;
-        state.prevY = touch.clientY;
+        state.prevY = e.clientY;
         state.prevTime = now;
 
         if (!state.active) {
@@ -265,7 +269,7 @@ export const NowPlayingView = React.memo(
             state.aborted = true;
             return;
           }
-          if (Math.abs(dy) < 5) return;
+          if (Math.abs(dy) < 6) return;
           if (dy < 0 && !((e.target as HTMLElement).closest('[data-sheet-handle="true"]'))) {
             state.aborted = true;
             return;
@@ -273,34 +277,60 @@ export const NowPlayingView = React.memo(
           state.active = true;
           if (backdropRef.current) backdropRef.current.style.transitionDuration = '0ms';
           if (sheetRef.current) sheetRef.current.style.transitionDuration = '0ms';
+          if (!state.captured) {
+            state.captured = true;
+            try {
+              e.currentTarget.setPointerCapture(e.pointerId);
+            } catch {
+              // ignore
+            }
+          }
         }
 
         const offset = dy >= 0 ? dy : Math.max(-22, dy * 0.16);
         state.lastOffset = offset;
-        const vh = Math.max(480, window.innerHeight || 720);
-        if (backdropRef.current) {
-          backdropRef.current.style.opacity = String(
-            offset > 0 ? Math.max(0, 1 - offset / vh) : 1
-          );
-        }
-        if (sheetRef.current) {
-          const radius = offset > 0 ? Math.min(24, offset * 0.25) : 0;
-          sheetRef.current.style.borderTopLeftRadius = `${radius}px`;
-          sheetRef.current.style.borderTopRightRadius = `${radius}px`;
-          sheetRef.current.style.transform = `translate3d(0, ${offset}px, 0)`;
+        if (state.rafId === null) {
+          state.rafId = requestAnimationFrame(() => {
+            if (!dragStateRef.current) return;
+            dragStateRef.current.rafId = null;
+            const curOffset = dragStateRef.current.lastOffset;
+            const vh = Math.max(460, window.innerHeight || 720);
+            if (backdropRef.current) {
+              backdropRef.current.style.opacity = String(
+                curOffset > 0 ? Math.max(0, 1 - curOffset / vh) : 1
+              );
+            }
+            if (sheetRef.current) {
+              const radius = curOffset > 0 ? Math.min(24, curOffset * 0.25) : 0;
+              sheetRef.current.style.borderTopLeftRadius = `${radius}px`;
+              sheetRef.current.style.borderTopRightRadius = `${radius}px`;
+              sheetRef.current.style.transform = `translate3d(0, ${curOffset}px, 0)`;
+            }
+          });
         }
       };
 
-      const finishSheetDrag = () => {
+      const finishSheetDrag = (e: React.PointerEvent<HTMLDivElement>) => {
         const state = dragStateRef.current;
+        if (!state || e.pointerId !== state.pointerId) return;
         dragStateRef.current = null;
-        if (!state || !state.active) {
+        if (state.rafId !== null) cancelAnimationFrame(state.rafId);
+
+        if (state.captured) {
+          try {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+          } catch {
+            // ignore
+          }
+        }
+
+        if (!state.active) {
           if (backdropRef.current) {
-            backdropRef.current.style.transitionDuration = '';
+            backdropRef.current.style.transitionDuration = '320ms';
             backdropRef.current.style.opacity = open ? '1' : '0';
           }
           if (sheetRef.current) {
-            sheetRef.current.style.transitionDuration = '';
+            sheetRef.current.style.transitionDuration = '320ms';
             sheetRef.current.style.borderTopLeftRadius = open ? '0px' : '24px';
             sheetRef.current.style.borderTopRightRadius = open ? '0px' : '24px';
             sheetRef.current.style.transform = open
@@ -310,18 +340,18 @@ export const NowPlayingView = React.memo(
           return;
         }
 
-        const vh = Math.max(480, window.innerHeight || 720);
-        const distanceThreshold = Math.min(180, vh * 0.24);
+        const vh = Math.max(460, window.innerHeight || 720);
+        const distanceThreshold = Math.min(160, vh * 0.22);
         const shouldClose =
           state.lastOffset > distanceThreshold ||
-          (state.lastOffset > 28 && state.velocityY > 0.38);
+          (state.lastOffset > 24 && state.velocityY > 0.35);
 
         if (backdropRef.current) {
-          backdropRef.current.style.transitionDuration = '360ms';
+          backdropRef.current.style.transitionDuration = '320ms';
           backdropRef.current.style.opacity = shouldClose ? '0' : '1';
         }
         if (sheetRef.current) {
-          sheetRef.current.style.transitionDuration = '360ms';
+          sheetRef.current.style.transitionDuration = '320ms';
           sheetRef.current.style.borderTopLeftRadius = shouldClose ? '24px' : '0px';
           sheetRef.current.style.borderTopRightRadius = shouldClose ? '24px' : '0px';
           sheetRef.current.style.transform = shouldClose
@@ -338,38 +368,39 @@ export const NowPlayingView = React.memo(
             ref={backdropRef}
             aria-hidden="true"
             style={{ opacity: open ? 1 : 0 }}
-            className="fixed inset-0 z-[45] bg-black/45 pointer-events-none transition-opacity duration-350"
+            className="fixed inset-0 z-[45] bg-black/45 pointer-events-none transition-opacity duration-300"
           />
           <div
             ref={sheetRef}
             aria-hidden={!open}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={finishSheetDrag}
-            onTouchCancel={finishSheetDrag}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={finishSheetDrag}
+            onPointerCancel={finishSheetDrag}
             style={{
               transform: open ? 'translate3d(0, 0, 0)' : 'translate3d(0, 100%, 0)',
               paddingTop: 'env(safe-area-inset-top, 0px)',
               paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+              touchAction: 'none',
             }}
-            className={`fixed inset-0 z-50 h-dvh overflow-hidden bg-zinc-50 dark:bg-zinc-950 flex flex-col shadow-[0_-16px_48px_rgba(0,0,0,0.4)] will-change-transform transition-[transform,border-radius] duration-350 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            className={`fixed inset-0 z-50 h-full overflow-hidden bg-zinc-50 dark:bg-zinc-950 flex flex-col shadow-[0_-16px_48px_rgba(0,0,0,0.4)] will-change-transform transition-[transform,border-radius] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] touch-none select-none ${
               open ? 'pointer-events-auto' : 'pointer-events-none'
             }`}
           >
             {/* Top Drag Handle Pill + Compact Header */}
             <div
               data-sheet-handle="true"
-              className="touch-none select-none z-10 bg-zinc-50/95 dark:bg-zinc-950/95 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800/80 shrink-0"
+              className="z-10 bg-zinc-50/95 dark:bg-zinc-950/95 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800/80 shrink-0"
             >
-              <div className="pt-2 pb-1 flex justify-center">
+              <div className="pt-1.5 pb-0.5 flex justify-center">
                 <span className="w-12 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-600" />
               </div>
-              <div className="flex items-center justify-between gap-2 px-3 sm:px-6 h-12">
+              <div className="flex items-center justify-between gap-2 px-3 sm:px-6 h-11">
                 <button
                   type="button"
                   onClick={onClose}
                   aria-label="Slide down to Library"
-                  className="min-h-[40px] px-2.5 flex items-center gap-1 rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-95 transition-transform duration-100 text-xs font-medium text-zinc-700 dark:text-zinc-200 shrink-0"
+                  className="min-h-[36px] px-2 flex items-center gap-1 rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-95 transition-transform duration-100 text-xs font-medium text-zinc-700 dark:text-zinc-200 shrink-0"
                 >
                   <ChevronDown className="w-4 h-4" />
                   <Library className="w-3.5 h-3.5 opacity-80" />
@@ -384,7 +415,7 @@ export const NowPlayingView = React.memo(
                       tactile.tap();
                       setDeckPage('player');
                     }}
-                    className={`min-h-[32px] px-2.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                    className={`min-h-[30px] px-2.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
                       deckPage === 'player'
                         ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm'
                         : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'
@@ -399,7 +430,7 @@ export const NowPlayingView = React.memo(
                       tactile.tap();
                       setDeckPage('queue');
                     }}
-                    className={`min-h-[32px] px-2.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                    className={`min-h-[30px] px-2.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
                       deckPage === 'queue'
                         ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm'
                         : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'
@@ -418,7 +449,7 @@ export const NowPlayingView = React.memo(
                     type="button"
                     onClick={onOpenShare}
                     aria-label="Share current track"
-                    className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100"
+                    className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100"
                   >
                     <Share2 className="w-4 h-4" />
                   </button>
@@ -427,15 +458,15 @@ export const NowPlayingView = React.memo(
             </div>
 
             {/* Unscrollable Body Area */}
-            <div className="flex-1 min-h-0 overflow-hidden px-4 sm:px-8 py-3 sm:py-5 flex flex-col">
+            <div className="flex-1 min-h-0 overflow-hidden px-4 sm:px-8 py-2.5 sm:py-4 flex flex-col">
               {deckPage === 'player' ? (
-                <div className="max-w-5xl w-full h-full min-h-0 mx-auto flex flex-col lg:flex-row [@media(max-height:540px)]:flex-row items-center justify-evenly gap-4 lg:gap-10">
+                <div className="max-w-5xl w-full h-full min-h-0 mx-auto flex flex-col lg:flex-row [@media(max-height:540px)]:flex-row items-center justify-evenly gap-2.5 sm:gap-4 lg:gap-10">
                   {/* Fluid Viewport-Fitted Cover Art + Spectrum */}
                   <div
                     data-sheet-handle="true"
-                    className="touch-none flex-1 min-h-0 w-full max-w-[340px] lg:max-w-[400px] [@media(max-height:540px)]:max-w-[220px] flex flex-col items-center justify-center gap-2.5"
+                    className="flex-1 min-h-0 w-full max-w-[320px] lg:max-w-[400px] [@media(max-height:540px)]:max-w-[200px] flex flex-col items-center justify-center gap-2"
                   >
-                    <div className="h-[min(34dvh,270px)] sm:h-[min(38dvh,320px)] lg:h-[min(52dvh,380px)] [@media(max-height:540px)]:h-[min(58dvh,200px)] aspect-square max-w-full">
+                    <div className="h-[min(27dvh,220px)] sm:h-[min(36dvh,310px)] lg:h-[min(50dvh,380px)] [@media(max-height:540px)]:h-[min(56dvh,185px)] aspect-square max-w-full">
                       <CoverArt
                         src={track.coverUrl}
                         alt={track.title}
@@ -446,20 +477,20 @@ export const NowPlayingView = React.memo(
                       <canvas
                         ref={canvasRef}
                         width={360}
-                        height={36}
-                        className="w-full max-w-[320px] h-7 sm:h-9 [@media(max-height:540px)]:hidden rounded-lg opacity-90 shrink-0"
+                        height={32}
+                        className="w-full max-w-[300px] h-6 sm:h-8 [@media(max-height:540px)]:hidden rounded-lg opacity-90 shrink-0"
                       />
                     )}
                   </div>
 
                   {/* Right / Bottom Track Info & Transport Controls */}
-                  <div className="w-full max-w-md shrink-0 flex flex-col gap-3 sm:gap-4 [@media(max-height:540px)]:gap-2">
-                    <div className="flex items-start justify-between gap-3">
+                  <div className="w-full max-w-md shrink-0 flex flex-col gap-2.5 sm:gap-3.5 [@media(max-height:540px)]:gap-1.5">
+                    <div className="flex items-start justify-between gap-2.5">
                       <div className="min-w-0">
-                        <h2 className="text-lg sm:text-2xl font-display font-bold text-zinc-900 dark:text-zinc-100 leading-tight truncate">
+                        <h2 className="text-base sm:text-2xl font-display font-bold text-zinc-900 dark:text-zinc-100 leading-tight truncate">
                           {track.title}
                         </h2>
-                        <div className="mt-1 flex items-center gap-1.5 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 truncate">
+                        <div className="mt-0.5 flex items-center gap-1.5 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 truncate">
                           <button
                             type="button"
                             onClick={() => {
@@ -492,7 +523,7 @@ export const NowPlayingView = React.memo(
                         type="button"
                         aria-label={track.favorite ? 'Remove favorite' : 'Favorite track'}
                         onClick={() => onToggleFavorite(track.id)}
-                        className="min-w-[42px] min-h-[42px] flex items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-90 transition-transform duration-100 shrink-0"
+                        className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-90 transition-transform duration-100 shrink-0"
                       >
                         <Heart
                           className={`w-5 h-5 ${
@@ -503,7 +534,7 @@ export const NowPlayingView = React.memo(
                     </div>
 
                     {/* Seek Bar */}
-                    <div className="space-y-1">
+                    <div className="space-y-0.5">
                       <input
                         type="range"
                         aria-label="Seek timeline"
@@ -532,7 +563,7 @@ export const NowPlayingView = React.memo(
                         type="button"
                         aria-label="Shuffle"
                         onClick={onToggleShuffle}
-                        className={`min-w-[42px] min-h-[42px] flex items-center justify-center rounded-xl active:scale-90 transition-transform duration-100 ${
+                        className={`min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl active:scale-90 transition-transform duration-100 ${
                           shuffle ? 'accent-text bg-zinc-200/60 dark:bg-zinc-800' : 'text-zinc-500'
                         }`}
                       >
@@ -543,7 +574,7 @@ export const NowPlayingView = React.memo(
                         type="button"
                         aria-label="Previous"
                         onClick={onPrev}
-                        className="min-w-[46px] min-h-[46px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100"
+                        className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100"
                       >
                         <SkipBack className="w-6 h-6" />
                       </button>
@@ -552,12 +583,12 @@ export const NowPlayingView = React.memo(
                         type="button"
                         aria-label={isPlaying ? 'Pause' : 'Play'}
                         onClick={onTogglePlay}
-                        className="w-14 h-14 sm:w-16 sm:h-16 rounded-full accent-bg flex items-center justify-center shadow-lg active:scale-90 transition-transform duration-100"
+                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-full accent-bg flex items-center justify-center shadow-lg active:scale-90 transition-transform duration-100"
                       >
                         {isPlaying ? (
-                          <Pause className="w-7 h-7 fill-current" />
+                          <Pause className="w-6 h-6 sm:w-7 sm:h-7 fill-current" />
                         ) : (
-                          <Play className="w-7 h-7 fill-current ml-0.5" />
+                          <Play className="w-6 h-6 sm:w-7 sm:h-7 fill-current ml-0.5" />
                         )}
                       </button>
 
@@ -565,7 +596,7 @@ export const NowPlayingView = React.memo(
                         type="button"
                         aria-label="Next"
                         onClick={onNext}
-                        className="min-w-[46px] min-h-[46px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100"
+                        className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100"
                       >
                         <SkipForward className="w-6 h-6" />
                       </button>
@@ -574,7 +605,7 @@ export const NowPlayingView = React.memo(
                         type="button"
                         aria-label="Repeat"
                         onClick={onCycleRepeat}
-                        className={`min-w-[42px] min-h-[42px] flex items-center justify-center rounded-xl active:scale-90 transition-transform duration-100 ${
+                        className={`min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl active:scale-90 transition-transform duration-100 ${
                           repeatMode !== 'off' ? 'accent-text bg-zinc-200/60 dark:bg-zinc-800' : 'text-zinc-500'
                         }`}
                       >
@@ -587,7 +618,7 @@ export const NowPlayingView = React.memo(
                     </div>
 
                     {/* Volume & Quick Tools Bar */}
-                    <div className="pt-2.5 border-t border-zinc-200 dark:border-zinc-800 flex items-center gap-2.5">
+                    <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
                       <div className="flex items-center gap-1.5 flex-1 min-w-0">
                         <button
                           type="button"
@@ -596,7 +627,7 @@ export const NowPlayingView = React.memo(
                             tactile.tap();
                             onChangeVolume(volume === 0 ? 0.8 : 0);
                           }}
-                          className="min-w-[34px] min-h-[34px] flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 shrink-0"
+                          className="min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 shrink-0"
                         >
                           {volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                         </button>
@@ -618,7 +649,7 @@ export const NowPlayingView = React.memo(
                           onClose();
                           onOpenEqualizer();
                         }}
-                        className="min-h-[38px] px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium flex items-center gap-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-95 transition-transform duration-100 whitespace-nowrap"
+                        className="min-h-[34px] px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium flex items-center gap-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-95 transition-transform duration-100 whitespace-nowrap"
                       >
                         <Sliders className="w-3.5 h-3.5" />
                         <span>EQ</span>
@@ -627,7 +658,7 @@ export const NowPlayingView = React.memo(
                       <button
                         type="button"
                         onClick={onOpenCast}
-                        className="min-h-[38px] px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium flex items-center gap-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-95 transition-transform duration-100 whitespace-nowrap"
+                        className="min-h-[34px] px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium flex items-center gap-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-95 transition-transform duration-100 whitespace-nowrap"
                       >
                         <Cast className="w-3.5 h-3.5" />
                         <span className="hidden xs:inline sm:inline">Output</span>
@@ -638,7 +669,7 @@ export const NowPlayingView = React.memo(
                       <button
                         type="button"
                         onClick={() => setDeckPage('queue')}
-                        className="text-left text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 truncate transition-colors"
+                        className="[@media(max-height:540px)]:hidden text-left text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 truncate transition-colors"
                       >
                         Up Next: <span className="font-medium text-zinc-700 dark:text-zinc-300">{nextTrack.title}</span> · {nextTrack.artist}
                       </button>
@@ -647,23 +678,23 @@ export const NowPlayingView = React.memo(
                 </div>
               ) : (
                 /* Page 2: Rating, Specs & Fixed Paginated Queue */
-                <div className="max-w-3xl w-full h-full min-h-0 mx-auto flex flex-col gap-3 overflow-hidden">
-                  <div className="shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="max-w-3xl w-full h-full min-h-0 mx-auto flex flex-col gap-2.5 overflow-hidden">
+                  <div className="shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-2.5 sm:p-3.5 flex flex-wrap items-center justify-between gap-2.5">
                     <div>
-                      <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                        Track Rating · {track.genre} · {track.bitrateKbps} kbps
+                      <div className="text-[11px] sm:text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                        Rating · {track.genre} · {track.bitrateKbps} kbps
                       </div>
-                      <div className="flex items-center gap-1 mt-1">
+                      <div className="flex items-center gap-0.5 mt-0.5">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <button
                             key={star}
                             type="button"
                             aria-label={`Rate ${star} stars`}
                             onClick={() => onRateTrack(track.id, track.rating === star ? 0 : star)}
-                            className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100"
+                            className="min-w-[34px] min-h-[34px] flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100"
                           >
                             <Star
-                              className={`w-5 h-5 ${
+                              className={`w-4 h-4 ${
                                 star <= track.rating
                                   ? 'fill-amber-400 text-amber-400'
                                   : 'text-zinc-300 dark:text-zinc-700'
@@ -674,11 +705,11 @@ export const NowPlayingView = React.memo(
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <button
                         type="button"
                         onClick={onPrev}
-                        className="min-w-[40px] min-h-[40px] rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-center"
+                        className="min-w-[36px] min-h-[36px] rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-center"
                         aria-label="Previous"
                       >
                         <SkipBack className="w-4 h-4" />
@@ -686,15 +717,15 @@ export const NowPlayingView = React.memo(
                       <button
                         type="button"
                         onClick={onTogglePlay}
-                        className="w-11 h-11 rounded-full accent-bg flex items-center justify-center shadow"
+                        className="w-10 h-10 rounded-full accent-bg flex items-center justify-center shadow"
                         aria-label={isPlaying ? 'Pause' : 'Play'}
                       >
-                        {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current ml-0.5" />}
+                        {isPlaying ? <Pause className="w-4 h-4 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
                       </button>
                       <button
                         type="button"
                         onClick={onNext}
-                        className="min-w-[40px] min-h-[40px] rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-center"
+                        className="min-w-[36px] min-h-[36px] rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-center"
                         aria-label="Next"
                       >
                         <SkipForward className="w-4 h-4" />

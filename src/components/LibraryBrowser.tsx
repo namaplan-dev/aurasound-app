@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Playlist, Track, ViewMode } from '../types/music';
 import {
+  compareLibraryLabels,
   extractAvailableLetters,
   formatDuration,
   getAlphabetBucket,
@@ -113,11 +114,11 @@ const TrackRow = React.memo<{
 
   return (
     <div
-      className={`group flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1.5 rounded-xl border transition-colors h-[56px] ${
+      className={`group flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1 rounded-xl border transition-colors h-[54px] ${
         isActive
           ? 'border-amber-500/45 bg-amber-500/10'
           : isHighlighted
-          ? 'border-amber-400/50 bg-amber-500/5'
+          ? 'border-amber-500 bg-amber-500/15'
           : 'border-transparent hover:bg-zinc-100/80 dark:hover:bg-zinc-900/80'
       }`}
     >
@@ -135,7 +136,7 @@ const TrackRow = React.memo<{
         <div className="min-w-0 flex-1">
           <div
             className={`text-sm font-medium truncate ${
-              isActive ? 'accent-text' : 'text-zinc-900 dark:text-zinc-100'
+              isActive || isHighlighted ? 'accent-text' : 'text-zinc-900 dark:text-zinc-100'
             }`}
           >
             {track.title}
@@ -216,7 +217,7 @@ const TrackRow = React.memo<{
             tactile.tap();
             setMenuOpen((o) => !o);
           }}
-          className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100"
+          className="min-w-[34px] min-h-[34px] flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100"
         >
           <Plus className="w-4 h-4" />
         </button>
@@ -282,12 +283,13 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
     onImportLocalFolder,
   }) => {
     const viewportRef = useRef<HTMLDivElement | null>(null);
-    const [page, setPage] = useState(0);
+    const highlightTimerRef = useRef<number | null>(null);
+    const [startIndex, setStartIndex] = useState(0);
     const [highlightedId, setHighlightedId] = useState<string | null>(null);
     const [newPlaylistName, setNewPlaylistName] = useState('');
     const [showNewPlaylist, setShowNewPlaylist] = useState(false);
 
-    // Filtered tracks for Songs tab
+    // Filtered and consistently bucket-sorted tracks for Songs tab
     const filteredSongs = useMemo(() => {
       let list = tracks;
       if (selectedAlbumFilter) {
@@ -309,7 +311,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
           list = list.filter((t) => set.has(t.id));
         }
       }
-      return [...list].sort((a, b) => a.title.localeCompare(b.title));
+      return [...list].sort((a, b) => compareLibraryLabels(a.title, b.title));
     }, [
       tracks,
       playlists,
@@ -351,7 +353,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
               tracks: plTracks,
             };
           })
-          .sort((a, b) => a.label.localeCompare(b.label));
+          .sort((a, b) => compareLibraryLabels(a.label, b.label));
       }
 
       const map = new Map<string, Track[]>();
@@ -382,25 +384,32 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
           trackCount: grpTracks.length,
           tracks: grpTracks,
         }))
-        .sort((a, b) => a.label.localeCompare(b.label));
+        .sort((a, b) => compareLibraryLabels(a.label, b.label));
     }, [tab, tracks, playlists]);
 
     const layout = useViewportPageSize(viewportRef, {
       mode: viewMode,
-      listRowHeight: 58,
-      gridMinCardWidth: 148,
+      listRowHeight: 55,
+      gridMinCardWidth: 140,
       gridGap: 10,
-      gridCardExtraHeight: tab === 'songs' ? 56 : 94,
+      gridCardExtraHeight: tab === 'songs' ? 58 : 96,
       maxColumns: 6,
-      verticalPadding: 6,
+      verticalPadding: 4,
     });
 
     const totalItems = tab === 'songs' ? filteredSongs.length : collectionItems.length;
+    const clampedStartIndex =
+      totalItems === 0 ? 0 : Math.max(0, Math.min(totalItems - 1, startIndex));
     const totalPages = Math.max(1, Math.ceil(totalItems / layout.pageSize));
-    const safePage = Math.max(0, Math.min(totalPages - 1, page));
+    const virtualPage =
+      totalItems === 0
+        ? 0
+        : clampedStartIndex + layout.pageSize >= totalItems && totalPages > 1
+        ? totalPages - 1
+        : Math.min(totalPages - 1, Math.floor(clampedStartIndex / layout.pageSize));
 
     useEffect(() => {
-      setPage(0);
+      setStartIndex(0);
     }, [
       tab,
       selectedAlbumFilter,
@@ -411,22 +420,28 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
     ]);
 
     useEffect(() => {
-      if (page > totalPages - 1) {
-        setPage(Math.max(0, totalPages - 1));
+      if (totalItems > 0 && startIndex >= totalItems) {
+        setStartIndex(Math.max(0, totalItems - layout.pageSize));
       }
-    }, [page, totalPages]);
+    }, [startIndex, totalItems, layout.pageSize]);
+
+    useEffect(() => {
+      return () => {
+        if (highlightTimerRef.current) {
+          window.clearTimeout(highlightTimerRef.current);
+        }
+      };
+    }, []);
 
     const pagedSongs = useMemo(() => {
       if (tab !== 'songs') return [];
-      const start = safePage * layout.pageSize;
-      return filteredSongs.slice(start, start + layout.pageSize);
-    }, [tab, filteredSongs, safePage, layout.pageSize]);
+      return filteredSongs.slice(clampedStartIndex, clampedStartIndex + layout.pageSize);
+    }, [tab, filteredSongs, clampedStartIndex, layout.pageSize]);
 
     const pagedCollections = useMemo(() => {
       if (tab === 'songs') return [];
-      const start = safePage * layout.pageSize;
-      return collectionItems.slice(start, start + layout.pageSize);
-    }, [tab, collectionItems, safePage, layout.pageSize]);
+      return collectionItems.slice(clampedStartIndex, clampedStartIndex + layout.pageSize);
+    }, [tab, collectionItems, clampedStartIndex, layout.pageSize]);
 
     const allTabTracks = useMemo(() => {
       if (tab === 'songs') return filteredSongs;
@@ -443,12 +458,17 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
       return combined;
     }, [tab, filteredSongs, collectionItems]);
 
-    const sliderLetters = useMemo(() => {
+    const { sliderLetters, populatedLetters } = useMemo(() => {
       const labels =
         tab === 'songs'
           ? filteredSongs.map((t) => t.title)
           : collectionItems.map((c) => c.label);
-      return extractAvailableLetters(labels);
+      const pop = new Set<string>();
+      labels.forEach((lbl) => pop.add(getAlphabetBucket(lbl)));
+      return {
+        sliderLetters: extractAvailableLetters(labels),
+        populatedLetters: pop,
+      };
     }, [tab, filteredSongs, collectionItems]);
 
     const currentPageFirstBucket = useMemo(() => {
@@ -471,21 +491,34 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
         let matchIdx = list.findIndex((entry) => getAlphabetBucket(entry.label) === letter);
         if (matchIdx === -1) {
           const letterPos = sliderLetters.indexOf(letter);
+          // Search forward in alphabet order
           for (let i = letterPos + 1; i < sliderLetters.length; i++) {
             matchIdx = list.findIndex(
               (entry) => getAlphabetBucket(entry.label) === sliderLetters[i]
             );
             if (matchIdx !== -1) break;
           }
+          // Search backward if none after
+          if (matchIdx === -1) {
+            for (let i = letterPos - 1; i >= 0; i--) {
+              matchIdx = list.findIndex(
+                (entry) => getAlphabetBucket(entry.label) === sliderLetters[i]
+              );
+              if (matchIdx !== -1) break;
+            }
+          }
         }
-        if (matchIdx === -1) matchIdx = list.length - 1;
+        if (matchIdx === -1) matchIdx = 0;
 
-        const targetPage = Math.floor(matchIdx / layout.pageSize);
-        setPage(targetPage);
+        // Anchor the matched letter right at Row 1 so the library visibly jumps to that letter
+        setStartIndex(matchIdx);
         setHighlightedId(list[matchIdx].id);
-        window.setTimeout(() => setHighlightedId(null), 900);
+        if (highlightTimerRef.current) {
+          window.clearTimeout(highlightTimerRef.current);
+        }
+        highlightTimerRef.current = window.setTimeout(() => setHighlightedId(null), 1200);
       },
-      [tab, filteredSongs, collectionItems, sliderLetters, layout.pageSize]
+      [tab, filteredSongs, collectionItems, sliderLetters]
     );
 
     const hasActiveFilter = Boolean(
@@ -531,33 +564,34 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
 
     return (
       <div className="h-full min-h-0 flex flex-col overflow-hidden">
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
-          <div className="flex items-baseline gap-2 min-w-0">
-            <h2 className="text-lg sm:text-xl font-display font-semibold capitalize text-zinc-900 dark:text-zinc-100">
+        {/* Compact Single-Row Toolbar */}
+        <div className="flex items-center justify-between gap-2 pb-2 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
+          <div className="flex items-baseline gap-1.5 min-w-0">
+            <h2 className="text-base sm:text-xl font-display font-semibold capitalize text-zinc-900 dark:text-zinc-100 truncate">
               {tab}
             </h2>
-            <span className="text-xs font-mono-tabular text-zinc-500">
-              {tab === 'songs' ? `${filteredSongs.length} tracks` : `${collectionItems.length} items`}
+            <span className="text-[11px] sm:text-xs font-mono-tabular text-zinc-500 whitespace-nowrap">
+              {tab === 'songs' ? `${filteredSongs.length}` : `${collectionItems.length}`}
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <button
               type="button"
               disabled={allTabTracks.length === 0}
               onClick={() => onPlayAll(allTabTracks, false)}
-              className="min-h-[36px] px-2.5 sm:px-3.5 rounded-lg accent-bg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-40"
+              className="min-h-[34px] px-2.5 sm:px-3.5 rounded-lg accent-bg text-xs font-medium flex items-center gap-1 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-40"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Play All</span>
+              <span>Play</span>
             </button>
 
             <button
               type="button"
               disabled={allTabTracks.length === 0}
               onClick={() => onPlayAll(allTabTracks, true)}
-              className="min-h-[36px] px-2.5 sm:px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-40"
+              aria-label="Shuffle all"
+              className="min-w-[34px] min-h-[34px] px-2 sm:px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-medium flex items-center justify-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-40"
             >
               <Shuffle className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Shuffle</span>
@@ -567,10 +601,11 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
               <button
                 type="button"
                 onClick={onImportLocalFolder}
-                className="min-h-[36px] px-2.5 sm:px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100"
+                aria-label="Scan Folder"
+                className="min-w-[34px] min-h-[34px] px-2 sm:px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-medium flex items-center justify-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100"
               >
                 <FolderOpen className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Scan Folder</span>
+                <span className="hidden sm:inline">Scan</span>
               </button>
             )}
 
@@ -581,10 +616,11 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                   tactile.tap();
                   setShowNewPlaylist((v) => !v);
                 }}
-                className="min-h-[36px] px-2.5 sm:px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100"
+                aria-label="New Playlist"
+                className="min-w-[34px] min-h-[34px] px-2 sm:px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-medium flex items-center justify-center gap-1 whitespace-nowrap active:scale-95 transition-transform duration-100"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>New</span>
+                <span className="hidden sm:inline">New</span>
               </button>
             )}
 
@@ -597,7 +633,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                   tactile.tap();
                   onChangeViewMode('list');
                 }}
-                className={`min-w-[34px] min-h-[32px] px-2 rounded-md flex items-center justify-center gap-1 text-xs font-medium transition-colors ${
+                className={`min-w-[30px] min-h-[28px] px-1.5 rounded-md flex items-center justify-center text-xs transition-colors ${
                   viewMode === 'list'
                     ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm'
                     : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'
@@ -612,7 +648,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                   tactile.tap();
                   onChangeViewMode('grid');
                 }}
-                className={`min-w-[34px] min-h-[32px] px-2 rounded-md flex items-center justify-center gap-1 text-xs font-medium transition-colors ${
+                className={`min-w-[30px] min-h-[28px] px-1.5 rounded-md flex items-center justify-center text-xs transition-colors ${
                   viewMode === 'grid'
                     ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm'
                     : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'
@@ -635,7 +671,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                 setShowNewPlaylist(false);
               }
             }}
-            className="mt-2.5 flex items-center gap-2 shrink-0"
+            className="mt-2 flex items-center gap-2 shrink-0"
           >
             <input
               type="text"
@@ -643,11 +679,11 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
               onChange={(e) => setNewPlaylistName(e.target.value)}
               placeholder="Enter playlist name..."
               autoFocus
-              className="flex-1 min-h-[40px] px-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm"
+              className="flex-1 min-h-[36px] px-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm"
             />
             <button
               type="submit"
-              className="min-h-[40px] px-4 rounded-lg accent-bg text-xs font-medium whitespace-nowrap active:scale-95 transition-transform duration-100"
+              className="min-h-[36px] px-4 rounded-lg accent-bg text-xs font-medium whitespace-nowrap active:scale-95 transition-transform duration-100"
             >
               Create
             </button>
@@ -656,7 +692,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
 
         {/* Active Filter Breadcrumb in Songs */}
         {tab === 'songs' && hasActiveFilter && activeFilterBreadcrumb && (
-          <div className="mt-2 flex items-center justify-between gap-3 py-1 border-b border-zinc-200/70 dark:border-zinc-800/70 shrink-0">
+          <div className="mt-1.5 flex items-center justify-between gap-3 py-1 border-b border-zinc-200/70 dark:border-zinc-800/70 shrink-0">
             <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 min-w-0">
               <span>{activeFilterBreadcrumb.group}</span>
               <span aria-hidden="true">/</span>
@@ -670,7 +706,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                 tactile.tap();
                 clearAllFilters();
               }}
-              className="min-h-[30px] px-2 text-xs font-medium accent-text flex items-center gap-1 shrink-0 hover:underline"
+              className="min-h-[28px] px-2 text-xs font-medium accent-text flex items-center gap-1 shrink-0 hover:underline"
             >
               <X className="w-3.5 h-3.5" />
               <span>Show All</span>
@@ -678,23 +714,42 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
           </div>
         )}
 
+        {/* Alphabet Jump Indicator Strip when offset mid-list */}
+        {clampedStartIndex > 0 && clampedStartIndex % layout.pageSize !== 0 && (
+          <div className="mt-1 flex items-center justify-between px-2 py-0.5 rounded-md bg-amber-500/10 text-[11px] text-amber-600 dark:text-amber-400 shrink-0">
+            <span className="font-mono-tabular">
+              Anchored at “{currentPageFirstBucket}” (#{clampedStartIndex + 1})
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                tactile.tap();
+                setStartIndex(0);
+              }}
+              className="font-medium underline"
+            >
+              Top
+            </button>
+          </div>
+        )}
+
         {/* Fixed Unscrollable Viewport + Right-Side Alphabetical Quick-Jump Slider */}
-        <div className="flex-1 min-h-0 flex gap-2 mt-2.5 overflow-hidden relative">
+        <div className="flex-1 min-h-0 flex gap-2 mt-2 overflow-hidden relative">
           <div
             ref={viewportRef}
             className="flex-1 min-w-0 h-full overflow-hidden flex flex-col justify-start"
           >
             {tab === 'songs' ? (
               pagedSongs.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center space-y-3 px-4">
-                  <Music className="w-10 h-10 text-zinc-400 opacity-60" />
+                <div className="h-full flex flex-col items-center justify-center text-center space-y-2.5 px-4">
+                  <Music className="w-9 h-9 text-zinc-400 opacity-60" />
                   <div className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
                     No tracks match this filter or offline mode.
                   </div>
                   <button
                     type="button"
                     onClick={hasActiveFilter ? clearAllFilters : onImportLocalFolder}
-                    className="min-h-[40px] px-4 py-2 rounded-lg accent-bg text-xs font-medium inline-flex items-center gap-2 active:scale-95 transition-transform duration-100"
+                    className="min-h-[38px] px-4 py-2 rounded-lg accent-bg text-xs font-medium inline-flex items-center gap-2 active:scale-95 transition-transform duration-100"
                   >
                     <FolderOpen className="w-4 h-4" />
                     <span>{hasActiveFilter ? 'Show All Tracks' : 'Add Local Music Folder'}</span>
@@ -733,25 +788,28 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                         key={track.id}
                         type="button"
                         onClick={() => handlePlayTrackItem(track)}
-                        className={`group rounded-xl border p-2 text-left transition-all duration-100 active:scale-[0.98] focus-visible:outline-none ${
+                        className={`group rounded-xl border p-2 text-left transition-all duration-100 active:scale-[0.98] focus-visible:outline-none overflow-hidden ${
                           active
                             ? 'border-amber-500/60 bg-amber-500/10'
                             : highlighted
-                            ? 'border-amber-400/60 bg-amber-500/5'
+                            ? 'border-amber-500 bg-amber-500/15'
                             : 'border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-900'
                         }`}
                       >
-                        <div className="relative aspect-square w-full mb-1.5">
+                        <div
+                          style={{ height: `${layout.maxCoverSize}px` }}
+                          className="relative w-full mb-1.5 flex items-center justify-center"
+                        >
                           <CoverArt
                             src={track.coverUrl}
                             alt={track.title}
                             isPlaying={active && isPlaying}
-                            className="w-full h-full rounded-lg"
+                            className="h-full aspect-square rounded-lg"
                           />
                         </div>
                         <div
                           className={`text-xs font-medium truncate ${
-                            active ? 'accent-text' : 'text-zinc-900 dark:text-zinc-100'
+                            active || highlighted ? 'accent-text' : 'text-zinc-900 dark:text-zinc-100'
                           }`}
                         >
                           {track.title}
@@ -773,9 +831,9 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                 {pagedCollections.map((item) => (
                   <div
                     key={item.id}
-                    className={`flex items-center justify-between gap-2.5 px-2 sm:px-3 py-1.5 rounded-xl transition-colors h-[56px] ${
+                    className={`flex items-center justify-between gap-2.5 px-2 sm:px-3 py-1 rounded-xl transition-colors h-[54px] ${
                       highlightedId === item.id
-                        ? 'bg-amber-500/10'
+                        ? 'bg-amber-500/15 border border-amber-500'
                         : 'hover:bg-zinc-100/80 dark:hover:bg-zinc-900/80'
                     }`}
                   >
@@ -807,7 +865,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                             aria-label={`Play all in ${item.label}`}
                             title="Play All"
                             onClick={() => onPlayAll(item.tracks, false)}
-                            className="min-w-[36px] min-h-[36px] rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-700 dark:text-zinc-200 active:scale-90 transition-transform duration-100"
+                            className="min-w-[34px] min-h-[34px] rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-700 dark:text-zinc-200 active:scale-90 transition-transform duration-100"
                           >
                             <Play className="w-4 h-4 fill-current" />
                           </button>
@@ -816,7 +874,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                             aria-label={`Play random in ${item.label}`}
                             title="Play All Random"
                             onClick={() => onPlayAll(item.tracks, true)}
-                            className="min-w-[36px] min-h-[36px] rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400 active:scale-90 transition-transform duration-100"
+                            className="min-w-[34px] min-h-[34px] rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400 active:scale-90 transition-transform duration-100"
                           >
                             <Shuffle className="w-3.5 h-3.5" />
                           </button>
@@ -828,7 +886,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                           aria-label={`Delete ${item.label}`}
                           title="Delete playlist"
                           onClick={() => onDeletePlaylist(item.id)}
-                          className="min-w-[36px] min-h-[36px] rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-red-500 active:scale-90 transition-all duration-100"
+                          className="min-w-[34px] min-h-[34px] rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-red-500 active:scale-90 transition-all duration-100"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -837,7 +895,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                         type="button"
                         aria-label={`Open ${item.label}`}
                         onClick={() => handleCollectionOpen(item)}
-                        className="min-w-[34px] min-h-[36px] rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-400"
+                        className="min-w-[32px] min-h-[34px] rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-400"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </button>
@@ -855,9 +913,9 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                 {pagedCollections.map((item) => (
                   <div
                     key={item.id}
-                    className={`group rounded-xl border p-2 transition-colors flex flex-col justify-between gap-2 ${
+                    className={`group rounded-xl border p-2 transition-colors flex flex-col justify-between gap-1.5 overflow-hidden ${
                       highlightedId === item.id
-                        ? 'border-amber-500/60 bg-amber-500/10'
+                        ? 'border-amber-500 bg-amber-500/15'
                         : 'border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-900'
                     }`}
                   >
@@ -866,11 +924,14 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                       onClick={() => handleCollectionOpen(item)}
                       className="w-full text-left focus-visible:outline-none active:scale-[0.98] transition-transform duration-100"
                     >
-                      <div className="relative aspect-square w-full mb-1.5">
+                      <div
+                        style={{ height: `${layout.maxCoverSize}px` }}
+                        className="relative w-full mb-1 flex items-center justify-center"
+                      >
                         <CoverArt
                           src={item.coverUrl}
                           alt={item.label}
-                          className="w-full h-full rounded-lg"
+                          className="h-full aspect-square rounded-lg"
                         />
                       </div>
                       <div className="text-xs font-medium truncate text-zinc-900 dark:text-zinc-100">
@@ -886,7 +947,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                           type="button"
                           onClick={() => onPlayAll(item.tracks, false)}
                           aria-label={`Play all in ${item.label}`}
-                          className="flex-1 min-h-[32px] rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-[11px] font-medium flex items-center justify-center gap-1 text-zinc-800 dark:text-zinc-200 active:scale-95 transition-transform duration-100"
+                          className="flex-1 min-h-[30px] rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-[11px] font-medium flex items-center justify-center gap-1 text-zinc-800 dark:text-zinc-200 active:scale-95 transition-transform duration-100"
                         >
                           <Play className="w-3 h-3 fill-current" />
                           <span>Play</span>
@@ -896,7 +957,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                           onClick={() => onPlayAll(item.tracks, true)}
                           aria-label={`Play random in ${item.label}`}
                           title="Play Random"
-                          className="min-w-[32px] min-h-[32px] rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 active:scale-95 transition-transform duration-100"
+                          className="min-w-[30px] min-h-[30px] rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 active:scale-95 transition-transform duration-100"
                         >
                           <Shuffle className="w-3 h-3" />
                         </button>
@@ -911,6 +972,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
           {/* Right-Side Alphabetical Quick-Jump Slider */}
           <AlphabetIndexSlider
             letters={sliderLetters}
+            populatedLetters={populatedLetters}
             activeLetter={currentPageFirstBucket}
             onSelectLetter={handleSelectAlphabetLetter}
           />
@@ -918,11 +980,16 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
 
         {/* Fixed Bottom Page Controls */}
         <PaginationBar
-          page={safePage}
+          page={virtualPage}
           totalPages={totalPages}
           totalItems={totalItems}
           pageSize={layout.pageSize}
-          onChangePage={setPage}
+          rangeStartIndex={clampedStartIndex}
+          onChangePage={(nextPage) => setStartIndex(nextPage * layout.pageSize)}
+          onStepPrev={() => setStartIndex(Math.max(0, clampedStartIndex - layout.pageSize))}
+          onStepNext={() =>
+            setStartIndex(Math.min(Math.max(0, totalItems - 1), clampedStartIndex + layout.pageSize))
+          }
           itemLabel={tab === 'songs' ? 'tracks' : tab}
         />
       </div>

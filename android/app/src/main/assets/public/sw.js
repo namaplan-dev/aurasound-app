@@ -87,7 +87,7 @@ define(['./workbox-afac4cd2'], (function (workbox) { 'use strict';
     "revision": "5cae7ab2a0b45e84463550b878484351"
   }, {
     "url": "index.html",
-    "revision": "a84f0d84c7d4cddc563962ae266bbf29"
+    "revision": "285de7e6e5826c00ddf35c860d888cad"
   }, {
     "url": "icon.svg",
     "revision": "925aa20d667bace57b00f0c1d480f656"
@@ -98,10 +98,10 @@ define(['./workbox-afac4cd2'], (function (workbox) { 'use strict';
     "url": "assets/workbox-window.prod.es5-Bd17z0YL.js",
     "revision": null
   }, {
-    "url": "assets/index-aNOr_chL.css",
+    "url": "assets/index-BtZYVTVN.css",
     "revision": null
   }, {
-    "url": "assets/index-CZIhuq0G.js",
+    "url": "assets/index-Bc-mqz6k.js",
     "revision": null
   }, {
     "url": "assets/album_nocturne_vinyl_1794587934959-HGvPbLOe.jpg",

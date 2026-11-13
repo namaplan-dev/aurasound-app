@@ -13,8 +13,8 @@ import {
   Music,
   Palette,
   Search,
-  Settings,
   Sliders,
+  Smartphone,
   Sparkles,
   Sun,
   Tag,
@@ -145,8 +145,10 @@ const WORKSPACES: Array<{
     mobileTitle: 'Settings',
     items: [
       { id: 'settings-audio', label: 'Audio', shortLabel: 'Audio', icon: Volume2 },
-      { id: 'settings-appearance', label: 'Display & Widget', shortLabel: 'Display', icon: Palette },
-      { id: 'settings-storage', label: 'Storage', shortLabel: 'Storage', icon: HardDrive },
+      { id: 'settings-devices', label: 'Devices & Power', shortLabel: 'Device', icon: Sliders },
+      { id: 'settings-theme', label: 'Theme & Touch', shortLabel: 'Theme', icon: Palette },
+      { id: 'settings-widgets', label: 'Widgets', shortLabel: 'Widget', icon: Smartphone },
+      { id: 'settings-storage', label: 'Storage', shortLabel: 'Cache', icon: HardDrive },
       { id: 'settings-cloud', label: 'Cloud Sync', shortLabel: 'Cloud', icon: Cloud },
     ],
   },
@@ -156,6 +158,7 @@ function normalizeTab(tab: NavigationTab): NavigationTab {
   if (tab === 'studio') return 'studio-mixes';
   if (tab === 'equalizer') return 'eq-rack';
   if (tab === 'settings') return 'settings-audio';
+  if (tab === 'settings-appearance') return 'settings-theme';
   return tab;
 }
 
@@ -1191,7 +1194,9 @@ export default function App() {
 
   const getSettingsPage = (t: NavigationTab): SettingsPage | null => {
     if (t === 'settings-audio') return 'audio';
-    if (t === 'settings-appearance') return 'appearance';
+    if (t === 'settings-devices') return 'devices';
+    if (t === 'settings-theme' || t === 'settings-appearance') return 'theme';
+    if (t === 'settings-widgets') return 'widgets';
     if (t === 'settings-storage') return 'storage';
     if (t === 'settings-cloud') return 'cloud';
     return null;
@@ -1404,7 +1409,7 @@ export default function App() {
   const settingsPage = getSettingsPage(normalizedActiveTab);
 
   return (
-    <div className="h-dvh w-full overflow-hidden flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+    <div className="h-full w-full overflow-hidden flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       {/* Hidden File & Folder Pickers */}
       <input
         ref={folderInputRef}
@@ -1436,7 +1441,7 @@ export default function App() {
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
         className="shrink-0 z-30 border-b border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md px-3 sm:px-6"
       >
-        <div className="h-12 sm:h-14 flex items-center justify-between gap-2 sm:gap-6">
+        <div className="h-11 sm:h-13 [@media(max-height:520px)]:h-10 flex items-center justify-between gap-2 sm:gap-6">
           <div className="flex items-baseline gap-1.5 whitespace-nowrap shrink-0">
             <span className="text-base sm:text-lg font-display font-bold tracking-tight">
               AuraSound
@@ -1653,7 +1658,7 @@ export default function App() {
         {/* Main Viewport Panel */}
         <main className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
           {/* Mobile 2-Tier Unscrollable Navigation (Zero Horizontal Scroll) */}
-          <div className="md:hidden shrink-0 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-2.5 py-1.5 space-y-1">
+          <div className="md:hidden shrink-0 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-2 py-1 space-y-1">
             {/* Tier 1: Workspaces */}
             <div className="grid grid-cols-4 gap-1 p-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-900">
               {WORKSPACES.map((ws) => {
@@ -1666,7 +1671,7 @@ export default function App() {
                       tactile.tap();
                       updateSettings({ activeTab: ws.items[0].id });
                     }}
-                    className={`min-h-[30px] px-1 rounded-md text-[11px] font-semibold whitespace-nowrap transition-colors ${
+                    className={`min-h-[28px] px-1 rounded-md text-[11px] font-semibold whitespace-nowrap transition-colors ${
                       active
                         ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm'
                         : 'text-zinc-500 dark:text-zinc-400'
@@ -1696,7 +1701,7 @@ export default function App() {
                       tactile.tap();
                       updateSettings({ activeTab: item.id });
                     }}
-                    className={`min-h-[30px] px-1 rounded-md text-[11px] font-medium whitespace-nowrap truncate transition-colors ${
+                    className={`min-h-[28px] px-0.5 rounded-md text-[11px] font-medium whitespace-nowrap truncate transition-colors ${
                       active
                         ? 'accent-soft-bg'
                         : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
@@ -1710,7 +1715,7 @@ export default function App() {
           </div>
 
           {audioError && (
-            <div className="shrink-0 mx-3 sm:mx-5 mt-2 px-3 py-2 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 flex items-center justify-between gap-2">
+            <div className="shrink-0 mx-3 sm:mx-5 mt-1.5 px-3 py-1.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 flex items-center justify-between gap-2">
               <span className="truncate">{audioError}</span>
               <button
                 type="button"
@@ -1723,7 +1728,7 @@ export default function App() {
           )}
 
           {/* Fixed Active Page Container (100% overflow-hidden) */}
-          <div className="flex-1 min-h-0 p-3 sm:p-5 overflow-hidden flex flex-col">
+          <div className="flex-1 min-h-0 p-2.5 sm:p-4 overflow-hidden flex flex-col">
             {isLibraryTab(normalizedActiveTab) && (
               <LibraryBrowser
                 tab={normalizedActiveTab}

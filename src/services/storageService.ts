@@ -9,12 +9,21 @@ import {
 } from '../types/music';
 import {
   BUILT_IN_EQ_PRESETS,
+  BUNDLED_COVERS,
   DEFAULT_SETTINGS,
   SEED_DAILY_RECOMMENDATIONS,
   SEED_PLAYLISTS,
   SEED_SMART_PLAYLISTS,
   SEED_TRACKS,
 } from '../data/seedLibrary';
+
+const LEGACY_COVER_MAP: Record<string, string> = {
+  '/src/assets/images/album_nocturne_vinyl_1794587934959.jpg': BUNDLED_COVERS.vinyl,
+  '/src/assets/images/album_baltic_ambient_1794587935576.jpg': BUNDLED_COVERS.baltic,
+  '/src/assets/images/album_analog_synth_1794587936966.jpg': BUNDLED_COVERS.tube,
+  '/src/assets/images/album_jazz_quartet_1794587935839.jpg': BUNDLED_COVERS.jazz,
+  '/src/assets/images/album_acoustic_atrium_1794587935664.jpg': BUNDLED_COVERS.atrium,
+};
 
 const KEYS = {
   SETTINGS: 'aurasound_settings_v1',
@@ -65,7 +74,11 @@ export function loadTracks(): Track[] {
   if (!saved || !Array.isArray(saved) || saved.length === 0) {
     return SEED_TRACKS;
   }
-  return saved;
+  return saved.map((t) =>
+    t.coverUrl && LEGACY_COVER_MAP[t.coverUrl]
+      ? { ...t, coverUrl: LEGACY_COVER_MAP[t.coverUrl] }
+      : t
+  );
 }
 
 export function saveTracks(tracks: Track[]): void {
@@ -74,7 +87,7 @@ export function saveTracks(tracks: Track[]): void {
     if (t.coverUrl && t.coverUrl.startsWith('data:') && t.coverUrl.length > 180000) {
       return {
         ...t,
-        coverUrl: '/src/assets/images/album_nocturne_vinyl_1794587934959.jpg',
+        coverUrl: BUNDLED_COVERS.vinyl,
       };
     }
     return t;
@@ -138,7 +151,7 @@ const DEFAULT_SESSION: SessionState = {
   selectedGenreFilter: null,
   selectedFolderFilter: null,
   selectedPlaylistFilter: null,
-  nowPlayingOpen: false,
+  nowPlayingOpen: true,
   libraryScrollTop: 0,
   mainScrollTop: 0,
   updatedAt: 0,

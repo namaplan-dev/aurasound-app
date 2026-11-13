@@ -21604,6 +21604,26 @@ var Heart = createLucideIcon("heart", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Layers = createLucideIcon("layers", [
+	["path", {
+		d: "M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z",
+		key: "zw3jo"
+	}],
+	["path", {
+		d: "M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12",
+		key: "1wduqc"
+	}],
+	["path", {
+		d: "M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17",
+		key: "kqbvx6"
+	}]
+]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var LayoutGrid = createLucideIcon("layout-grid", [
 	["rect", {
 		width: "7",
@@ -21636,6 +21656,30 @@ var LayoutGrid = createLucideIcon("layout-grid", [
 		y: "14",
 		rx: "1",
 		key: "1bb6yr"
+	}]
+]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Library = createLucideIcon("library", [
+	["path", {
+		d: "m16 6 4 14",
+		key: "ji33uf"
+	}],
+	["path", {
+		d: "M12 6v14",
+		key: "1n7gus"
+	}],
+	["path", {
+		d: "M8 8v12",
+		key: "1gg7y9"
+	}],
+	["path", {
+		d: "M4 4v16",
+		key: "6qkkli"
 	}]
 ]);
 /**
@@ -22774,8 +22818,10 @@ function formatDuration(seconds) {
 	const total = Math.floor(seconds);
 	return `${Math.floor(total / 60)}:${(total % 60).toString().padStart(2, "0")}`;
 }
+// src/assets/images/album_nocturne_vinyl_1794587934959.jpg
+var album_nocturne_vinyl_1794587934959_default = "/assets/album_nocturne_vinyl_1794587934959-HGvPbLOe.jpg";
 // src/services/metadataParser.ts
-var DEFAULT_FALLBACK_COVER$1 = "/src/assets/images/album_nocturne_vinyl_1794587934959.jpg";
+var DEFAULT_FALLBACK_COVER$1 = album_nocturne_vinyl_1794587934959_default;
 function readSynchsafeInt(bytes, offset) {
 	return (bytes[offset] & 127) << 21 | (bytes[offset + 1] & 127) << 14 | (bytes[offset + 2] & 127) << 7 | bytes[offset + 3] & 127;
 }
@@ -23038,6 +23084,14 @@ async function parseLocalAudioFile(file) {
 		fingerprint
 	};
 }
+// src/assets/images/album_baltic_ambient_1794587935576.jpg
+var album_baltic_ambient_1794587935576_default = "/assets/album_baltic_ambient_1794587935576-D8VKDs7u.jpg";
+// src/assets/images/album_analog_synth_1794587936966.jpg
+var album_analog_synth_1794587936966_default = "/assets/album_analog_synth_1794587936966-rJPT9Yof.jpg";
+// src/assets/images/album_jazz_quartet_1794587935839.jpg
+var album_jazz_quartet_1794587935839_default = "/assets/album_jazz_quartet_1794587935839-CvBPV2-0.jpg";
+// src/assets/images/album_acoustic_atrium_1794587935664.jpg
+var album_acoustic_atrium_1794587935664_default = "/assets/album_acoustic_atrium_1794587935664-9FDoCyfz.jpg";
 // src/data/seedLibrary.ts
 var EQ_FREQUENCIES = [
 	31,
@@ -23198,6 +23252,7 @@ var DEFAULT_SETTINGS = {
 	lowBatteryMode: false,
 	autoPlayBluetooth: true,
 	showHomescreenWidget: false,
+	widgetVariant: "top-bar",
 	masterVolume: .8,
 	eqEnabled: true,
 	activeEqPresetId: "flat",
@@ -23220,13 +23275,14 @@ var DEFAULT_SETTINGS = {
 	tactileSounds: true,
 	hapticFeedback: true
 };
-var COVERS = {
-	vinyl: "/src/assets/images/album_nocturne_vinyl_1794587934959.jpg",
-	baltic: "/src/assets/images/album_baltic_ambient_1794587935576.jpg",
-	tube: "/src/assets/images/album_analog_synth_1794587936966.jpg",
-	jazz: "/src/assets/images/album_jazz_quartet_1794587935839.jpg",
-	atrium: "/src/assets/images/album_acoustic_atrium_1794587935664.jpg"
+var BUNDLED_COVERS = {
+	vinyl: album_nocturne_vinyl_1794587934959_default,
+	baltic: album_baltic_ambient_1794587935576_default,
+	tube: album_analog_synth_1794587936966_default,
+	jazz: album_jazz_quartet_1794587935839_default,
+	atrium: album_acoustic_atrium_1794587935664_default
 };
+var COVERS = BUNDLED_COVERS;
 function makeSeedTrack(partial) {
 	return {
 		...partial,
@@ -51931,6 +51987,13 @@ async function restoreFromCloud(user, backupId = "latest") {
 	}
 }
 // src/services/storageService.ts
+var LEGACY_COVER_MAP = {
+	"/src/assets/images/album_nocturne_vinyl_1794587934959.jpg": BUNDLED_COVERS.vinyl,
+	"/src/assets/images/album_baltic_ambient_1794587935576.jpg": BUNDLED_COVERS.baltic,
+	"/src/assets/images/album_analog_synth_1794587936966.jpg": BUNDLED_COVERS.tube,
+	"/src/assets/images/album_jazz_quartet_1794587935839.jpg": BUNDLED_COVERS.jazz,
+	"/src/assets/images/album_acoustic_atrium_1794587935664.jpg": BUNDLED_COVERS.atrium
+};
 var KEYS = {
 	SETTINGS: "aurasound_settings_v1",
 	TRACKS: "aurasound_tracks_v1",
@@ -51973,13 +52036,16 @@ function saveSettings(settings) {
 function loadTracks() {
 	const saved = safeReadJson(KEYS.TRACKS, null);
 	if (!saved || !Array.isArray(saved) || saved.length === 0) return SEED_TRACKS;
-	return saved;
+	return saved.map((t) => t.coverUrl && LEGACY_COVER_MAP[t.coverUrl] ? {
+		...t,
+		coverUrl: LEGACY_COVER_MAP[t.coverUrl]
+	} : t);
 }
 function saveTracks(tracks) {
 	const compact = tracks.map((t) => {
 		if (t.coverUrl && t.coverUrl.startsWith("data:") && t.coverUrl.length > 18e4) return {
 			...t,
-			coverUrl: "/src/assets/images/album_nocturne_vinyl_1794587934959.jpg"
+			coverUrl: BUNDLED_COVERS.vinyl
 		};
 		return t;
 	});
@@ -52028,7 +52094,7 @@ var DEFAULT_SESSION = {
 	selectedGenreFilter: null,
 	selectedFolderFilter: null,
 	selectedPlaylistFilter: null,
-	nowPlayingOpen: false,
+	nowPlayingOpen: true,
 	libraryScrollTop: 0,
 	mainScrollTop: 0,
 	updatedAt: 0
@@ -53999,6 +54065,8 @@ var SmartStudioView = ({ user, tracks, smartPlaylists, dailyRecommendations, onS
 		]
 	});
 };
+// src/version.ts
+var APP_VERSION = "v1.2.0";
 // src/components/SettingsCloudView.tsx
 var ACCENTS = [
 	{
@@ -54070,9 +54138,15 @@ var SettingsCloudView = ({ user, settings, cacheStats, syncBusy, syncMessage, on
 		children: [
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 				className: "flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-4",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
-					className: "text-xl font-display font-semibold text-zinc-900 dark:text-zinc-100",
-					children: "Settings & Cloud"
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-baseline gap-2",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+						className: "text-xl font-display font-semibold text-zinc-900 dark:text-zinc-100",
+						children: "Settings & Cloud"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						className: "text-xs font-mono-tabular text-zinc-500 dark:text-zinc-400",
+						children: APP_VERSION
+					})]
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
 					className: "text-sm text-zinc-500 dark:text-zinc-400",
 					children: "Audio quality, appearance, offline storage, and Gmail cloud sync."
@@ -54216,23 +54290,51 @@ var SettingsCloudView = ({ user, settings, cacheStats, syncBusy, syncMessage, on
 								})]
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "flex items-center justify-between py-3 gap-4",
+								className: "py-3 space-y-3",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "flex items-center gap-2.5",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Smartphone, { className: "w-4 h-4 text-zinc-500" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "text-sm font-medium",
-										children: "Floating Homescreen Widget"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "text-xs text-zinc-500 dark:text-zinc-400",
-										children: "Keep a compact mini-controller floating above your workspace."
-									})] })]
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ToggleSwitch, {
-									checked: settings.showHomescreenWidget,
-									label: "Floating Homescreen Widget",
-									onChange: () => {
-										tactile.toggle(!settings.showHomescreenWidget);
-										onUpdateSettings({ showHomescreenWidget: !settings.showHomescreenWidget });
-									}
+									className: "flex items-center justify-between gap-4",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center gap-2.5",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Smartphone, { className: "w-4 h-4 text-zinc-500" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+											className: "text-sm font-medium",
+											children: "Top Floating Player Widget"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+											className: "text-xs text-zinc-500 dark:text-zinc-400",
+											children: "Pin a mini-controller near the top of your screen, or long-press your Android home screen → Widgets → AuraSound (4×1 Top Bar or 4×2 Studio Deck)."
+										})] })]
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ToggleSwitch, {
+										checked: settings.showHomescreenWidget,
+										label: "Top Floating Player Widget",
+										onChange: () => {
+											tactile.toggle(!settings.showHomescreenWidget);
+											onUpdateSettings({ showHomescreenWidget: !settings.showHomescreenWidget });
+										}
+									})]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "flex flex-wrap items-center gap-2 pl-6",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										onClick: () => {
+											tactile.tap();
+											onUpdateSettings({
+												showHomescreenWidget: true,
+												widgetVariant: "top-bar"
+											});
+										},
+										className: `min-h-[36px] px-3 rounded-lg text-xs font-medium border transition-colors ${(settings.widgetVariant || "top-bar") === "top-bar" ? "accent-soft-bg border-amber-500/50" : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"}`,
+										children: "Compact Top Bar (4×1)"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										onClick: () => {
+											tactile.tap();
+											onUpdateSettings({
+												showHomescreenWidget: true,
+												widgetVariant: "studio-deck"
+											});
+										},
+										className: `min-h-[36px] px-3 rounded-lg text-xs font-medium border transition-colors ${settings.widgetVariant === "studio-deck" ? "accent-soft-bg border-amber-500/50" : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"}`,
+										children: "Studio Deck Card (4×2)"
+									})]
 								})]
 							}),
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
@@ -54463,6 +54565,9 @@ var PlayerBar = import_react.memo(({ track, isPlaying, isLoading, shuffle, repea
 		duration: track?.duration || 0
 	});
 	const [dragTime, setDragTime] = (0, import_react.useState)(null);
+	const [liftY, setLiftY] = (0, import_react.useState)(0);
+	const touchStartYRef = (0, import_react.useRef)(null);
+	const swipedRef = (0, import_react.useRef)(false);
 	(0, import_react.useEffect)(() => {
 		return audioEngine.subscribeProgress((state) => {
 			setProgress(state);
@@ -54472,50 +54577,69 @@ var PlayerBar = import_react.memo(({ track, isPlaying, isLoading, shuffle, repea
 	const dur = progress.duration || track.duration || 1;
 	const displayTime = dragTime !== null ? dragTime : progress.currentTime;
 	const pct = Math.min(100, Math.max(0, displayTime / dur * 100));
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("footer", {
-		className: "fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md",
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "relative w-full h-2 group cursor-pointer bg-zinc-200 dark:bg-zinc-800",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				className: "h-full accent-bg transition-[width] duration-75",
-				style: { width: `${pct}%` }
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-				type: "range",
-				"aria-label": "Seek track position",
-				min: 0,
-				max: dur,
-				step: .5,
-				value: Math.min(displayTime, dur),
-				onChange: (e) => {
-					const val = parseFloat(e.target.value);
-					setDragTime(val);
-					audioEngine.seek(val);
-				},
-				onPointerUp: () => setDragTime(null),
-				onKeyUp: () => setDragTime(null),
-				className: "absolute inset-0 w-full h-4 -top-1 opacity-0 cursor-pointer"
-			})]
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "max-w-screen-2xl mx-auto px-3 sm:px-5 h-15 sm:h-[68px] flex items-center justify-between gap-3",
+	const handleTouchStart = (e) => {
+		const target = e.target;
+		if (target.closest("input[type=\"range\"]") || target.closest("button[data-no-swipe=\"true\"]")) {
+			touchStartYRef.current = null;
+			return;
+		}
+		touchStartYRef.current = e.touches[0].clientY;
+		swipedRef.current = false;
+	};
+	const handleTouchMove = (e) => {
+		if (touchStartYRef.current === null) return;
+		const dy = e.touches[0].clientY - touchStartYRef.current;
+		if (dy < 0) {
+			setLiftY(Math.max(-44, dy * .45));
+			if (dy < -36 && !swipedRef.current) {
+				swipedRef.current = true;
+				touchStartYRef.current = null;
+				setLiftY(0);
+				onOpenNowPlaying();
+			}
+		}
+	};
+	const handleTouchEnd = () => {
+		touchStartYRef.current = null;
+		setLiftY(0);
+	};
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("footer", {
+		onTouchStart: handleTouchStart,
+		onTouchMove: handleTouchMove,
+		onTouchEnd: handleTouchEnd,
+		style: {
+			bottom: "calc(1rem + env(safe-area-inset-bottom, 0px))",
+			transform: liftY !== 0 ? `translate3d(0, ${liftY}px, 0)` : void 0
+		},
+		className: "fixed left-2.5 right-2.5 sm:left-4 sm:right-4 z-40 rounded-2xl border border-zinc-200/90 dark:border-zinc-700/80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl shadow-[0_14px_40px_rgba(0,0,0,0.35)] transition-transform duration-150",
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "max-w-screen-2xl mx-auto px-3.5 sm:px-5 pt-2 pb-3.5 space-y-2.5",
 			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					onClick: onOpenNowPlaying,
+					"aria-label": "Slide up or tap to open full screen player",
+					className: "w-full flex flex-col items-center justify-center py-0.5 group cursor-grab active:cursor-grabbing",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-10 h-1 rounded-full bg-zinc-300 dark:bg-zinc-600 group-hover:bg-amber-500 transition-colors" })
+				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "flex items-center gap-3 min-w-0 flex-1 sm:max-w-[34%]",
+					className: "flex items-center justify-between gap-3",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 						type: "button",
 						onClick: onOpenNowPlaying,
-						className: "flex items-center gap-3 min-w-0 text-left group active:scale-[0.99] transition-transform duration-100",
+						className: "flex items-center gap-3 min-w-0 flex-1 text-left group active:scale-[0.99] transition-transform duration-100",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CoverArt, {
 							src: track.coverUrl,
 							alt: track.title,
 							isPlaying,
-							className: "w-11 h-11 sm:w-12 sm:h-12 rounded-lg"
+							className: "w-14 h-14 rounded-xl shadow-sm"
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "min-w-0",
+							className: "min-w-0 flex-1",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-								className: "text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate group-hover:underline",
+								className: "text-sm sm:text-base font-semibold text-zinc-900 dark:text-zinc-100 truncate group-hover:underline",
 								children: track.title
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "text-xs text-zinc-500 dark:text-zinc-400 truncate flex items-center gap-1.5",
+								className: "text-xs text-zinc-500 dark:text-zinc-400 truncate flex items-center gap-1.5 mt-0.5",
 								children: [
 									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 										className: "truncate",
@@ -54526,7 +54650,7 @@ var PlayerBar = import_react.memo(({ track, isPlaying, isLoading, shuffle, repea
 										children: "·"
 									}),
 									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-										className: "font-mono-tabular shrink-0",
+										className: "font-mono-tabular shrink-0 text-[11px]",
 										children: [
 											track.format,
 											" ",
@@ -54539,130 +54663,179 @@ var PlayerBar = import_react.memo(({ track, isPlaying, isLoading, shuffle, repea
 								]
 							})]
 						})]
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-						type: "button",
-						"aria-label": track.favorite ? "Remove from favorites" : "Add to favorites",
-						title: track.favorite ? "Remove from favorites" : "Favorite",
-						onClick: () => onToggleFavorite(track.id),
-						className: "hidden sm:flex min-w-[40px] min-h-[40px] items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-90 transition-transform duration-100",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Heart, { className: `w-4 h-4 transition-colors ${track.favorite ? "fill-rose-500 text-rose-500" : "text-zinc-400"}` })
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center gap-1 shrink-0",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							"data-no-swipe": "true",
+							"aria-label": track.favorite ? "Remove from favorites" : "Add to favorites",
+							title: track.favorite ? "Remove from favorites" : "Favorite",
+							onClick: () => onToggleFavorite(track.id),
+							className: "min-w-[42px] min-h-[42px] flex items-center justify-center rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Heart, { className: `w-5 h-5 transition-colors ${track.favorite ? "fill-rose-500 text-rose-500" : "text-zinc-400"}` })
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "button",
+							"aria-label": "Open Full Player",
+							title: "Slide up to open full player",
+							onClick: onOpenNowPlaying,
+							className: "min-w-[42px] min-h-[42px] px-2.5 flex items-center justify-center gap-1 rounded-xl bg-zinc-100 dark:bg-zinc-800/90 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-zinc-700 active:scale-90 transition-transform duration-100 text-xs font-medium",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronUp, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "hidden xs:inline sm:inline",
+								children: "Player"
+							})]
+						})]
 					})]
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "flex items-center gap-1 sm:gap-2 shrink-0",
+					className: "flex items-center gap-2.5",
 					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							type: "button",
-							"aria-label": "Toggle shuffle",
-							title: shuffle ? "Shuffle On" : "Shuffle Off",
-							onClick: onToggleShuffle,
-							className: `hidden md:flex min-w-[40px] min-h-[40px] items-center justify-center rounded-lg active:scale-90 transition-all duration-100 ${shuffle ? "accent-text bg-zinc-100 dark:bg-zinc-900" : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"}`,
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Shuffle, { className: "w-4 h-4" })
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: "text-[11px] font-mono-tabular text-zinc-500 dark:text-zinc-400 w-9 text-left shrink-0",
+							children: formatDuration(displayTime)
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							type: "button",
-							"aria-label": "Previous track",
-							title: "Previous",
-							onClick: onPrev,
-							className: "min-w-[42px] min-h-[42px] flex items-center justify-center rounded-lg text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-90 transition-transform duration-100",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipBack, { className: "w-5 h-5" })
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "relative flex-1 h-2 rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-visible flex items-center",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "h-full rounded-full accent-bg transition-[width] duration-75",
+								style: { width: `${pct}%` }
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+								type: "range",
+								"aria-label": "Seek track position",
+								min: 0,
+								max: dur,
+								step: .5,
+								value: Math.min(displayTime, dur),
+								onChange: (e) => {
+									const val = parseFloat(e.target.value);
+									setDragTime(val);
+									audioEngine.seek(val);
+								},
+								onPointerUp: () => setDragTime(null),
+								onKeyUp: () => setDragTime(null),
+								className: "absolute inset-0 w-full h-7 -top-2.5 opacity-0 cursor-pointer"
+							})]
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							type: "button",
-							"aria-label": isPlaying ? "Pause" : "Play",
-							title: isPlaying ? "Pause (Space)" : "Play (Space)",
-							onClick: onTogglePlay,
-							className: "min-w-[44px] min-h-[44px] rounded-full accent-bg flex items-center justify-center shadow-sm active:scale-90 transition-transform duration-100",
-							children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" }) : isPlaying ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pause, { className: "w-5 h-5 fill-current" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Play, { className: "w-5 h-5 fill-current ml-0.5" })
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							type: "button",
-							"aria-label": "Next track",
-							title: "Next",
-							onClick: onNext,
-							className: "min-w-[42px] min-h-[42px] flex items-center justify-center rounded-lg text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-90 transition-transform duration-100",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipForward, { className: "w-5 h-5" })
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							type: "button",
-							"aria-label": "Cycle repeat mode",
-							title: `Repeat: ${repeatMode}`,
-							onClick: onCycleRepeat,
-							className: `hidden md:flex min-w-[40px] min-h-[40px] items-center justify-center rounded-lg active:scale-90 transition-all duration-100 ${repeatMode !== "off" ? "accent-text bg-zinc-100 dark:bg-zinc-900" : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"}`,
-							children: repeatMode === "one" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Repeat1, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Repeat, { className: "w-4 h-4" })
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: "text-[11px] font-mono-tabular text-zinc-500 dark:text-zinc-400 w-9 text-right shrink-0",
+							children: formatDuration(dur)
 						})
 					]
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "hidden sm:flex items-center justify-end gap-1.5 flex-1 max-w-[34%]",
+					className: "flex items-center justify-between gap-2 pt-0.5",
 					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-							className: "text-xs font-mono-tabular text-zinc-500 dark:text-zinc-400 mr-2 hidden lg:inline",
-							children: [
-								formatDuration(displayTime),
-								" / ",
-								formatDuration(dur)
-							]
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							type: "button",
-							"aria-label": "Equalizer",
-							title: "Equalizer",
-							onClick: onOpenEqualizer,
-							className: "min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-90 transition-transform duration-100",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SlidersVertical, { className: "w-4 h-4" })
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							type: "button",
-							"aria-label": "Cast audio",
-							title: "Cast & Audio Output",
-							onClick: onOpenCast,
-							className: "min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-90 transition-transform duration-100",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Cast, { className: "w-4 h-4" })
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							type: "button",
-							"aria-label": "Share track",
-							title: "Share",
-							onClick: onOpenShare,
-							className: "hidden md:flex min-w-[40px] min-h-[40px] items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-90 transition-transform duration-100",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Share2, { className: "w-4 h-4" })
-						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "hidden xl:flex items-center gap-1.5 ml-1",
+							className: "flex items-center gap-1",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 								type: "button",
-								"aria-label": volume === 0 ? "Unmute" : "Mute",
-								title: volume === 0 ? "Unmute (M)" : "Mute (M)",
-								onClick: () => {
-									tactile.tap();
-									onChangeVolume(volume === 0 ? .8 : 0);
-								},
-								className: "min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-300 active:scale-90 transition-transform duration-100",
-								children: volume === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(VolumeX, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Volume2, { className: "w-4 h-4" })
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-								type: "range",
-								"aria-label": "Master volume",
-								min: 0,
-								max: 1,
-								step: .01,
-								value: volume,
-								onChange: (e) => onChangeVolume(parseFloat(e.target.value)),
-								className: "w-20 accent-amber-500 cursor-pointer"
+								"data-no-swipe": "true",
+								"aria-label": "Toggle shuffle",
+								title: shuffle ? "Shuffle On" : "Shuffle Off",
+								onClick: onToggleShuffle,
+								className: `min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl active:scale-90 transition-all duration-100 ${shuffle ? "accent-text bg-zinc-100 dark:bg-zinc-800" : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"}`,
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Shuffle, { className: "w-4 h-4" })
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								type: "button",
+								"data-no-swipe": "true",
+								"aria-label": "Equalizer",
+								title: "Equalizer",
+								onClick: onOpenEqualizer,
+								className: "min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SlidersVertical, { className: "w-4 h-4" })
 							})]
 						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							type: "button",
-							"aria-label": "Expand Now Playing",
-							title: "Open Now Playing",
-							onClick: onOpenNowPlaying,
-							className: "min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-90 transition-transform duration-100",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronUp, { className: "w-4 h-4" })
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-2 sm:gap-3",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									"data-no-swipe": "true",
+									"aria-label": "Previous track",
+									title: "Previous",
+									onClick: onPrev,
+									className: "min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipBack, { className: "w-5 h-5" })
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									"data-no-swipe": "true",
+									"aria-label": isPlaying ? "Pause" : "Play",
+									title: isPlaying ? "Pause (Space)" : "Play (Space)",
+									onClick: onTogglePlay,
+									className: "w-12 h-12 rounded-full accent-bg flex items-center justify-center shadow-md active:scale-90 transition-transform duration-100",
+									children: isLoading ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" }) : isPlaying ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pause, { className: "w-5 h-5 fill-current" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Play, { className: "w-5 h-5 fill-current ml-0.5" })
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									"data-no-swipe": "true",
+									"aria-label": "Next track",
+									title: "Next",
+									onClick: onNext,
+									className: "min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-zinc-800 dark:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipForward, { className: "w-5 h-5" })
+								})
+							]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-1",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									"data-no-swipe": "true",
+									"aria-label": "Cycle repeat mode",
+									title: `Repeat: ${repeatMode}`,
+									onClick: onCycleRepeat,
+									className: `min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl active:scale-90 transition-all duration-100 ${repeatMode !== "off" ? "accent-text bg-zinc-100 dark:bg-zinc-800" : "text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"}`,
+									children: repeatMode === "one" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Repeat1, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Repeat, { className: "w-4 h-4" })
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									"data-no-swipe": "true",
+									"aria-label": "Cast audio",
+									title: "Cast & Audio Output",
+									onClick: onOpenCast,
+									className: "min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Cast, { className: "w-4 h-4" })
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									"data-no-swipe": "true",
+									"aria-label": "Share track",
+									title: "Share",
+									onClick: onOpenShare,
+									className: "hidden sm:flex min-w-[40px] min-h-[40px] items-center justify-center rounded-xl text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Share2, { className: "w-4 h-4" })
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "hidden lg:flex items-center gap-1.5 ml-1",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										"data-no-swipe": "true",
+										"aria-label": volume === 0 ? "Unmute" : "Mute",
+										title: volume === 0 ? "Unmute (M)" : "Mute (M)",
+										onClick: () => {
+											tactile.tap();
+											onChangeVolume(volume === 0 ? .8 : 0);
+										},
+										className: "min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-zinc-600 dark:text-zinc-300 active:scale-90 transition-transform duration-100",
+										children: volume === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(VolumeX, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Volume2, { className: "w-4 h-4" })
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+										type: "range",
+										"aria-label": "Master volume",
+										min: 0,
+										max: 1,
+										step: .01,
+										value: volume,
+										onChange: (e) => onChangeVolume(parseFloat(e.target.value)),
+										className: "w-20 accent-amber-500 cursor-pointer"
+									})]
+								})
+							]
 						})
 					]
 				})
 			]
-		})]
+		})
 	});
 });
 // src/components/NowPlayingView.tsx
@@ -54672,9 +54845,15 @@ var NowPlayingView = import_react.memo(({ open, track, nextTrack, isPlaying, shu
 		duration: track?.duration || 0
 	});
 	const [dragTime, setDragTime] = (0, import_react.useState)(null);
+	const [dragOffsetY, setDragOffsetY] = (0, import_react.useState)(0);
+	const [isDraggingSheet, setIsDraggingSheet] = (0, import_react.useState)(false);
 	const canvasRef = (0, import_react.useRef)(null);
+	const scrollRef = (0, import_react.useRef)(null);
+	const touchStartRef = (0, import_react.useRef)(null);
 	(0, import_react.useEffect)(() => {
 		if (!open) return;
+		setDragOffsetY(0);
+		setIsDraggingSheet(false);
 		return audioEngine.subscribeProgress(setProgress);
 	}, [open]);
 	(0, import_react.useEffect)(() => {
@@ -54716,52 +54895,109 @@ var NowPlayingView = import_react.memo(({ open, track, nextTrack, isPlaying, shu
 		isPlaying,
 		lowBatteryMode
 	]);
-	if (!open || !track) return null;
+	if (!track) return null;
 	const dur = progress.duration || track.duration || 1;
 	const displayTime = dragTime !== null ? dragTime : progress.currentTime;
+	const handleTouchStart = (e) => {
+		const target = e.target;
+		if (target.closest("input[type=\"range\"]")) return;
+		const scrollTop = scrollRef.current?.scrollTop || 0;
+		const onHandleArea = Boolean(target.closest("[data-sheet-handle=\"true\"]"));
+		if (scrollTop > 4 && !onHandleArea) return;
+		touchStartRef.current = {
+			y: e.touches[0].clientY,
+			time: performance.now()
+		};
+		setIsDraggingSheet(true);
+	};
+	const handleTouchMove = (e) => {
+		if (!touchStartRef.current) return;
+		const dy = e.touches[0].clientY - touchStartRef.current.y;
+		if (dy > 0) setDragOffsetY(dy);
+		else setDragOffsetY(0);
+	};
+	const handleTouchEnd = () => {
+		if (!touchStartRef.current) {
+			setIsDraggingSheet(false);
+			setDragOffsetY(0);
+			return;
+		}
+		const elapsed = Math.max(16, performance.now() - touchStartRef.current.time);
+		const velocity = dragOffsetY / elapsed;
+		const shouldClose = dragOffsetY > 90 || dragOffsetY > 42 && velocity > .45;
+		touchStartRef.current = null;
+		setIsDraggingSheet(false);
+		setDragOffsetY(0);
+		if (shouldClose) onClose();
+	};
+	const transformValue = open ? `translate3d(0, ${dragOffsetY}px, 0)` : "translate3d(0, 100%, 0)";
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		className: "fixed inset-0 z-50 bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-y-auto",
+		ref: scrollRef,
+		"aria-hidden": !open,
+		onTouchStart: handleTouchStart,
+		onTouchMove: handleTouchMove,
+		onTouchEnd: handleTouchEnd,
+		style: {
+			transform: transformValue,
+			paddingTop: "env(safe-area-inset-top, 0px)",
+			paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom, 0px))"
+		},
+		className: `fixed inset-0 z-50 bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-y-auto ${isDraggingSheet ? "" : "transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"} ${open ? "pointer-events-auto" : "pointer-events-none"}`,
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "flex items-center justify-between px-4 sm:px-8 h-16 border-b border-zinc-200/80 dark:border-zinc-800/80 shrink-0",
-			children: [
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-					type: "button",
-					onClick: onClose,
-					"aria-label": "Minimize Now Playing",
-					className: "min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronDown, { className: "w-5 h-5" })
-				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "text-center min-w-0 px-3",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						className: "text-xs font-medium text-zinc-500 dark:text-zinc-400",
-						children: "Now Playing"
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "text-xs font-mono-tabular text-zinc-700 dark:text-zinc-300 truncate",
+			"data-sheet-handle": "true",
+			className: "sticky top-0 z-10 bg-zinc-50/95 dark:bg-zinc-950/95 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800/80 shrink-0",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "pt-2.5 pb-1 flex justify-center",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-12 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700" })
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex items-center justify-between px-4 sm:px-8 h-14",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+						type: "button",
+						onClick: onClose,
+						"aria-label": "Slide down to Library",
+						className: "min-h-[42px] px-2.5 flex items-center gap-1.5 rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-95 transition-transform duration-100 text-xs font-medium text-zinc-700 dark:text-zinc-200",
 						children: [
-							track.format,
-							" · ",
-							track.bitDepth,
-							"-bit / ",
-							(track.sampleRate / 1e3).toFixed(1),
-							" kHz ·",
-							" ",
-							streamingQuality === "lossless-hires" ? "Bit-Perfect" : streamingQuality
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronDown, { className: "w-5 h-5" }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Library, { className: "w-3.5 h-3.5 opacity-80" }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Library" })
 						]
-					})]
-				}),
-				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-					type: "button",
-					onClick: onOpenShare,
-					"aria-label": "Share current track",
-					className: "min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
-					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Share2, { className: "w-5 h-5" })
-				})
-			]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "text-center min-w-0 px-2",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "text-xs font-medium text-zinc-500 dark:text-zinc-400",
+							children: ["Now Playing · ", /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "font-mono-tabular",
+								children: APP_VERSION
+							})]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "text-[11px] font-mono-tabular text-zinc-700 dark:text-zinc-300 truncate",
+							children: [
+								track.format,
+								" · ",
+								track.bitDepth,
+								"-bit / ",
+								(track.sampleRate / 1e3).toFixed(1),
+								" kHz ·",
+								" ",
+								streamingQuality === "lossless-hires" ? "Bit-Perfect" : streamingQuality
+							]
+						})]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						onClick: onOpenShare,
+						"aria-label": "Share current track",
+						className: "min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Share2, { className: "w-5 h-5" })
+					})
+				]
+			})]
 		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			className: "flex-1 max-w-4xl w-full mx-auto px-5 py-6 sm:py-10 flex flex-col lg:flex-row items-center gap-8 lg:gap-12 justify-center",
+			className: "flex-1 max-w-4xl w-full mx-auto px-5 py-6 sm:py-10 flex flex-col lg:flex-row items-center gap-7 lg:gap-12 justify-center",
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "w-full max-w-[340px] sm:max-w-[380px] flex flex-col items-center gap-4",
+				className: "w-full max-w-[320px] sm:max-w-[380px] flex flex-col items-center gap-4",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CoverArt, {
 					src: track.coverUrl,
 					alt: track.title,
@@ -54969,55 +55205,156 @@ var NowPlayingView = import_react.memo(({ open, track, nextTrack, isPlaying, shu
 	});
 });
 // src/components/HomescreenWidget.tsx
-var HomescreenWidget = import_react.memo(({ visible, track, isPlaying, onTogglePlay, onPrev, onNext, onToggleFavorite, onExpand, onClose }) => {
+var HomescreenWidget = import_react.memo(({ visible, variant = "top-bar", track, isPlaying, onTogglePlay, onPrev, onNext, onToggleFavorite, onChangeVariant, onExpand, onClose }) => {
 	if (!visible || !track) return null;
+	if (variant === "top-bar") return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		role: "region",
+		"aria-label": "Top Bar Compact Widget",
+		style: { top: "calc(4.35rem + env(safe-area-inset-top, 0px))" },
+		className: "fixed left-3 right-3 sm:left-auto sm:right-5 sm:w-[380px] z-35 rounded-2xl border border-zinc-200 dark:border-zinc-700/80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl shadow-xl px-3 py-2 flex items-center gap-2.5",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+			type: "button",
+			onClick: onExpand,
+			className: "flex items-center gap-2.5 min-w-0 flex-1 text-left",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CoverArt, {
+				src: track.coverUrl,
+				alt: track.title,
+				isPlaying,
+				className: "w-10 h-10 rounded-lg"
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "min-w-0 flex-1",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate",
+					children: track.title
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "text-[11px] text-zinc-500 dark:text-zinc-400 truncate",
+					children: track.artist
+				})]
+			})]
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "flex items-center gap-1 shrink-0",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					"aria-label": "Previous",
+					onClick: onPrev,
+					className: "w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipBack, { className: "w-3.5 h-3.5" })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					"aria-label": isPlaying ? "Pause" : "Play",
+					onClick: onTogglePlay,
+					className: "w-9 h-9 rounded-full accent-bg flex items-center justify-center shadow-sm",
+					children: isPlaying ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pause, { className: "w-4 h-4 fill-current" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Play, { className: "w-4 h-4 fill-current ml-0.5" })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					"aria-label": "Next",
+					onClick: onNext,
+					className: "w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipForward, { className: "w-3.5 h-3.5" })
+				}),
+				onChangeVariant && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					"aria-label": "Switch to Studio Deck widget view",
+					title: "Switch widget size",
+					onClick: () => {
+						tactile.tap();
+						onChangeVariant("studio-deck");
+					},
+					className: "w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Layers, { className: "w-3.5 h-3.5" })
+				}),
+				/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					"aria-label": "Hide widget",
+					onClick: onClose,
+					className: "w-8 h-8 flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-3.5 h-3.5" })
+				})
+			]
+		})]
+	});
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		role: "region",
-		"aria-label": "Homescreen Mini Player Widget",
-		className: "fixed bottom-24 right-4 z-30 w-72 sm:w-80 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-xl p-3",
+		"aria-label": "Studio Deck Expanded Widget",
+		style: { top: "calc(4.35rem + env(safe-area-inset-top, 0px))" },
+		className: "fixed left-3 right-3 sm:left-auto sm:right-5 sm:w-[380px] z-35 rounded-2xl border border-amber-500/30 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl shadow-2xl p-3.5 space-y-3",
 		children: [
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "flex items-center justify-between gap-2 mb-2",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-					className: "text-[11px] font-medium text-zinc-500 dark:text-zinc-400",
-					children: "Homescreen Widget"
+				className: "flex items-center justify-between gap-2",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+					className: "text-[11px] font-mono-tabular font-semibold uppercase tracking-wide accent-text",
+					children: [
+						"Studio Deck · ",
+						track.format,
+						" ",
+						track.bitDepth,
+						"b/",
+						Math.round(track.sampleRate / 1e3),
+						"kHz"
+					]
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 					className: "flex items-center gap-1",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-						type: "button",
-						"aria-label": "Expand Now Playing",
-						onClick: onExpand,
-						className: "w-7 h-7 flex items-center justify-center rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Maximize2, { className: "w-3.5 h-3.5" })
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-						type: "button",
-						"aria-label": "Hide widget",
-						onClick: onClose,
-						className: "w-7 h-7 flex items-center justify-center rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-3.5 h-3.5" })
-					})]
+					children: [
+						onChangeVariant && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "button",
+							"aria-label": "Switch to Top Bar compact widget view",
+							title: "Switch to Compact Top Bar",
+							onClick: () => {
+								tactile.tap();
+								onChangeVariant("top-bar");
+							},
+							className: "px-2 h-7 flex items-center gap-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[11px] text-zinc-500 font-medium",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Layers, { className: "w-3 h-3" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "4×1" })]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							"aria-label": "Expand Now Playing",
+							onClick: onExpand,
+							className: "w-7 h-7 flex items-center justify-center rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Maximize2, { className: "w-3.5 h-3.5" })
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							"aria-label": "Hide widget",
+							onClick: onClose,
+							className: "w-7 h-7 flex items-center justify-center rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-3.5 h-3.5" })
+						})
+					]
 				})]
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "flex items-center gap-3",
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+				type: "button",
+				onClick: onExpand,
+				className: "w-full flex items-center gap-3 text-left",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CoverArt, {
 					src: track.coverUrl,
 					alt: track.title,
 					isPlaying,
-					className: "w-12 h-12 rounded-xl"
+					className: "w-16 h-16 rounded-xl shadow-sm"
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 					className: "min-w-0 flex-1",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						className: "text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate",
-						children: track.title
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						className: "text-xs text-zinc-500 dark:text-zinc-400 truncate",
-						children: track.artist
-					})]
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate",
+							children: track.title
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "text-xs text-zinc-600 dark:text-zinc-300 truncate mt-0.5",
+							children: track.artist
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5",
+							children: track.album
+						})
+					]
 				})]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "mt-3 flex items-center justify-between",
+				className: "flex items-center justify-between pt-1 border-t border-zinc-200/80 dark:border-zinc-800/80",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 					type: "button",
 					"aria-label": "Favorite",
@@ -55025,27 +55362,27 @@ var HomescreenWidget = import_react.memo(({ visible, track, isPlaying, onToggleP
 					className: "min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800",
 					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Heart, { className: `w-4 h-4 ${track.favorite ? "fill-rose-500 text-rose-500" : "text-zinc-400"}` })
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "flex items-center gap-1",
+					className: "flex items-center gap-2",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 							type: "button",
 							"aria-label": "Previous",
 							onClick: onPrev,
-							className: "min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800",
+							className: "min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800",
 							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipBack, { className: "w-4 h-4" })
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 							type: "button",
 							"aria-label": isPlaying ? "Pause" : "Play",
 							onClick: onTogglePlay,
-							className: "min-w-[40px] min-h-[40px] rounded-full accent-bg flex items-center justify-center",
-							children: isPlaying ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pause, { className: "w-4 h-4 fill-current" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Play, { className: "w-4 h-4 fill-current ml-0.5" })
+							className: "min-w-[44px] min-h-[44px] rounded-full accent-bg flex items-center justify-center shadow-sm",
+							children: isPlaying ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pause, { className: "w-5 h-5 fill-current" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Play, { className: "w-5 h-5 fill-current ml-0.5" })
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 							type: "button",
 							"aria-label": "Next",
 							onClick: onNext,
-							className: "min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800",
+							className: "min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800",
 							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipForward, { className: "w-4 h-4" })
 						})
 					]
@@ -55464,10 +55801,48 @@ function useOnlineStatus() {
 var OfflineIndicator = () => {
 	if (useOnlineStatus()) return null;
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		className: "fixed bottom-24 left-4 z-30 flex items-center gap-2 rounded-xl border border-amber-500/40 bg-zinc-900/95 px-3 py-2 text-xs font-medium text-amber-300 shadow-lg backdrop-blur-md",
+		className: "fixed bottom-44 left-4 z-30 flex items-center gap-2 rounded-xl border border-amber-500/40 bg-zinc-900/95 px-3 py-2 text-xs font-medium text-amber-300 shadow-lg backdrop-blur-md",
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(WifiOff, { className: "w-3.5 h-3.5 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Offline — Playing cached library" })]
 	});
 };
+// src/services/nativeWidget.ts
+var AuraWidget = registerPlugin("AuraWidget");
+function isAndroidNative() {
+	return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
+}
+async function syncNativeWidgets(track, isPlaying) {
+	if (!isAndroidNative()) return;
+	try {
+		await AuraWidget.syncState({
+			title: track?.title || "AuraSound Hi-Fi",
+			artist: track?.artist || "Tap to browse library",
+			album: track?.album || "Local Studio Library",
+			formatBadge: track ? `AURASOUND · ${track.format} ${track.bitDepth}b/${Math.round(track.sampleRate / 1e3)}kHz` : "AURASOUND · HI-FI",
+			isPlaying
+		});
+	} catch {}
+}
+function subscribeNativeWidgetActions(onAction) {
+	if (!isAndroidNative()) return () => {};
+	let active = true;
+	let handle = null;
+	const dispatchIfValid = (raw) => {
+		if (raw === "prev" || raw === "toggle" || raw === "next") onAction(raw);
+	};
+	AuraWidget.consumePendingAction().then((res) => {
+		if (active) dispatchIfValid(res?.action);
+	}).catch(() => {});
+	AuraWidget.addListener("widgetAction", (payload) => {
+		if (active) dispatchIfValid(payload?.action);
+	}).then((h) => {
+		if (active) handle = h;
+		else h.remove();
+	}).catch(() => {});
+	return () => {
+		active = false;
+		if (handle) handle.remove();
+	};
+}
 // src/App.tsx
 var NAV_GROUPS = [
 	{
@@ -55560,7 +55935,7 @@ function App() {
 	const [isPlaying, setIsPlaying] = (0, import_react.useState)(false);
 	const [isLoadingAudio, setIsLoadingAudio] = (0, import_react.useState)(false);
 	const [audioError, setAudioError] = (0, import_react.useState)(null);
-	const [nowPlayingOpen, setNowPlayingOpen] = (0, import_react.useState)(() => Boolean(initialSessionRef.current?.nowPlayingOpen));
+	const [nowPlayingOpen, setNowPlayingOpen] = (0, import_react.useState)(true);
 	const [castOpen, setCastOpen] = (0, import_react.useState)(false);
 	const [shareOpen, setShareOpen] = (0, import_react.useState)(false);
 	const [importingFiles, setImportingFiles] = (0, import_react.useState)(false);
@@ -55886,6 +56261,20 @@ function App() {
 		currentTrack,
 		visibleTracks,
 		playTrack
+	]);
+	(0, import_react.useEffect)(() => {
+		syncNativeWidgets(currentTrack, isPlaying);
+	}, [currentTrack, isPlaying]);
+	(0, import_react.useEffect)(() => {
+		return subscribeNativeWidgetActions((action) => {
+			if (action === "prev") handlePrev();
+			else if (action === "next") handleNext();
+			else if (action === "toggle") handleTogglePlayPause();
+		});
+	}, [
+		handlePrev,
+		handleNext,
+		handleTogglePlayPause
 	]);
 	(0, import_react.useEffect)(() => {
 		const handleKeyDown = (e) => {
@@ -56281,55 +56670,65 @@ function App() {
 				},
 				className: "hidden"
 			}),
-			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
-				className: "sticky top-0 z-30 h-14 sm:h-16 border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between gap-4 sm:gap-8",
-				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-						className: "text-lg font-display font-bold tracking-tight whitespace-nowrap shrink-0",
-						children: "AuraSound"
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "relative flex-1 max-w-md",
-						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Search, { className: "w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" }),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-								type: "search",
-								value: searchQuery,
-								onChange: (e) => setSearchQuery(e.target.value),
-								placeholder: "Search songs, artists, Lithuanian or Cyrillic...",
-								"aria-label": "Search library",
-								className: "w-full min-h-[40px] pl-9 pr-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40"
-							}),
-							searchQuery && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("header", {
+				style: { paddingTop: "env(safe-area-inset-top, 0px)" },
+				className: "sticky top-0 z-30 border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md px-4 sm:px-6",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "py-2.5 sm:py-0 sm:h-16 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 sm:gap-8",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-baseline gap-1.5 whitespace-nowrap shrink-0",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "text-lg font-display font-bold tracking-tight",
+								children: "AuraSound"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "text-[11px] font-mono-tabular text-zinc-500 dark:text-zinc-400",
+								children: APP_VERSION
+							})]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "relative order-last sm:order-none basis-full sm:basis-auto sm:flex-1 sm:max-w-md",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Search, { className: "w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" }),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+									type: "search",
+									value: searchQuery,
+									onChange: (e) => setSearchQuery(e.target.value),
+									placeholder: "Search songs, artists, Lithuanian or Cyrillic...",
+									"aria-label": "Search library",
+									className: "w-full min-h-[40px] pl-9 pr-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+								}),
+								searchQuery && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									"aria-label": "Clear search",
+									onClick: () => {
+										tactile.tap();
+										setSearchQuery("");
+									},
+									className: "absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-600",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-3.5 h-3.5" })
+								})
+							]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-2 shrink-0",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(PWAInstallButton, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 								type: "button",
-								"aria-label": "Clear search",
 								onClick: () => {
 									tactile.tap();
-									setSearchQuery("");
+									if (isNativeAndroidApp()) handleScanNativeAndroid(false);
+									else filesInputRef.current?.click();
 								},
-								className: "absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-600",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-3.5 h-3.5" })
-							})
-						]
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex items-center gap-2 shrink-0",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(PWAInstallButton, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-							type: "button",
-							onClick: () => {
-								tactile.tap();
-								if (isNativeAndroidApp()) handleScanNativeAndroid(false);
-								else filesInputRef.current?.click();
-							},
-							disabled: importingFiles,
-							className: "min-h-[40px] px-3.5 sm:px-4 py-2 rounded-lg accent-bg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0",
-							children: [isNativeAndroidApp() ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FolderOpen, { className: "w-3.5 h-3.5" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Upload, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: importingFiles ? "Scanning..." : isNativeAndroidApp() ? "Scan Music" : "Add Audio" })]
-						})]
-					})
-				]
+								disabled: importingFiles,
+								className: "min-h-[40px] px-3.5 sm:px-4 py-2 rounded-lg accent-bg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0",
+								children: [isNativeAndroidApp() ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FolderOpen, { className: "w-3.5 h-3.5" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Upload, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: importingFiles ? "Scanning..." : isNativeAndroidApp() ? "Scan Music" : "Add Audio" })]
+							})]
+						})
+					]
+				})
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "flex-1 flex min-h-0 pb-20 sm:pb-24",
+				className: "flex-1 flex min-h-0 pb-44 sm:pb-48",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("aside", {
 					className: "hidden md:flex flex-col justify-between w-60 shrink-0 border-r border-zinc-200 dark:border-zinc-800 p-4 bg-white/50 dark:bg-zinc-950",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
@@ -56609,12 +57008,14 @@ function App() {
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(HomescreenWidget, {
 				visible: settings.showHomescreenWidget,
+				variant: settings.widgetVariant || "top-bar",
 				track: currentTrack,
 				isPlaying,
 				onTogglePlay: () => void handleTogglePlayPause(),
 				onPrev: handlePrev,
 				onNext: handleNext,
 				onToggleFavorite: handleToggleFavorite,
+				onChangeVariant: (variant) => updateSettings({ widgetVariant: variant }),
 				onExpand: () => {
 					tactile.sheet(true);
 					setNowPlayingOpen(true);

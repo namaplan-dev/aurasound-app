@@ -4,4 +4,8 @@
     <string name="title_activity_main">AuraSound</string>
     <string name="package_name">com.aurasound.player</string>
     <string name="custom_url_scheme">com.aurasound.player</string>
+    <string name="widget_mini_label">AuraSound Top Bar (4×1)</string>
+    <string name="widget_mini_desc">Compact bar for the top of your home screen with track info and quick controls.</string>
+    <string name="widget_studio_label">AuraSound Studio Deck (4×2)</string>
+    <string name="widget_studio_desc">Expanded Hi-Fi widget showing format quality, album details, and full playback controls.</string>
 </resources>

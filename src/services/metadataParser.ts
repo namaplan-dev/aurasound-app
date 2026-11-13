@@ -1,7 +1,8 @@
 import { Track } from '../types/music';
 import { hasGarbledMojibake, repairMojibakeText } from '../utils/textNormalization';
+import defaultVinylCover from '../assets/images/album_nocturne_vinyl_1794587934959.jpg';
 
-const DEFAULT_FALLBACK_COVER = '/src/assets/images/album_nocturne_vinyl_1794587934959.jpg';
+const DEFAULT_FALLBACK_COVER = defaultVinylCover;
 
 function readSynchsafeInt(bytes: Uint8Array, offset: number): number {
   return (

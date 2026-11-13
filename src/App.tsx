@@ -75,6 +75,11 @@ import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { tactile } from './services/tactileFeedback';
 import { isNativeAndroidApp, scanAndroidDeviceLibrary } from './services/nativeScanner';
+import {
+  subscribeNativeWidgetActions,
+  syncNativeWidgets,
+} from './services/nativeWidget';
+import { APP_VERSION } from './version';
 
 interface NavItem {
   id: NavigationTab;
@@ -167,10 +172,8 @@ export default function App() {
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
 
-  // Overlays & Modals
-  const [nowPlayingOpen, setNowPlayingOpen] = useState<boolean>(
-    () => Boolean(initialSessionRef.current?.nowPlayingOpen)
-  );
+  // Overlays & Modals — default to nice full-screen Player View on app open
+  const [nowPlayingOpen, setNowPlayingOpen] = useState<boolean>(true);
   const [castOpen, setCastOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -569,6 +572,20 @@ export default function App() {
     tactile.playAction(willPlay);
     await audioEngine.togglePlayPause();
   }, [currentTrack, visibleTracks, playTrack]);
+
+  // Sync live track & playback state to both Android home screen widgets
+  useEffect(() => {
+    void syncNativeWidgets(currentTrack, isPlaying);
+  }, [currentTrack, isPlaying]);
+
+  // Receive Play/Pause/Prev/Next taps from Android home screen widgets
+  useEffect(() => {
+    return subscribeNativeWidgetActions((action) => {
+      if (action === 'prev') handlePrev();
+      else if (action === 'next') handleNext();
+      else if (action === 'toggle') void handleTogglePlayPause();
+    });
+  }, [handlePrev, handleNext, handleTogglePlayPause]);
 
   // Global keyboard shortcuts (Space = Play/Pause, Arrows = Seek/Skip, M = Mute)
   useEffect(() => {
@@ -1089,65 +1106,75 @@ export default function App() {
       />
 
       {/* Top Bar (Clean 3-Zone Contract: Brand — Search — Primary Action) */}
-      <header className="sticky top-0 z-30 h-14 sm:h-16 border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between gap-4 sm:gap-8">
-        <span className="text-lg font-display font-bold tracking-tight whitespace-nowrap shrink-0">
-          AuraSound
-        </span>
+      <header
+        style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+        className="sticky top-0 z-30 border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md px-4 sm:px-6"
+      >
+        <div className="py-2.5 sm:py-0 sm:h-16 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 sm:gap-8">
+          <div className="flex items-baseline gap-1.5 whitespace-nowrap shrink-0">
+            <span className="text-lg font-display font-bold tracking-tight">
+              AuraSound
+            </span>
+            <span className="text-[11px] font-mono-tabular text-zinc-500 dark:text-zinc-400">
+              {APP_VERSION}
+            </span>
+          </div>
 
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search songs, artists, Lithuanian or Cyrillic..."
-            aria-label="Search library"
-            className="w-full min-h-[40px] pl-9 pr-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40"
-          />
-          {searchQuery && (
+          <div className="relative order-last sm:order-none basis-full sm:basis-auto sm:flex-1 sm:max-w-md">
+            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search songs, artists, Lithuanian or Cyrillic..."
+              aria-label="Search library"
+              className="w-full min-h-[40px] pl-9 pr-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                aria-label="Clear search"
+                onClick={() => {
+                  tactile.tap();
+                  setSearchQuery('');
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <PWAInstallButton />
             <button
               type="button"
-              aria-label="Clear search"
               onClick={() => {
                 tactile.tap();
-                setSearchQuery('');
+                if (isNativeAndroidApp()) {
+                  void handleScanNativeAndroid(false);
+                } else {
+                  filesInputRef.current?.click();
+                }
               }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-600"
+              disabled={importingFiles}
+              className="min-h-[40px] px-3.5 sm:px-4 py-2 rounded-lg accent-bg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0"
             >
-              <X className="w-3.5 h-3.5" />
+              {isNativeAndroidApp() ? <FolderOpen className="w-3.5 h-3.5" /> : <Upload className="w-3.5 h-3.5" />}
+              <span>
+                {importingFiles
+                  ? 'Scanning...'
+                  : isNativeAndroidApp()
+                  ? 'Scan Music'
+                  : 'Add Audio'}
+              </span>
             </button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <PWAInstallButton />
-          <button
-            type="button"
-            onClick={() => {
-              tactile.tap();
-              if (isNativeAndroidApp()) {
-                void handleScanNativeAndroid(false);
-              } else {
-                filesInputRef.current?.click();
-              }
-            }}
-            disabled={importingFiles}
-            className="min-h-[40px] px-3.5 sm:px-4 py-2 rounded-lg accent-bg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0"
-          >
-            {isNativeAndroidApp() ? <FolderOpen className="w-3.5 h-3.5" /> : <Upload className="w-3.5 h-3.5" />}
-            <span>
-              {importingFiles
-                ? 'Scanning...'
-                : isNativeAndroidApp()
-                ? 'Scan Music'
-                : 'Add Audio'}
-            </span>
-          </button>
+          </div>
         </div>
       </header>
 
       {/* Main Workspace (Sidebar + Viewport) */}
-      <div className="flex-1 flex min-h-0 pb-20 sm:pb-24">
+      <div className="flex-1 flex min-h-0 pb-44 sm:pb-48">
         {/* Desktop Sidebar */}
         <aside className="hidden md:flex flex-col justify-between w-60 shrink-0 border-r border-zinc-200 dark:border-zinc-800 p-4 bg-white/50 dark:bg-zinc-950">
           <div className="space-y-5">
@@ -1469,15 +1496,17 @@ export default function App() {
         </main>
       </div>
 
-      {/* Floating Homescreen Widget */}
+      {/* Floating Homescreen Widget (2 Sizes & Top-of-Screen Views) */}
       <HomescreenWidget
         visible={settings.showHomescreenWidget}
+        variant={settings.widgetVariant || 'top-bar'}
         track={currentTrack}
         isPlaying={isPlaying}
         onTogglePlay={() => void handleTogglePlayPause()}
         onPrev={handlePrev}
         onNext={handleNext}
         onToggleFavorite={handleToggleFavorite}
+        onChangeVariant={(variant) => updateSettings({ widgetVariant: variant })}
         onExpand={() => {
           tactile.sheet(true);
           setNowPlayingOpen(true);

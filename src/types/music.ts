@@ -117,6 +117,7 @@ export interface AppSettings {
   lowBatteryMode: boolean;
   autoPlayBluetooth: boolean;
   showHomescreenWidget: boolean;
+  widgetVariant?: 'top-bar' | 'studio-deck';
   masterVolume: number; // 0 to 1
   eqEnabled: boolean;
   activeEqPresetId: string;

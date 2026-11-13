@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_mini_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg_dark"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="12dp"
+    android:paddingEnd="10dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <ImageView
+        android:id="@+id/widget_mini_art"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:contentDescription="AuraSound"
+        android:scaleType="centerCrop"
+        android:src="@mipmap/ic_launcher_round" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="8dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/widget_mini_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:text="AuraSound Hi-Fi"
+            android:textColor="#FAFAFA"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/widget_mini_artist"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:text="Tap to open player"
+            android:textColor="#A1A1AA"
+            android:textSize="11sp" />
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/widget_mini_prev"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:layout_marginEnd="4dp"
+        android:background="@drawable/widget_btn_subtle"
+        android:contentDescription="Previous track"
+        android:padding="7dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_widget_prev" />
+
+    <ImageButton
+        android:id="@+id/widget_mini_play"
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:layout_marginEnd="4dp"
+        android:background="@drawable/widget_btn_accent"
+        android:contentDescription="Play or pause"
+        android:padding="8dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_widget_play" />
+
+    <ImageButton
+        android:id="@+id/widget_mini_next"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:background="@drawable/widget_btn_subtle"
+        android:contentDescription="Next track"
+        android:padding="7dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_widget_next" />
+</LinearLayout>

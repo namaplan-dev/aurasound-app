@@ -41,6 +41,11 @@
   --accent-soft: rgba(71, 85, 105, 0.16);
 }
 
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 body {
   font-family: var(--font-sans);
   overflow-x: hidden;

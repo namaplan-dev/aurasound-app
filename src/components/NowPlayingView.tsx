@@ -3,6 +3,7 @@ import {
   Cast,
   ChevronDown,
   Heart,
+  Library,
   Pause,
   Play,
   Repeat,
@@ -21,6 +22,7 @@ import { audioEngine } from '../services/audioEngine';
 import { formatDuration } from '../utils/textNormalization';
 import { CoverArt } from './CoverArt';
 import { tactile } from '../services/tactileFeedback';
+import { APP_VERSION } from '../version';
 
 interface NowPlayingViewProps {
   open: boolean;
@@ -76,10 +78,17 @@ export const NowPlayingView: React.FC<NowPlayingViewProps> = React.memo(
   }) => {
     const [progress, setProgress] = useState({ currentTime: 0, duration: track?.duration || 0 });
     const [dragTime, setDragTime] = useState<number | null>(null);
+    const [dragOffsetY, setDragOffsetY] = useState(0);
+    const [isDraggingSheet, setIsDraggingSheet] = useState(false);
+
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const scrollRef = useRef<HTMLDivElement | null>(null);
+    const touchStartRef = useRef<{ y: number; time: number } | null>(null);
 
     useEffect(() => {
       if (!open) return;
+      setDragOffsetY(0);
+      setIsDraggingSheet(false);
       return audioEngine.subscribeProgress(setProgress);
     }, [open]);
 
@@ -124,45 +133,114 @@ export const NowPlayingView: React.FC<NowPlayingViewProps> = React.memo(
       return () => cancelAnimationFrame(rafId);
     }, [open, isPlaying, lowBatteryMode]);
 
-    if (!open || !track) return null;
+    if (!track) return null;
 
     const dur = progress.duration || track.duration || 1;
     const displayTime = dragTime !== null ? dragTime : progress.currentTime;
 
+    const handleTouchStart = (e: React.TouchEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('input[type="range"]')) return;
+      const scrollTop = scrollRef.current?.scrollTop || 0;
+      const onHandleArea = Boolean(target.closest('[data-sheet-handle="true"]'));
+      if (scrollTop > 4 && !onHandleArea) return;
+      touchStartRef.current = { y: e.touches[0].clientY, time: performance.now() };
+      setIsDraggingSheet(true);
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+      if (!touchStartRef.current) return;
+      const dy = e.touches[0].clientY - touchStartRef.current.y;
+      if (dy > 0) {
+        setDragOffsetY(dy);
+      } else {
+        setDragOffsetY(0);
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (!touchStartRef.current) {
+        setIsDraggingSheet(false);
+        setDragOffsetY(0);
+        return;
+      }
+      const elapsed = Math.max(16, performance.now() - touchStartRef.current.time);
+      const velocity = dragOffsetY / elapsed;
+      const shouldClose = dragOffsetY > 90 || (dragOffsetY > 42 && velocity > 0.45);
+      touchStartRef.current = null;
+      setIsDraggingSheet(false);
+      setDragOffsetY(0);
+      if (shouldClose) {
+        onClose();
+      }
+    };
+
+    const transformValue = open
+      ? `translate3d(0, ${dragOffsetY}px, 0)`
+      : 'translate3d(0, 100%, 0)';
+
     return (
-      <div className="fixed inset-0 z-50 bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 sm:px-8 h-16 border-b border-zinc-200/80 dark:border-zinc-800/80 shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Minimize Now Playing"
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100"
-          >
-            <ChevronDown className="w-5 h-5" />
-          </button>
-
-          <div className="text-center min-w-0 px-3">
-            <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Now Playing</div>
-            <div className="text-xs font-mono-tabular text-zinc-700 dark:text-zinc-300 truncate">
-              {track.format} · {track.bitDepth}-bit / {(track.sampleRate / 1000).toFixed(1)} kHz ·{' '}
-              {streamingQuality === 'lossless-hires' ? 'Bit-Perfect' : streamingQuality}
-            </div>
+      <div
+        ref={scrollRef}
+        aria-hidden={!open}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{
+          transform: transformValue,
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))',
+        }}
+        className={`fixed inset-0 z-50 bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-y-auto ${
+          isDraggingSheet
+            ? ''
+            : 'transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]'
+        } ${open ? 'pointer-events-auto' : 'pointer-events-none'}`}
+      >
+        {/* Top Drag Handle Pill + Header */}
+        <div
+          data-sheet-handle="true"
+          className="sticky top-0 z-10 bg-zinc-50/95 dark:bg-zinc-950/95 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800/80 shrink-0"
+        >
+          <div className="pt-2.5 pb-1 flex justify-center">
+            <span className="w-12 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
           </div>
+          <div className="flex items-center justify-between px-4 sm:px-8 h-14">
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Slide down to Library"
+              className="min-h-[42px] px-2.5 flex items-center gap-1.5 rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-95 transition-transform duration-100 text-xs font-medium text-zinc-700 dark:text-zinc-200"
+            >
+              <ChevronDown className="w-5 h-5" />
+              <Library className="w-3.5 h-3.5 opacity-80" />
+              <span>Library</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={onOpenShare}
-            aria-label="Share current track"
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100"
-          >
-            <Share2 className="w-5 h-5" />
-          </button>
+            <div className="text-center min-w-0 px-2">
+              <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                Now Playing · <span className="font-mono-tabular">{APP_VERSION}</span>
+              </div>
+              <div className="text-[11px] font-mono-tabular text-zinc-700 dark:text-zinc-300 truncate">
+                {track.format} · {track.bitDepth}-bit / {(track.sampleRate / 1000).toFixed(1)} kHz ·{' '}
+                {streamingQuality === 'lossless-hires' ? 'Bit-Perfect' : streamingQuality}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={onOpenShare}
+              aria-label="Share current track"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100"
+            >
+              <Share2 className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 max-w-4xl w-full mx-auto px-5 py-6 sm:py-10 flex flex-col lg:flex-row items-center gap-8 lg:gap-12 justify-center">
-          <div className="w-full max-w-[340px] sm:max-w-[380px] flex flex-col items-center gap-4">
+        <div className="flex-1 max-w-4xl w-full mx-auto px-5 py-6 sm:py-10 flex flex-col lg:flex-row items-center gap-7 lg:gap-12 justify-center">
+          <div className="w-full max-w-[320px] sm:max-w-[380px] flex flex-col items-center gap-4">
             <CoverArt
               src={track.coverUrl}
               alt={track.title}

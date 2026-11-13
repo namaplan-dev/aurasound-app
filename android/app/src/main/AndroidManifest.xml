@@ -33,6 +33,40 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <receiver
+            android:name=".AuraWidgetMiniProvider"
+            android:exported="true"
+            android:label="@string/widget_mini_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_aurasound_mini_info" />
+        </receiver>
+
+        <receiver
+            android:name=".AuraWidgetLargeProvider"
+            android:exported="true"
+            android:label="@string/widget_studio_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_aurasound_studio_info" />
+        </receiver>
+
+        <receiver
+            android:name=".WidgetActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.aurasound.player.ACTION_WIDGET_PREV" />
+                <action android:name="com.aurasound.player.ACTION_WIDGET_TOGGLE" />
+                <action android:name="com.aurasound.player.ACTION_WIDGET_NEXT" />
+            </intent-filter>
+        </receiver>
     </application>
 
     <!-- Permissions -->

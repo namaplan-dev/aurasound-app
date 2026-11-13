@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { AppSettings, StreamingQuality, ThemeAccent } from '../types/music';
 import { tactile } from '../services/tactileFeedback';
+import { APP_VERSION } from '../version';
 
 type SettingsSection = 'all' | 'audio' | 'appearance' | 'storage' | 'cloud';
 
@@ -104,9 +105,14 @@ export const SettingsCloudView: React.FC<SettingsCloudViewProps> = ({
       {/* Header + Segmented Quick Filter */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 dark:border-zinc-800 pb-4">
         <div>
-          <h2 className="text-xl font-display font-semibold text-zinc-900 dark:text-zinc-100">
-            Settings & Cloud
-          </h2>
+          <div className="flex items-baseline gap-2">
+            <h2 className="text-xl font-display font-semibold text-zinc-900 dark:text-zinc-100">
+              Settings & Cloud
+            </h2>
+            <span className="text-xs font-mono-tabular text-zinc-500 dark:text-zinc-400">
+              {APP_VERSION}
+            </span>
+          </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Audio quality, appearance, offline storage, and Gmail cloud sync.
           </p>
@@ -254,24 +260,57 @@ export const SettingsCloudView: React.FC<SettingsCloudViewProps> = ({
               />
             </div>
 
-            <div className="flex items-center justify-between py-3 gap-4">
-              <div className="flex items-center gap-2.5">
-                <Smartphone className="w-4 h-4 text-zinc-500" />
-                <div>
-                  <div className="text-sm font-medium">Floating Homescreen Widget</div>
-                  <div className="text-xs text-zinc-500 dark:text-zinc-400">
-                    Keep a compact mini-controller floating above your workspace.
+            <div className="py-3 space-y-3">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2.5">
+                  <Smartphone className="w-4 h-4 text-zinc-500" />
+                  <div>
+                    <div className="text-sm font-medium">Top Floating Player Widget</div>
+                    <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Pin a mini-controller near the top of your screen, or long-press your Android home screen → Widgets → AuraSound (4×1 Top Bar or 4×2 Studio Deck).
+                    </div>
                   </div>
                 </div>
+                <ToggleSwitch
+                  checked={settings.showHomescreenWidget}
+                  label="Top Floating Player Widget"
+                  onChange={() => {
+                    tactile.toggle(!settings.showHomescreenWidget);
+                    onUpdateSettings({ showHomescreenWidget: !settings.showHomescreenWidget });
+                  }}
+                />
               </div>
-              <ToggleSwitch
-                checked={settings.showHomescreenWidget}
-                label="Floating Homescreen Widget"
-                onChange={() => {
-                  tactile.toggle(!settings.showHomescreenWidget);
-                  onUpdateSettings({ showHomescreenWidget: !settings.showHomescreenWidget });
-                }}
-              />
+
+              <div className="flex flex-wrap items-center gap-2 pl-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    tactile.tap();
+                    onUpdateSettings({ showHomescreenWidget: true, widgetVariant: 'top-bar' });
+                  }}
+                  className={`min-h-[36px] px-3 rounded-lg text-xs font-medium border transition-colors ${
+                    (settings.widgetVariant || 'top-bar') === 'top-bar'
+                      ? 'accent-soft-bg border-amber-500/50'
+                      : 'border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  Compact Top Bar (4×1)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    tactile.tap();
+                    onUpdateSettings({ showHomescreenWidget: true, widgetVariant: 'studio-deck' });
+                  }}
+                  className={`min-h-[36px] px-3 rounded-lg text-xs font-medium border transition-colors ${
+                    settings.widgetVariant === 'studio-deck'
+                      ? 'accent-soft-bg border-amber-500/50'
+                      : 'border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  Studio Deck Card (4×2)
+                </button>
+              </div>
             </div>
 
             <div className="flex items-center justify-between py-3 gap-4">

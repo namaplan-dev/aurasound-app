@@ -7,6 +7,11 @@ import {
   Track,
 } from '../types/music';
 import { createTrackFingerprint } from '../services/metadataParser';
+import vinylCover from '../assets/images/album_nocturne_vinyl_1794587934959.jpg';
+import balticCover from '../assets/images/album_baltic_ambient_1794587935576.jpg';
+import tubeCover from '../assets/images/album_analog_synth_1794587936966.jpg';
+import jazzCover from '../assets/images/album_jazz_quartet_1794587935839.jpg';
+import atriumCover from '../assets/images/album_acoustic_atrium_1794587935664.jpg';
 
 export const EQ_FREQUENCIES = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 
@@ -81,6 +86,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   lowBatteryMode: false,
   autoPlayBluetooth: true,
   showHomescreenWidget: false,
+  widgetVariant: 'top-bar',
   masterVolume: 0.8,
   eqEnabled: true,
   activeEqPresetId: 'flat',
@@ -93,13 +99,15 @@ export const DEFAULT_SETTINGS: AppSettings = {
   hapticFeedback: true,
 };
 
-const COVERS = {
-  vinyl: '/src/assets/images/album_nocturne_vinyl_1794587934959.jpg',
-  baltic: '/src/assets/images/album_baltic_ambient_1794587935576.jpg',
-  tube: '/src/assets/images/album_analog_synth_1794587936966.jpg',
-  jazz: '/src/assets/images/album_jazz_quartet_1794587935839.jpg',
-  atrium: '/src/assets/images/album_acoustic_atrium_1794587935664.jpg',
+export const BUNDLED_COVERS = {
+  vinyl: vinylCover,
+  baltic: balticCover,
+  tube: tubeCover,
+  jazz: jazzCover,
+  atrium: atriumCover,
 };
+
+const COVERS = BUNDLED_COVERS;
 
 function makeSeedTrack(
   partial: Omit<Track, 'fingerprint' | 'addedAt'>

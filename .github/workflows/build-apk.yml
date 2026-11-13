@@ -52,25 +52,32 @@ jobs:
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
 
+      - name: Read app version
+        id: meta
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          echo "apk_name=AuraSound-v${VER}-b${{ github.run_number }}.apk" >> "$GITHUB_OUTPUT"
+
       - name: Prepare APK output
         run: |
           mkdir -p release-apk
-          cp android/app/build/outputs/apk/debug/app-debug.apk release-apk/AuraSound-Android.apk
-          ls -lh release-apk/AuraSound-Android.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk "release-apk/${{ steps.meta.outputs.apk_name }}"
+          ls -lh "release-apk/${{ steps.meta.outputs.apk_name }}"
 
       - name: Upload APK build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AuraSound-Android-APK
-          path: release-apk/AuraSound-Android.apk
+          name: AuraSound-v${{ steps.meta.outputs.version }}-b${{ github.run_number }}-APK
+          path: release-apk/${{ steps.meta.outputs.apk_name }}
           if-no-files-found: error
 
-      - name: Publish direct download APK to GitHub Releases
+      - name: Publish versioned APK to GitHub Releases
         uses: softprops/action-gh-release@v2
         continue-on-error: true
         with:
-          tag_name: latest-apk
-          name: AuraSound Latest Android APK
-          body: Standalone AuraSound Android APK with native local device music scanning, 10-band EQ, lossless FLAC/WAV playback, offline cache, and cloud sync.
-          files: release-apk/AuraSound-Android.apk
+          tag_name: v${{ steps.meta.outputs.version }}-b${{ github.run_number }}
+          name: AuraSound v${{ steps.meta.outputs.version }} (Build #${{ github.run_number }})
+          body: Standalone AuraSound Android APK v${{ steps.meta.outputs.version }} (Build #${{ github.run_number }}) with safe-area screen fit, taller floating bottom player, default slide-up/down full-screen player, 2 home screen widgets (4×1 Top Bar & 4×2 Studio Deck), and native local music scanning.
+          files: release-apk/${{ steps.meta.outputs.apk_name }}
           make_latest: true

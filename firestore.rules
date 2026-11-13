@@ -1,0 +1,143 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedOwner(userId) {
+      return isSignedIn()
+        && request.auth.uid == userId
+        && request.auth.token.email_verified == true;
+    }
+
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'updatedAt'])
+        && data.uid is string
+        && data.uid == userId
+        && isValidId(data.uid)
+        && data.email is string
+        && data.email.size() >= 3
+        && data.email.size() <= 256
+        && data.displayName is string
+        && data.displayName.size() <= 120
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCloudBackup(data, userId) {
+      return data.keys().hasAll([
+          'ownerId',
+          'settings',
+          'eqPresets',
+          'playlists',
+          'smartPlaylists',
+          'trackPrefs',
+          'dailyRecommendations',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerId',
+          'settings',
+          'eqPresets',
+          'playlists',
+          'smartPlaylists',
+          'trackPrefs',
+          'dailyRecommendations',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.ownerId is string
+        && data.ownerId == userId
+        && isValidId(data.ownerId)
+        && data.settings is map
+        && data.settings.keys().size() <= 35
+        && data.eqPresets is list
+        && data.eqPresets.size() <= 40
+        && (data.eqPresets.size() == 0 || data.eqPresets[0] is map)
+        && data.playlists is list
+        && data.playlists.size() <= 80
+        && (data.playlists.size() == 0 || data.playlists[0] is map)
+        && data.smartPlaylists is list
+        && data.smartPlaylists.size() <= 50
+        && (data.smartPlaylists.size() == 0 || data.smartPlaylists[0] is map)
+        && data.trackPrefs is list
+        && data.trackPrefs.size() <= 500
+        && (data.trackPrefs.size() == 0 || data.trackPrefs[0] is map)
+        && data.dailyRecommendations is list
+        && data.dailyRecommendations.size() <= 12
+        && (data.dailyRecommendations.size() == 0 || data.dailyRecommendations[0] is map)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow list: if false;
+      allow create: if isVerifiedOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'updatedAt']);
+      allow delete: if isVerifiedOwner(userId) && isValidId(userId);
+
+      match /backups/{backupId} {
+        allow get: if isSignedIn()
+          && isValidId(userId)
+          && isValidId(backupId)
+          && request.auth.uid == userId;
+        allow list: if isSignedIn()
+          && isValidId(userId)
+          && request.auth.uid == userId
+          && resource.data.ownerId == request.auth.uid;
+        allow create: if isVerifiedOwner(userId)
+          && isValidId(userId)
+          && isValidId(backupId)
+          && exists(/databases/$(database)/documents/users/$(userId))
+          && isValidCloudBackup(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerifiedOwner(userId)
+          && isValidId(userId)
+          && isValidId(backupId)
+          && isValidCloudBackup(incoming(), userId)
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'settings',
+            'eqPresets',
+            'playlists',
+            'smartPlaylists',
+            'trackPrefs',
+            'dailyRecommendations',
+            'updatedAt'
+          ]);
+        allow delete: if isVerifiedOwner(userId) && isValidId(userId) && isValidId(backupId);
+      }
+    }
+  }
+}

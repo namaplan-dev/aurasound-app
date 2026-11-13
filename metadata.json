@@ -1,0 +1,6 @@
+{
+  "name": "AuraSound - Audiophile Hi-Fi Music Player & Smart Studio",
+  "description": "Audiophile-grade music player with lossless FLAC/ALAC/WAV audio engine, 10-band parametric EQ, gapless crossfade, local folder scanning, Gemini AI smart playlists, and cloud backup.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

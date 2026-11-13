@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>AuraSound — Audiophile Hi-Fi Music Player &amp; Smart Studio</title>
+    <meta name="description" content="Audiophile-grade music player with lossless FLAC/ALAC/WAV audio engine, 10-band parametric EQ, gapless crossfade, local folder scanning, AI smart playlists, and cloud backup." />
+    <meta name="theme-color" content="#09090b" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="AuraSound" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
+    <meta property="og:title" content="AuraSound — Audiophile Hi-Fi Music Player &amp; Smart Studio" />
+    <meta property="og:description" content="Audiophile-grade music player with lossless FLAC/ALAC/WAV audio engine, 10-band parametric EQ, gapless crossfade, local folder playback, AI smart playlists, and cloud backup." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap" rel="stylesheet" />
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem('aurasound_settings_v1');
+          var theme = raw ? JSON.parse(raw).themeMode : 'dark';
+          if (theme === 'light') document.documentElement.classList.remove('dark');
+          else document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-CWpoLgvL.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-gW9vWl0b.css">
+  <link rel="manifest" href="/manifest.webmanifest"></head>
+  <body class="bg-zinc-50 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 antialiased selection:bg-amber-500/25">
+    <div id="root"></div>
+  </body>
+</html>
+

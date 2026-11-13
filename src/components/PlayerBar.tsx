@@ -184,18 +184,18 @@ export const PlayerBar: React.FC<PlayerBarProps> = React.memo(
         onTouchEnd={finishSwipe}
         onTouchCancel={finishSwipe}
         style={{
-          bottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+          marginBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))',
           transform: 'translate3d(0, 0, 0)',
         }}
-        className="fixed left-2.5 right-2.5 sm:left-4 sm:right-4 z-40 rounded-2xl border border-zinc-200/90 dark:border-zinc-700/80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl shadow-[0_14px_40px_rgba(0,0,0,0.35)] will-change-transform transition-transform duration-250 ease-[cubic-bezier(0.22,1,0.36,1)]"
+        className="relative shrink-0 mx-2.5 sm:mx-4 z-40 rounded-2xl border border-zinc-200/90 dark:border-zinc-700/80 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl shadow-[0_14px_40px_rgba(0,0,0,0.35)] will-change-transform transition-transform duration-250 ease-[cubic-bezier(0.22,1,0.36,1)]"
       >
-        <div className="max-w-screen-2xl mx-auto px-3.5 sm:px-5 pt-2 pb-3.5 space-y-2.5">
+        <div className="max-w-screen-2xl mx-auto px-3 sm:px-5 pt-1.5 pb-2.5 sm:pb-3 space-y-2 [@media(max-height:520px)]:space-y-1 [@media(max-height:520px)]:py-1.5">
           {/* Slide-Up Drag Handle */}
           <button
             type="button"
             onClick={onOpenNowPlaying}
             aria-label="Slide up or tap to open full screen player"
-            className="touch-none w-full flex flex-col items-center justify-center py-1.5 group cursor-grab active:cursor-grabbing"
+            className="touch-none w-full flex flex-col items-center justify-center py-1 group cursor-grab active:cursor-grabbing [@media(max-height:520px)]:hidden"
           >
             <span className="w-12 h-1 rounded-full bg-zinc-300 dark:bg-zinc-600 group-hover:bg-amber-500 transition-colors" />
           </button>

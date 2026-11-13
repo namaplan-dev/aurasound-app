@@ -55,9 +55,15 @@ function safeWriteJson(key: string, value: unknown): void {
 
 export function loadSettings(): AppSettings {
   const saved = safeReadJson<Partial<AppSettings>>(KEYS.SETTINGS, {});
+  let activeTab = saved.activeTab || DEFAULT_SETTINGS.activeTab;
+  if (activeTab === 'studio') activeTab = 'studio-mixes';
+  else if (activeTab === 'equalizer') activeTab = 'eq-rack';
+  else if (activeTab === 'settings') activeTab = 'settings-audio';
+
   return {
     ...DEFAULT_SETTINGS,
     ...saved,
+    activeTab,
     viewModes: {
       ...DEFAULT_SETTINGS.viewModes,
       ...(saved.viewModes || {}),

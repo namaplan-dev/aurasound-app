@@ -22,6 +22,8 @@ import {
 } from '../utils/textNormalization';
 import { AlphabetIndexSlider } from './AlphabetIndexSlider';
 import { CoverArt } from './CoverArt';
+import { PaginationBar } from './PaginationBar';
+import { useViewportPageSize } from '../hooks/useViewportPageSize';
 import { tactile } from '../services/tactileFeedback';
 
 export type LibraryTab = 'songs' | 'albums' | 'artists' | 'genres' | 'playlists' | 'folders';
@@ -53,8 +55,6 @@ interface LibraryBrowserProps {
   onSelectFolder: (folder: string | null) => void;
   onSelectPlaylist: (playlistId: string | null) => void;
   onImportLocalFolder: () => void;
-  initialScrollTop?: number;
-  onScrollChange?: (scrollTop: number) => void;
 }
 
 interface GroupedCollectionItem {
@@ -70,10 +70,9 @@ interface GroupedCollectionItem {
 const TrackRow = React.memo<{
   track: Track;
   isActive: boolean;
+  isHighlighted: boolean;
   isPlaying: boolean;
   playlists: Playlist[];
-  bucket: string;
-  isFirstInBucket: boolean;
   onPlayTrackItem: (track: Track) => void;
   onToggleFavorite: (trackId: string) => void;
   onRateTrack: (trackId: string, rating: number) => void;
@@ -82,10 +81,9 @@ const TrackRow = React.memo<{
 }>(({
   track,
   isActive,
+  isHighlighted,
   isPlaying,
   playlists,
-  bucket,
-  isFirstInBucket,
   onPlayTrackItem,
   onToggleFavorite,
   onRateTrack,
@@ -115,23 +113,24 @@ const TrackRow = React.memo<{
 
   return (
     <div
-      data-alpha-bucket={isFirstInBucket ? bucket : undefined}
-      className={`group flex items-center gap-2.5 sm:gap-3 px-2.5 sm:px-3 py-2 rounded-xl border transition-colors ${
+      className={`group flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1.5 rounded-xl border transition-colors h-[56px] ${
         isActive
-          ? 'border-amber-500/40 bg-amber-500/5 dark:bg-amber-500/10'
+          ? 'border-amber-500/45 bg-amber-500/10'
+          : isHighlighted
+          ? 'border-amber-400/50 bg-amber-500/5'
           : 'border-transparent hover:bg-zinc-100/80 dark:hover:bg-zinc-900/80'
       }`}
     >
       <button
         type="button"
         onClick={() => onPlayTrackItem(track)}
-        className="flex items-center gap-3 min-w-0 flex-1 text-left active:scale-[0.99] transition-transform duration-100 focus-visible:outline-none"
+        className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 text-left active:scale-[0.99] transition-transform duration-100 focus-visible:outline-none"
       >
         <CoverArt
           src={track.coverUrl}
           alt={track.title}
           isPlaying={isActive && isPlaying}
-          className="w-11 h-11 rounded-lg"
+          className="w-10 h-10 rounded-lg"
         />
         <div className="min-w-0 flex-1">
           <div
@@ -146,8 +145,8 @@ const TrackRow = React.memo<{
             <span aria-hidden="true" className="hidden sm:inline">·</span>
             <span className="truncate hidden sm:inline">{track.album}</span>
             <span aria-hidden="true">·</span>
-            <span className="font-mono-tabular shrink-0">
-              {track.format} {track.bitDepth}b/{Math.round(track.sampleRate / 1000)}kHz
+            <span className="font-mono-tabular shrink-0 text-[11px]">
+              {track.format} {track.bitDepth}b/{Math.round(track.sampleRate / 1000)}k
             </span>
           </div>
         </div>
@@ -198,7 +197,7 @@ const TrackRow = React.memo<{
         aria-label={track.favorite ? 'Remove favorite' : 'Add favorite'}
         title={track.favorite ? 'Remove favorite' : 'Favorite'}
         onClick={() => onToggleFavorite(track.id)}
-        className="min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100"
+        className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-lg hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100"
       >
         <Heart
           className={`w-4 h-4 ${
@@ -217,17 +216,17 @@ const TrackRow = React.memo<{
             tactile.tap();
             setMenuOpen((o) => !o);
           }}
-          className="min-w-[38px] min-h-[38px] flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100"
+          className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100"
         >
           <Plus className="w-4 h-4" />
         </button>
         {menuOpen && (
-          <div className="absolute right-0 top-10 z-30 w-48 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xl py-1.5">
+          <div className="absolute right-0 bottom-10 z-30 w-48 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xl py-1.5">
             <div className="px-3 py-1 text-[11px] font-medium text-zinc-500">Add to playlist</div>
             {playlists.length === 0 ? (
               <div className="px-3 py-2 text-xs text-zinc-400">No playlists yet</div>
             ) : (
-              playlists.map((pl) => (
+              playlists.slice(0, 8).map((pl) => (
                 <button
                   key={pl.id}
                   type="button"
@@ -246,7 +245,7 @@ const TrackRow = React.memo<{
         )}
       </div>
 
-      <span className="text-xs font-mono-tabular text-zinc-500 w-10 text-right shrink-0">
+      <span className="text-xs font-mono-tabular text-zinc-500 w-9 text-right shrink-0">
         {formatDuration(track.duration)}
       </span>
     </div>
@@ -281,69 +280,12 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
     onSelectFolder,
     onSelectPlaylist,
     onImportLocalFolder,
-    initialScrollTop = 0,
-    onScrollChange,
   }) => {
-    const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-    const restoredScrollRef = useRef(false);
-    const scrollTimerRef = useRef<number | null>(null);
-    const [activeLetter, setActiveLetter] = useState<string | undefined>(undefined);
+    const viewportRef = useRef<HTMLDivElement | null>(null);
+    const [page, setPage] = useState(0);
+    const [highlightedId, setHighlightedId] = useState<string | null>(null);
     const [newPlaylistName, setNewPlaylistName] = useState('');
     const [showNewPlaylist, setShowNewPlaylist] = useState(false);
-
-    // Restore saved library scroll offset once after initial mount
-    useEffect(() => {
-      if (restoredScrollRef.current) return;
-      restoredScrollRef.current = true;
-      const el = scrollContainerRef.current;
-      if (el && initialScrollTop > 0) {
-        requestAnimationFrame(() => {
-          if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = initialScrollTop;
-          }
-        });
-      }
-    }, [initialScrollTop]);
-
-    useEffect(() => {
-      return () => {
-        if (scrollTimerRef.current) {
-          window.clearTimeout(scrollTimerRef.current);
-        }
-      };
-    }, []);
-
-    const handleLibraryScroll = useCallback(() => {
-      const container = scrollContainerRef.current;
-      if (!container) return;
-
-      // Sync visible slider handle silently as user scrolls
-      const containerTop = container.getBoundingClientRect().top + 16;
-      const nodes = container.querySelectorAll('[data-alpha-bucket]');
-      let currentBucket: string | undefined;
-      for (let i = 0; i < nodes.length; i++) {
-        const el = nodes[i] as HTMLElement;
-        if (el.getBoundingClientRect().top <= containerTop) {
-          currentBucket = el.dataset.alphaBucket;
-        } else {
-          break;
-        }
-      }
-      if (!currentBucket && nodes.length > 0) {
-        currentBucket = (nodes[0] as HTMLElement).dataset.alphaBucket;
-      }
-      if (currentBucket) {
-        setActiveLetter((prev) => (prev === currentBucket ? prev : currentBucket));
-      }
-
-      if (!onScrollChange) return;
-      if (scrollTimerRef.current) window.clearTimeout(scrollTimerRef.current);
-      scrollTimerRef.current = window.setTimeout(() => {
-        if (scrollContainerRef.current) {
-          onScrollChange(Math.round(scrollContainerRef.current.scrollTop));
-        }
-      }, 120);
-    }, [onScrollChange]);
 
     // Filtered tracks for Songs tab
     const filteredSongs = useMemo(() => {
@@ -443,6 +385,49 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
         .sort((a, b) => a.label.localeCompare(b.label));
     }, [tab, tracks, playlists]);
 
+    const layout = useViewportPageSize(viewportRef, {
+      mode: viewMode,
+      listRowHeight: 58,
+      gridMinCardWidth: 148,
+      gridGap: 10,
+      gridCardExtraHeight: tab === 'songs' ? 56 : 94,
+      maxColumns: 6,
+      verticalPadding: 6,
+    });
+
+    const totalItems = tab === 'songs' ? filteredSongs.length : collectionItems.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / layout.pageSize));
+    const safePage = Math.max(0, Math.min(totalPages - 1, page));
+
+    useEffect(() => {
+      setPage(0);
+    }, [
+      tab,
+      selectedAlbumFilter,
+      selectedArtistFilter,
+      selectedGenreFilter,
+      selectedFolderFilter,
+      selectedPlaylistFilter,
+    ]);
+
+    useEffect(() => {
+      if (page > totalPages - 1) {
+        setPage(Math.max(0, totalPages - 1));
+      }
+    }, [page, totalPages]);
+
+    const pagedSongs = useMemo(() => {
+      if (tab !== 'songs') return [];
+      const start = safePage * layout.pageSize;
+      return filteredSongs.slice(start, start + layout.pageSize);
+    }, [tab, filteredSongs, safePage, layout.pageSize]);
+
+    const pagedCollections = useMemo(() => {
+      if (tab === 'songs') return [];
+      const start = safePage * layout.pageSize;
+      return collectionItems.slice(start, start + layout.pageSize);
+    }, [tab, collectionItems, safePage, layout.pageSize]);
+
     const allTabTracks = useMemo(() => {
       if (tab === 'songs') return filteredSongs;
       const seen = new Set<string>();
@@ -466,28 +451,41 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
       return extractAvailableLetters(labels);
     }, [tab, filteredSongs, collectionItems]);
 
+    const currentPageFirstBucket = useMemo(() => {
+      if (tab === 'songs') {
+        return pagedSongs[0] ? getAlphabetBucket(pagedSongs[0].title) : sliderLetters[0];
+      }
+      return pagedCollections[0]
+        ? getAlphabetBucket(pagedCollections[0].label)
+        : sliderLetters[0];
+    }, [tab, pagedSongs, pagedCollections, sliderLetters]);
+
     const handleSelectAlphabetLetter = useCallback(
       (letter: string) => {
-        setActiveLetter(letter);
-        const container = scrollContainerRef.current;
-        if (!container) return;
-        const target = container.querySelector(`[data-alpha-bucket="${letter}"]`) as HTMLElement | null;
-        if (target) {
-          target.scrollIntoView({ behavior: 'auto', block: 'start' });
-        } else {
-          const idx = sliderLetters.indexOf(letter);
-          for (let i = idx + 1; i < sliderLetters.length; i++) {
-            const nextEl = container.querySelector(
-              `[data-alpha-bucket="${sliderLetters[i]}"]`
-            ) as HTMLElement | null;
-            if (nextEl) {
-              nextEl.scrollIntoView({ behavior: 'auto', block: 'start' });
-              break;
-            }
+        const list =
+          tab === 'songs'
+            ? filteredSongs.map((t) => ({ id: t.id, label: t.title }))
+            : collectionItems.map((c) => ({ id: c.id, label: c.label }));
+        if (list.length === 0) return;
+
+        let matchIdx = list.findIndex((entry) => getAlphabetBucket(entry.label) === letter);
+        if (matchIdx === -1) {
+          const letterPos = sliderLetters.indexOf(letter);
+          for (let i = letterPos + 1; i < sliderLetters.length; i++) {
+            matchIdx = list.findIndex(
+              (entry) => getAlphabetBucket(entry.label) === sliderLetters[i]
+            );
+            if (matchIdx !== -1) break;
           }
         }
+        if (matchIdx === -1) matchIdx = list.length - 1;
+
+        const targetPage = Math.floor(matchIdx / layout.pageSize);
+        setPage(targetPage);
+        setHighlightedId(list[matchIdx].id);
+        window.setTimeout(() => setHighlightedId(null), 900);
       },
-      [sliderLetters]
+      [tab, filteredSongs, collectionItems, sliderLetters, layout.pageSize]
     );
 
     const hasActiveFilter = Boolean(
@@ -531,14 +529,12 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
       else if (tab === 'playlists') onSelectPlaylist(item.id);
     };
 
-    const seenBuckets = new Set<string>();
-
     return (
-      <div className="flex flex-col h-full min-h-0">
+      <div className="h-full min-h-0 flex flex-col overflow-hidden">
         {/* Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
-          <div className="flex items-baseline gap-2.5 min-w-0">
-            <h2 className="text-xl font-display font-semibold capitalize text-zinc-900 dark:text-zinc-100">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
+          <div className="flex items-baseline gap-2 min-w-0">
+            <h2 className="text-lg sm:text-xl font-display font-semibold capitalize text-zinc-900 dark:text-zinc-100">
               {tab}
             </h2>
             <span className="text-xs font-mono-tabular text-zinc-500">
@@ -546,12 +542,12 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               type="button"
               disabled={allTabTracks.length === 0}
               onClick={() => onPlayAll(allTabTracks, false)}
-              className="min-h-[40px] px-3.5 rounded-lg accent-bg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-40"
+              className="min-h-[36px] px-2.5 sm:px-3.5 rounded-lg accent-bg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-40"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span>Play All</span>
@@ -561,21 +557,20 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
               type="button"
               disabled={allTabTracks.length === 0}
               onClick={() => onPlayAll(allTabTracks, true)}
-              className="min-h-[40px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-40"
+              className="min-h-[36px] px-2.5 sm:px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-40"
             >
               <Shuffle className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Play All Random</span>
-              <span className="sm:hidden">Shuffle</span>
+              <span className="hidden sm:inline">Shuffle</span>
             </button>
 
             {tab === 'folders' && (
               <button
                 type="button"
                 onClick={onImportLocalFolder}
-                className="min-h-[40px] px-3.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100"
+                className="min-h-[36px] px-2.5 sm:px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100"
               >
-                <FolderOpen className="w-4 h-4" />
-                <span>Scan Folder</span>
+                <FolderOpen className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Scan Folder</span>
               </button>
             )}
 
@@ -586,15 +581,15 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                   tactile.tap();
                   setShowNewPlaylist((v) => !v);
                 }}
-                className="min-h-[40px] px-3.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100"
+                className="min-h-[36px] px-2.5 sm:px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100"
               >
-                <Plus className="w-4 h-4" />
-                <span>New Playlist</span>
+                <Plus className="w-3.5 h-3.5" />
+                <span>New</span>
               </button>
             )}
 
-            {/* Persistent List View <-> Square View Toggle */}
-            <div className="inline-flex items-center p-1 rounded-lg bg-zinc-200/70 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+            {/* List / Grid Toggle */}
+            <div className="inline-flex items-center p-0.5 rounded-lg bg-zinc-200/70 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
               <button
                 type="button"
                 aria-label="List view"
@@ -602,14 +597,13 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                   tactile.tap();
                   onChangeViewMode('list');
                 }}
-                className={`min-w-[38px] min-h-[34px] px-2.5 rounded-md flex items-center justify-center gap-1.5 text-xs font-medium transition-colors ${
+                className={`min-w-[34px] min-h-[32px] px-2 rounded-md flex items-center justify-center gap-1 text-xs font-medium transition-colors ${
                   viewMode === 'list'
                     ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm'
                     : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'
                 }`}
               >
-                <List className="w-4 h-4" />
-                <span className="hidden sm:inline">List</span>
+                <List className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
@@ -618,14 +612,13 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                   tactile.tap();
                   onChangeViewMode('grid');
                 }}
-                className={`min-w-[38px] min-h-[34px] px-2.5 rounded-md flex items-center justify-center gap-1.5 text-xs font-medium transition-colors ${
+                className={`min-w-[34px] min-h-[32px] px-2 rounded-md flex items-center justify-center gap-1 text-xs font-medium transition-colors ${
                   viewMode === 'grid'
                     ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm'
                     : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200'
                 }`}
               >
-                <LayoutGrid className="w-4 h-4" />
-                <span className="hidden sm:inline">Grid</span>
+                <LayoutGrid className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -642,7 +635,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                 setShowNewPlaylist(false);
               }
             }}
-            className="mt-3 flex items-center gap-2 shrink-0"
+            className="mt-2.5 flex items-center gap-2 shrink-0"
           >
             <input
               type="text"
@@ -650,11 +643,11 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
               onChange={(e) => setNewPlaylistName(e.target.value)}
               placeholder="Enter playlist name..."
               autoFocus
-              className="flex-1 min-h-[42px] px-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm"
+              className="flex-1 min-h-[40px] px-3 rounded-lg bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-sm"
             />
             <button
               type="submit"
-              className="min-h-[42px] px-4 rounded-lg accent-bg text-sm font-medium whitespace-nowrap active:scale-95 transition-transform duration-100"
+              className="min-h-[40px] px-4 rounded-lg accent-bg text-xs font-medium whitespace-nowrap active:scale-95 transition-transform duration-100"
             >
               Create
             </button>
@@ -663,7 +656,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
 
         {/* Active Filter Breadcrumb in Songs */}
         {tab === 'songs' && hasActiveFilter && activeFilterBreadcrumb && (
-          <div className="mt-2.5 flex items-center justify-between gap-3 py-1.5 border-b border-zinc-200/70 dark:border-zinc-800/70 shrink-0">
+          <div className="mt-2 flex items-center justify-between gap-3 py-1 border-b border-zinc-200/70 dark:border-zinc-800/70 shrink-0">
             <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 min-w-0">
               <span>{activeFilterBreadcrumb.group}</span>
               <span aria-hidden="true">/</span>
@@ -677,7 +670,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                 tactile.tap();
                 clearAllFilters();
               }}
-              className="min-h-[32px] px-2 text-xs font-medium accent-text flex items-center gap-1 shrink-0 hover:underline"
+              className="min-h-[30px] px-2 text-xs font-medium accent-text flex items-center gap-1 shrink-0 hover:underline"
             >
               <X className="w-3.5 h-3.5" />
               <span>Show All</span>
@@ -685,24 +678,23 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
           </div>
         )}
 
-        {/* Scrollable Content + Right-Side Alphabetical Slider */}
-        <div className="flex-1 min-h-0 flex gap-2 mt-3 relative">
+        {/* Fixed Unscrollable Viewport + Right-Side Alphabetical Quick-Jump Slider */}
+        <div className="flex-1 min-h-0 flex gap-2 mt-2.5 overflow-hidden relative">
           <div
-            ref={scrollContainerRef}
-            onScroll={handleLibraryScroll}
-            className="flex-1 overflow-y-auto pr-1 pb-6 space-y-2"
+            ref={viewportRef}
+            className="flex-1 min-w-0 h-full overflow-hidden flex flex-col justify-start"
           >
             {tab === 'songs' ? (
-              filteredSongs.length === 0 ? (
-                <div className="py-16 text-center space-y-3">
-                  <Music className="w-10 h-10 mx-auto text-zinc-400 opacity-60" />
+              pagedSongs.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center space-y-3 px-4">
+                  <Music className="w-10 h-10 text-zinc-400 opacity-60" />
                   <div className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
                     No tracks match this filter or offline mode.
                   </div>
                   <button
                     type="button"
                     onClick={hasActiveFilter ? clearAllFilters : onImportLocalFolder}
-                    className="min-h-[42px] px-4 py-2 rounded-lg accent-bg text-xs font-medium inline-flex items-center gap-2 active:scale-95 transition-transform duration-100"
+                    className="min-h-[40px] px-4 py-2 rounded-lg accent-bg text-xs font-medium inline-flex items-center gap-2 active:scale-95 transition-transform duration-100"
                   >
                     <FolderOpen className="w-4 h-4" />
                     <span>{hasActiveFilter ? 'Show All Tracks' : 'Add Local Music Folder'}</span>
@@ -710,49 +702,46 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                 </div>
               ) : viewMode === 'list' ? (
                 <div className="divide-y divide-zinc-100 dark:divide-zinc-900">
-                  {filteredSongs.map((track) => {
-                    const bucket = getAlphabetBucket(track.title);
-                    const isFirst = !seenBuckets.has(bucket);
-                    if (isFirst) seenBuckets.add(bucket);
-                    return (
-                      <TrackRow
-                        key={track.id}
-                        track={track}
-                        isActive={track.id === currentTrackId}
-                        isPlaying={isPlaying}
-                        playlists={playlists}
-                        bucket={bucket}
-                        isFirstInBucket={isFirst}
-                        onPlayTrackItem={handlePlayTrackItem}
-                        onToggleFavorite={onToggleFavorite}
-                        onRateTrack={onRateTrack}
-                        onToggleOfflineCache={onToggleOfflineCache}
-                        onAddTrackToPlaylist={onAddTrackToPlaylist}
-                      />
-                    );
-                  })}
+                  {pagedSongs.map((track) => (
+                    <TrackRow
+                      key={track.id}
+                      track={track}
+                      isActive={track.id === currentTrackId}
+                      isHighlighted={track.id === highlightedId}
+                      isPlaying={isPlaying}
+                      playlists={playlists}
+                      onPlayTrackItem={handlePlayTrackItem}
+                      onToggleFavorite={onToggleFavorite}
+                      onRateTrack={onRateTrack}
+                      onToggleOfflineCache={onToggleOfflineCache}
+                      onAddTrackToPlaylist={onAddTrackToPlaylist}
+                    />
+                  ))}
                 </div>
               ) : (
-                /* Compact Square Grid View for Songs */
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-                  {filteredSongs.map((track) => {
-                    const bucket = getAlphabetBucket(track.title);
-                    const isFirst = !seenBuckets.has(bucket);
-                    if (isFirst) seenBuckets.add(bucket);
+                <div
+                  style={{
+                    gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))`,
+                  }}
+                  className="grid gap-2.5"
+                >
+                  {pagedSongs.map((track) => {
                     const active = track.id === currentTrackId;
+                    const highlighted = track.id === highlightedId;
                     return (
                       <button
                         key={track.id}
                         type="button"
-                        data-alpha-bucket={isFirst ? bucket : undefined}
                         onClick={() => handlePlayTrackItem(track)}
-                        className={`group rounded-xl border p-2.5 text-left transition-all duration-100 active:scale-[0.98] focus-visible:outline-none ${
+                        className={`group rounded-xl border p-2 text-left transition-all duration-100 active:scale-[0.98] focus-visible:outline-none ${
                           active
                             ? 'border-amber-500/60 bg-amber-500/10'
+                            : highlighted
+                            ? 'border-amber-400/60 bg-amber-500/5'
                             : 'border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-900'
                         }`}
                       >
-                        <div className="relative aspect-square w-full mb-2">
+                        <div className="relative aspect-square w-full mb-1.5">
                           <CoverArt
                             src={track.coverUrl}
                             alt={track.title}
@@ -775,158 +764,167 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                   })}
                 </div>
               )
-            ) : collectionItems.length === 0 ? (
-              <div className="py-16 text-center text-sm text-zinc-500">
+            ) : pagedCollections.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-sm text-zinc-500">
                 No items found in {tab}.
               </div>
             ) : viewMode === 'list' ? (
-              /* List View with small album artwork across Albums, Artists, Genres, Playlists, Folders */
               <div className="divide-y divide-zinc-100 dark:divide-zinc-900">
-                {collectionItems.map((item) => {
-                  const bucket = getAlphabetBucket(item.label);
-                  const isFirst = !seenBuckets.has(bucket);
-                  if (isFirst) seenBuckets.add(bucket);
-                  return (
-                    <div
-                      key={item.id}
-                      data-alpha-bucket={isFirst ? bucket : undefined}
-                      className="flex items-center justify-between gap-3 px-2.5 sm:px-3 py-2 rounded-xl hover:bg-zinc-100/80 dark:hover:bg-zinc-900/80 transition-colors"
+                {pagedCollections.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`flex items-center justify-between gap-2.5 px-2 sm:px-3 py-1.5 rounded-xl transition-colors h-[56px] ${
+                      highlightedId === item.id
+                        ? 'bg-amber-500/10'
+                        : 'hover:bg-zinc-100/80 dark:hover:bg-zinc-900/80'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleCollectionOpen(item)}
+                      className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 text-left active:scale-[0.99] transition-transform duration-100"
                     >
+                      <CoverArt
+                        src={item.coverUrl}
+                        alt={item.label}
+                        className="w-10 h-10 rounded-lg"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                          {item.label}
+                        </div>
+                        <div className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                          {item.subtitle}
+                        </div>
+                      </div>
+                    </button>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      {item.tracks.length > 0 && (
+                        <>
+                          <button
+                            type="button"
+                            aria-label={`Play all in ${item.label}`}
+                            title="Play All"
+                            onClick={() => onPlayAll(item.tracks, false)}
+                            className="min-w-[36px] min-h-[36px] rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-700 dark:text-zinc-200 active:scale-90 transition-transform duration-100"
+                          >
+                            <Play className="w-4 h-4 fill-current" />
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={`Play random in ${item.label}`}
+                            title="Play All Random"
+                            onClick={() => onPlayAll(item.tracks, true)}
+                            className="min-w-[36px] min-h-[36px] rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400 active:scale-90 transition-transform duration-100"
+                          >
+                            <Shuffle className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+                      {item.isDeletable && onDeletePlaylist && (
+                        <button
+                          type="button"
+                          aria-label={`Delete ${item.label}`}
+                          title="Delete playlist"
+                          onClick={() => onDeletePlaylist(item.id)}
+                          className="min-w-[36px] min-h-[36px] rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-red-500 active:scale-90 transition-all duration-100"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       <button
                         type="button"
+                        aria-label={`Open ${item.label}`}
                         onClick={() => handleCollectionOpen(item)}
-                        className="flex items-center gap-3 min-w-0 flex-1 text-left active:scale-[0.99] transition-transform duration-100"
+                        className="min-w-[34px] min-h-[36px] rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-400"
                       >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div
+                style={{
+                  gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))`,
+                }}
+                className="grid gap-2.5"
+              >
+                {pagedCollections.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`group rounded-xl border p-2 transition-colors flex flex-col justify-between gap-2 ${
+                      highlightedId === item.id
+                        ? 'border-amber-500/60 bg-amber-500/10'
+                        : 'border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-900'
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => handleCollectionOpen(item)}
+                      className="w-full text-left focus-visible:outline-none active:scale-[0.98] transition-transform duration-100"
+                    >
+                      <div className="relative aspect-square w-full mb-1.5">
                         <CoverArt
                           src={item.coverUrl}
                           alt={item.label}
-                          className="w-11 h-11 rounded-lg"
+                          className="w-full h-full rounded-lg"
                         />
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
-                            {item.label}
-                          </div>
-                          <div className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
-                            {item.subtitle}
-                          </div>
-                        </div>
-                      </button>
-
-                      <div className="flex items-center gap-1 shrink-0">
-                        {item.tracks.length > 0 && (
-                          <>
-                            <button
-                              type="button"
-                              aria-label={`Play all in ${item.label}`}
-                              title="Play All"
-                              onClick={() => onPlayAll(item.tracks, false)}
-                              className="min-w-[38px] min-h-[38px] rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-700 dark:text-zinc-200 active:scale-90 transition-transform duration-100"
-                            >
-                              <Play className="w-4 h-4 fill-current" />
-                            </button>
-                            <button
-                              type="button"
-                              aria-label={`Play random in ${item.label}`}
-                              title="Play All Random"
-                              onClick={() => onPlayAll(item.tracks, true)}
-                              className="min-w-[38px] min-h-[38px] rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-500 dark:text-zinc-400 active:scale-90 transition-transform duration-100"
-                            >
-                              <Shuffle className="w-3.5 h-3.5" />
-                            </button>
-                          </>
-                        )}
-                        {item.isDeletable && onDeletePlaylist && (
-                          <button
-                            type="button"
-                            aria-label={`Delete ${item.label}`}
-                            title="Delete playlist"
-                            onClick={() => onDeletePlaylist(item.id)}
-                            className="min-w-[38px] min-h-[38px] rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-400 hover:text-red-500 active:scale-90 transition-all duration-100"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                      </div>
+                      <div className="text-xs font-medium truncate text-zinc-900 dark:text-zinc-100">
+                        {item.label}
+                      </div>
+                      <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
+                        {item.subtitle}
+                      </div>
+                    </button>
+                    {item.tracks.length > 0 && (
+                      <div className="flex items-center gap-1.5">
                         <button
                           type="button"
-                          aria-label={`Open ${item.label}`}
-                          onClick={() => handleCollectionOpen(item)}
-                          className="min-w-[38px] min-h-[38px] rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-800 flex items-center justify-center text-zinc-400"
+                          onClick={() => onPlayAll(item.tracks, false)}
+                          aria-label={`Play all in ${item.label}`}
+                          className="flex-1 min-h-[32px] rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-[11px] font-medium flex items-center justify-center gap-1 text-zinc-800 dark:text-zinc-200 active:scale-95 transition-transform duration-100"
                         >
-                          <ChevronRight className="w-4 h-4" />
+                          <Play className="w-3 h-3 fill-current" />
+                          <span>Play</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onPlayAll(item.tracks, true)}
+                          aria-label={`Play random in ${item.label}`}
+                          title="Play Random"
+                          className="min-w-[32px] min-h-[32px] rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 active:scale-95 transition-transform duration-100"
+                        >
+                          <Shuffle className="w-3 h-3" />
                         </button>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              /* Compact Square Grid View across Albums, Artists, Genres, Playlists, Folders */
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-                {collectionItems.map((item) => {
-                  const bucket = getAlphabetBucket(item.label);
-                  const isFirst = !seenBuckets.has(bucket);
-                  if (isFirst) seenBuckets.add(bucket);
-                  return (
-                    <div
-                      key={item.id}
-                      data-alpha-bucket={isFirst ? bucket : undefined}
-                      className="group rounded-xl border border-zinc-200/80 dark:border-zinc-800/80 bg-white dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-900 p-2.5 transition-colors flex flex-col justify-between gap-2.5"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => handleCollectionOpen(item)}
-                        className="w-full text-left focus-visible:outline-none active:scale-[0.98] transition-transform duration-100"
-                      >
-                        <div className="relative aspect-square w-full mb-2">
-                          <CoverArt
-                            src={item.coverUrl}
-                            alt={item.label}
-                            className="w-full h-full rounded-lg"
-                          />
-                        </div>
-                        <div className="text-xs font-medium truncate text-zinc-900 dark:text-zinc-100">
-                          {item.label}
-                        </div>
-                        <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
-                          {item.subtitle}
-                        </div>
-                      </button>
-                      {item.tracks.length > 0 && (
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => onPlayAll(item.tracks, false)}
-                            aria-label={`Play all in ${item.label}`}
-                            className="flex-1 min-h-[34px] rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-[11px] font-medium flex items-center justify-center gap-1 text-zinc-800 dark:text-zinc-200 active:scale-95 transition-transform duration-100"
-                          >
-                            <Play className="w-3 h-3 fill-current" />
-                            <span>Play</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onPlayAll(item.tracks, true)}
-                            aria-label={`Play random in ${item.label}`}
-                            title="Play Random"
-                            className="min-w-[34px] min-h-[34px] rounded-lg bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 active:scale-95 transition-transform duration-100"
-                          >
-                            <Shuffle className="w-3 h-3" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>
 
-          {/* Right-Side Alphabetical Quick-Scroll Slider */}
+          {/* Right-Side Alphabetical Quick-Jump Slider */}
           <AlphabetIndexSlider
             letters={sliderLetters}
-            activeLetter={activeLetter}
+            activeLetter={currentPageFirstBucket}
             onSelectLetter={handleSelectAlphabetLetter}
           />
         </div>
+
+        {/* Fixed Bottom Page Controls */}
+        <PaginationBar
+          page={safePage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={layout.pageSize}
+          onChangePage={setPage}
+          itemLabel={tab === 'songs' ? 'tracks' : tab}
+        />
       </div>
     );
   }

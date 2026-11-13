@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Cast, Check, RefreshCw, Speaker, X } from 'lucide-react';
 import { audioEngine } from '../services/audioEngine';
+import { PaginationBar } from './PaginationBar';
 import { tactile } from '../services/tactileFeedback';
 
 interface CastModalProps {
@@ -8,10 +9,13 @@ interface CastModalProps {
   onClose: () => void;
 }
 
+const DEVICES_PER_PAGE = 3;
+
 export const CastModal: React.FC<CastModalProps> = ({ open, onClose }) => {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedId, setSelectedId] = useState<string>('default');
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
 
   const loadDevices = async () => {
     try {
@@ -22,6 +26,7 @@ export const CastModal: React.FC<CastModalProps> = ({ open, onClose }) => {
       const list = await navigator.mediaDevices.enumerateDevices();
       const outputs = list.filter((d) => d.kind === 'audiooutput');
       setDevices(outputs);
+      setPage(0);
     } catch (err) {
       setStatusMsg(err instanceof Error ? err.message : 'Unable to inspect audio outputs.');
     }
@@ -35,6 +40,13 @@ export const CastModal: React.FC<CastModalProps> = ({ open, onClose }) => {
   }, [open]);
 
   if (!open) return null;
+
+  const totalPages = Math.max(1, Math.ceil(devices.length / DEVICES_PER_PAGE));
+  const safePage = Math.max(0, Math.min(totalPages - 1, page));
+  const pagedDevices = devices.slice(
+    safePage * DEVICES_PER_PAGE,
+    safePage * DEVICES_PER_PAGE + DEVICES_PER_PAGE
+  );
 
   const handleSelectDevice = async (deviceId: string) => {
     try {
@@ -59,9 +71,9 @@ export const CastModal: React.FC<CastModalProps> = ({ open, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-hidden">
       <div className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800">
           <div className="flex items-center gap-2.5">
             <Cast className="w-5 h-5 accent-text" />
             <h3 className="text-base font-display font-semibold">Cast & Audio Output</h3>
@@ -76,17 +88,17 @@ export const CastModal: React.FC<CastModalProps> = ({ open, onClose }) => {
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="p-4 sm:p-5 space-y-3.5">
           <button
             type="button"
             onClick={handleCastPrompt}
-            className="w-full min-h-[46px] px-4 rounded-xl accent-bg text-sm font-medium flex items-center justify-center gap-2"
+            className="w-full min-h-[44px] px-4 rounded-xl accent-bg text-sm font-medium flex items-center justify-center gap-2"
           >
             <Cast className="w-4 h-4" />
             <span>Cast to Smart Speaker / Chromecast</span>
           </button>
 
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center justify-between pt-1">
             <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
               Connected Audio Outputs (DAC / Bluetooth / Speakers)
             </span>
@@ -103,20 +115,20 @@ export const CastModal: React.FC<CastModalProps> = ({ open, onClose }) => {
             </button>
           </div>
 
-          <div className="space-y-1.5 max-h-56 overflow-y-auto">
-            {devices.length === 0 ? (
+          <div className="space-y-1.5">
+            {pagedDevices.length === 0 ? (
               <div className="text-xs text-zinc-500 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800">
                 System Default Output active. Connect a Bluetooth speaker or USB DAC to switch outputs.
               </div>
             ) : (
-              devices.map((dev, idx) => {
+              pagedDevices.map((dev, idx) => {
                 const active = selectedId === dev.deviceId;
                 return (
                   <button
                     key={dev.deviceId || idx}
                     type="button"
                     onClick={() => handleSelectDevice(dev.deviceId)}
-                    className={`w-full min-h-[44px] px-3.5 py-2.5 rounded-xl border text-left flex items-center justify-between gap-3 transition-colors ${
+                    className={`w-full min-h-[44px] px-3.5 py-2 rounded-xl border text-left flex items-center justify-between gap-3 transition-colors ${
                       active
                         ? 'border-amber-500/60 bg-amber-500/10'
                         : 'border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/70'
@@ -125,7 +137,7 @@ export const CastModal: React.FC<CastModalProps> = ({ open, onClose }) => {
                     <div className="flex items-center gap-2.5 min-w-0">
                       <Speaker className="w-4 h-4 text-zinc-500 shrink-0" />
                       <span className="text-sm truncate">
-                        {dev.label || `Audio Output ${idx + 1}`}
+                        {dev.label || `Audio Output ${safePage * DEVICES_PER_PAGE + idx + 1}`}
                       </span>
                     </div>
                     {active && <Check className="w-4 h-4 accent-text shrink-0" />}
@@ -134,6 +146,17 @@ export const CastModal: React.FC<CastModalProps> = ({ open, onClose }) => {
               })
             )}
           </div>
+
+          {devices.length > DEVICES_PER_PAGE && (
+            <PaginationBar
+              page={safePage}
+              totalPages={totalPages}
+              totalItems={devices.length}
+              pageSize={DEVICES_PER_PAGE}
+              onChangePage={setPage}
+              itemLabel="outputs"
+            />
+          )}
 
           {statusMsg && (
             <p className="text-xs text-zinc-500 dark:text-zinc-400 pt-1">{statusMsg}</p>

@@ -2,12 +2,16 @@ import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useSt
 import { onAuthStateChanged, User } from 'firebase/auth';
 import {
   Cloud,
+  CopyCheck,
   Disc,
   FolderOpen,
+  HardDrive,
+  ImagePlus,
   ListMusic,
   Mic2,
   Moon,
   Music,
+  Palette,
   Search,
   Settings,
   Sliders,
@@ -15,6 +19,8 @@ import {
   Sun,
   Tag,
   Upload,
+  Volume2,
+  Wand2,
   WifiOff,
   X,
 } from 'lucide-react';
@@ -65,9 +71,9 @@ import {
 } from './services/storageService';
 import { matchesNormalizedQuery, repairMojibakeText } from './utils/textNormalization';
 import { LibraryBrowser, LibraryTab } from './components/LibraryBrowser';
-import { EqualizerPanel } from './components/EqualizerPanel';
-import { SmartStudioView } from './components/SmartStudioView';
-import { SettingsCloudView } from './components/SettingsCloudView';
+import { EqualizerPage, EqualizerPanel } from './components/EqualizerPanel';
+import { SmartStudioView, StudioPage } from './components/SmartStudioView';
+import { SettingsCloudView, SettingsPage } from './components/SettingsCloudView';
 import { PlayerBar } from './components/PlayerBar';
 import { NowPlayingSheetHandle, NowPlayingView } from './components/NowPlayingView';
 import { HomescreenWidget } from './components/HomescreenWidget';
@@ -84,38 +90,82 @@ import {
 } from './services/nativeWidget';
 import { APP_VERSION } from './version';
 
+type WorkspaceId = 'library' | 'studio' | 'equalizer' | 'settings';
+
 interface NavItem {
   id: NavigationTab;
   label: string;
+  shortLabel: string;
   icon: React.ComponentType<{ className?: string }>;
 }
 
-const NAV_GROUPS: Array<{ title: string; items: NavItem[] }> = [
+const WORKSPACES: Array<{
+  id: WorkspaceId;
+  title: string;
+  mobileTitle: string;
+  items: NavItem[];
+}> = [
   {
+    id: 'library',
     title: 'Library',
+    mobileTitle: 'Library',
     items: [
-      { id: 'songs', label: 'Songs', icon: Music },
-      { id: 'albums', label: 'Albums', icon: Disc },
-      { id: 'artists', label: 'Artists', icon: Mic2 },
-      { id: 'genres', label: 'Genres', icon: Tag },
-      { id: 'playlists', label: 'Playlists', icon: ListMusic },
-      { id: 'folders', label: 'Folders', icon: FolderOpen },
+      { id: 'songs', label: 'Songs', shortLabel: 'Songs', icon: Music },
+      { id: 'albums', label: 'Albums', shortLabel: 'Albums', icon: Disc },
+      { id: 'artists', label: 'Artists', shortLabel: 'Artists', icon: Mic2 },
+      { id: 'genres', label: 'Genres', shortLabel: 'Genres', icon: Tag },
+      { id: 'playlists', label: 'Playlists', shortLabel: 'Lists', icon: ListMusic },
+      { id: 'folders', label: 'Folders', shortLabel: 'Folders', icon: FolderOpen },
     ],
   },
   {
-    title: 'Studio & Sound',
+    id: 'studio',
+    title: 'Smart Studio',
+    mobileTitle: 'Studio',
     items: [
-      { id: 'studio', label: 'Smart Studio', icon: Sparkles },
-      { id: 'equalizer', label: 'Equalizer', icon: Sliders },
+      { id: 'studio-mixes', label: 'Daily Mixes', shortLabel: 'Mixes', icon: Sparkles },
+      { id: 'studio-playlists', label: 'Smart Mixes', shortLabel: 'Smart', icon: Wand2 },
+      { id: 'studio-duplicates', label: 'Duplicates', shortLabel: 'Dups', icon: CopyCheck },
+      { id: 'studio-tags', label: 'Tag Cleanup', shortLabel: 'Tags', icon: Tag },
+      { id: 'studio-artwork', label: 'Album Art', shortLabel: 'Art', icon: ImagePlus },
     ],
   },
   {
-    title: 'System',
-    items: [{ id: 'settings', label: 'Settings', icon: Settings }],
+    id: 'equalizer',
+    title: 'Equalizer',
+    mobileTitle: 'EQ',
+    items: [
+      { id: 'eq-rack', label: '10-Band EQ', shortLabel: '10-Band EQ', icon: Sliders },
+      { id: 'eq-presets', label: 'Sound Presets', shortLabel: 'Presets', icon: Music },
+    ],
+  },
+  {
+    id: 'settings',
+    title: 'Settings',
+    mobileTitle: 'Settings',
+    items: [
+      { id: 'settings-audio', label: 'Audio', shortLabel: 'Audio', icon: Volume2 },
+      { id: 'settings-appearance', label: 'Display & Widget', shortLabel: 'Display', icon: Palette },
+      { id: 'settings-storage', label: 'Storage', shortLabel: 'Storage', icon: HardDrive },
+      { id: 'settings-cloud', label: 'Cloud Sync', shortLabel: 'Cloud', icon: Cloud },
+    ],
   },
 ];
 
-const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
+function normalizeTab(tab: NavigationTab): NavigationTab {
+  if (tab === 'studio') return 'studio-mixes';
+  if (tab === 'equalizer') return 'eq-rack';
+  if (tab === 'settings') return 'settings-audio';
+  return tab;
+}
+
+function getWorkspaceForTab(tab: NavigationTab): WorkspaceId {
+  const clean = normalizeTab(tab);
+  if (clean.startsWith('studio-')) return 'studio';
+  if (clean.startsWith('eq-')) return 'equalizer';
+  if (clean.startsWith('settings-')) return 'settings';
+  return 'library';
+}
 
 export default function App() {
   const initialSessionRef = useRef<SessionState | null>(null);
@@ -182,6 +232,7 @@ export default function App() {
 
   // Import, Cloud & Global Task Progress state
   const [importingFiles, setImportingFiles] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [cacheStats, setCacheStats] = useState({ count: 0, totalBytes: 0 });
   const [syncBusy, setSyncBusy] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
@@ -257,8 +308,6 @@ export default function App() {
   const folderInputRef = useRef<HTMLInputElement | null>(null);
   const filesInputRef = useRef<HTMLInputElement | null>(null);
   const autoBackupTimerRef = useRef<number | null>(null);
-  const mainScrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const mainScrollTimerRef = useRef<number | null>(null);
   const libraryScrollTopRef = useRef<number>(initialSessionRef.current?.libraryScrollTop || 0);
   const mainScrollTopRef = useRef<number>(initialSessionRef.current?.mainScrollTop || 0);
   const currentTimeRef = useRef<number>(initialSessionRef.current?.currentTimeSeconds || 0);
@@ -462,14 +511,6 @@ export default function App() {
     const sess = initialSessionRef.current;
     const trackToRestore = tracks.find((t) => t.id === currentTrackId) || tracks[0] || null;
 
-    if (mainScrollContainerRef.current && mainScrollTopRef.current > 0) {
-      requestAnimationFrame(() => {
-        if (mainScrollContainerRef.current) {
-          mainScrollContainerRef.current.scrollTop = mainScrollTopRef.current;
-        }
-      });
-    }
-
     if (!trackToRestore) return;
     const restoredSec =
       sess?.currentTrackId === trackToRestore.id
@@ -522,9 +563,6 @@ export default function App() {
       window.removeEventListener('beforeunload', handleLifecycleFlush);
       window.removeEventListener('pagehide', handleLifecycleFlush);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (mainScrollTimerRef.current) {
-        window.clearTimeout(mainScrollTimerRef.current);
-      }
     };
   }, [persistSessionSnapshot]);
 
@@ -1128,8 +1166,36 @@ export default function App() {
     };
   }, [user, settings.autoCloudBackup, playlists, smartPlaylists, eqPresets, handleBackupNow]);
 
+  const normalizedActiveTab = normalizeTab(settings.activeTab);
+  const activeWorkspace = getWorkspaceForTab(normalizedActiveTab);
+  const activeWorkspaceMeta =
+    WORKSPACES.find((w) => w.id === activeWorkspace) || WORKSPACES[0];
+
   const isLibraryTab = (t: NavigationTab): t is LibraryTab =>
     ['songs', 'albums', 'artists', 'genres', 'playlists', 'folders'].includes(t);
+
+  const getStudioPage = (t: NavigationTab): StudioPage | null => {
+    if (t === 'studio-mixes') return 'mixes';
+    if (t === 'studio-playlists') return 'playlists';
+    if (t === 'studio-duplicates') return 'duplicates';
+    if (t === 'studio-tags') return 'tags';
+    if (t === 'studio-artwork') return 'artwork';
+    return null;
+  };
+
+  const getEqPage = (t: NavigationTab): EqualizerPage | null => {
+    if (t === 'eq-rack') return 'rack';
+    if (t === 'eq-presets') return 'presets';
+    return null;
+  };
+
+  const getSettingsPage = (t: NavigationTab): SettingsPage | null => {
+    if (t === 'settings-audio') return 'audio';
+    if (t === 'settings-appearance') return 'appearance';
+    if (t === 'settings-storage') return 'storage';
+    if (t === 'settings-cloud') return 'cloud';
+    return null;
+  };
 
   const upcomingTrack = useMemo(() => {
     if (!currentTrackId || queue.length === 0) return null;
@@ -1138,14 +1204,6 @@ export default function App() {
     if (idx + 1 < queue.length) return queue[idx + 1];
     return settings.repeatMode === 'all' ? queue[0] : null;
   }, [currentTrackId, queue, settings.repeatMode]);
-
-  const handleLibraryScrollChange = useCallback(
-    (scrollTop: number) => {
-      libraryScrollTopRef.current = scrollTop;
-      persistSessionSnapshot(false);
-    },
-    [persistSessionSnapshot]
-  );
 
   const handleChangeLibraryViewMode = useCallback(
     (mode: ViewMode) => {
@@ -1341,8 +1399,12 @@ export default function App() {
     folderInputRef.current?.click();
   }, [handleImportFiles, handleScanNativeAndroid, reportTaskProgress]);
 
+  const studioPage = getStudioPage(normalizedActiveTab);
+  const eqPage = getEqPage(normalizedActiveTab);
+  const settingsPage = getSettingsPage(normalizedActiveTab);
+
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
+    <div className="h-dvh w-full overflow-hidden flex flex-col bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
       {/* Hidden File & Folder Pickers */}
       <input
         ref={folderInputRef}
@@ -1369,14 +1431,14 @@ export default function App() {
         className="hidden"
       />
 
-      {/* Top Bar (Clean 3-Zone Contract: Brand — Search — Primary Action) */}
+      {/* Compact Fixed Top Header */}
       <header
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
-        className="sticky top-0 z-30 border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md px-4 sm:px-6"
+        className="shrink-0 z-30 border-b border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md px-3 sm:px-6"
       >
-        <div className="py-2.5 sm:py-0 sm:h-16 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5 sm:gap-8">
+        <div className="h-12 sm:h-14 flex items-center justify-between gap-2 sm:gap-6">
           <div className="flex items-baseline gap-1.5 whitespace-nowrap shrink-0">
-            <span className="text-lg font-display font-bold tracking-tight">
+            <span className="text-base sm:text-lg font-display font-bold tracking-tight">
               AuraSound
             </span>
             <span className="text-[11px] font-mono-tabular text-zinc-500 dark:text-zinc-400">
@@ -1384,7 +1446,8 @@ export default function App() {
             </span>
           </div>
 
-          <div className="relative order-last sm:order-none basis-full sm:basis-auto sm:flex-1 sm:max-w-md">
+          {/* Desktop/Tablet Inline Search */}
+          <div className="hidden sm:block relative flex-1 max-w-md">
             <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="search"
@@ -1392,7 +1455,7 @@ export default function App() {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search songs, artists, Lithuanian or Cyrillic..."
               aria-label="Search library"
-              className="w-full min-h-[40px] pl-9 pr-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+              className="w-full min-h-[38px] pl-9 pr-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40"
             />
             {searchQuery && (
               <button
@@ -1409,8 +1472,25 @@ export default function App() {
             )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <button
+              type="button"
+              aria-label="Toggle search"
+              onClick={() => {
+                tactile.tap();
+                setMobileSearchOpen((v) => !v);
+              }}
+              className={`sm:hidden min-w-[38px] min-h-[38px] rounded-lg flex items-center justify-center border transition-colors ${
+                mobileSearchOpen || searchQuery
+                  ? 'border-amber-500/50 bg-amber-500/10 accent-text'
+                  : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300'
+              }`}
+            >
+              <Search className="w-4 h-4" />
+            </button>
+
             <PWAInstallButton />
+
             <button
               type="button"
               onClick={() => {
@@ -1422,7 +1502,7 @@ export default function App() {
                 }
               }}
               disabled={importingFiles}
-              className="min-h-[40px] px-3.5 sm:px-4 py-2 rounded-lg accent-bg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0"
+              className="min-h-[38px] px-3 sm:px-3.5 py-1.5 rounded-lg accent-bg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0"
             >
               {isNativeAndroidApp() ? <FolderOpen className="w-3.5 h-3.5" /> : <Upload className="w-3.5 h-3.5" />}
               <span>
@@ -1435,21 +1515,52 @@ export default function App() {
             </button>
           </div>
         </div>
+
+        {/* Collapsible Mobile Search Row */}
+        {(mobileSearchOpen || searchQuery.length > 0) && (
+          <div className="sm:hidden pb-2">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search songs, artists, albums..."
+                aria-label="Search library"
+                className="w-full min-h-[36px] pl-8 pr-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+              />
+              {(searchQuery || mobileSearchOpen) && (
+                <button
+                  type="button"
+                  aria-label="Close search"
+                  onClick={() => {
+                    tactile.tap();
+                    setSearchQuery('');
+                    setMobileSearchOpen(false);
+                  }}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-600"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </header>
 
-      {/* Main Workspace (Sidebar + Viewport) */}
-      <div className="flex-1 flex min-h-0 pb-44 sm:pb-48">
+      {/* Middle Unscrollable Workspace (Desktop Sidebar + Page Viewport) */}
+      <div className="flex-1 min-h-0 flex overflow-hidden">
         {/* Desktop Sidebar */}
-        <aside className="hidden md:flex flex-col justify-between w-60 shrink-0 border-r border-zinc-200 dark:border-zinc-800 p-4 bg-white/50 dark:bg-zinc-950">
-          <div className="space-y-5">
-            {NAV_GROUPS.map((group) => (
-              <div key={group.title} className="space-y-1">
-                <div className="px-3 pb-1 text-[11px] font-medium text-zinc-400 dark:text-zinc-500">
+        <aside className="hidden md:flex flex-col justify-between w-56 shrink-0 border-r border-zinc-200 dark:border-zinc-800 p-3 bg-white/50 dark:bg-zinc-950 overflow-hidden">
+          <div className="space-y-3 overflow-hidden">
+            {WORKSPACES.map((group) => (
+              <div key={group.id} className="space-y-0.5">
+                <div className="px-2.5 pb-0.5 text-[11px] font-medium text-zinc-400 dark:text-zinc-500">
                   {group.title}
                 </div>
                 {group.items.map((item) => {
                   const Icon = item.icon;
-                  const active = settings.activeTab === item.id;
+                  const active = normalizedActiveTab === item.id;
                   return (
                     <button
                       key={item.id}
@@ -1458,38 +1569,36 @@ export default function App() {
                         tactile.tap();
                         updateSettings({ activeTab: item.id });
                       }}
-                      className={`w-full min-h-[40px] px-3 rounded-lg text-sm font-medium flex items-center gap-3 active:scale-[0.98] transition-all duration-100 whitespace-nowrap ${
+                      className={`w-full min-h-[32px] px-2.5 rounded-lg text-xs font-medium flex items-center gap-2.5 active:scale-[0.98] transition-all duration-100 whitespace-nowrap ${
                         active
                           ? 'accent-soft-bg'
                           : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100'
                       }`}
                     >
-                      <Icon className="w-4 h-4 shrink-0" />
-                      <span>{item.label}</span>
+                      <Icon className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">{item.label}</span>
                     </button>
                   );
                 })}
               </div>
             ))}
-
-            <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800">
-              <button
-                type="button"
-                onClick={() => {
-                  tactile.tap();
-                  void handleOpenFolderImport();
-                }}
-                className="w-full min-h-[40px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium flex items-center gap-2.5 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-[0.98] transition-transform duration-100"
-              >
-                <FolderOpen className="w-4 h-4 shrink-0" />
-                <span>Scan Music Folder</span>
-              </button>
-            </div>
           </div>
 
           {/* Sidebar Bottom Quick Controls */}
-          <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800 space-y-2">
-            <div className="flex items-center gap-2">
+          <div className="pt-2.5 border-t border-zinc-200 dark:border-zinc-800 space-y-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                tactile.tap();
+                void handleOpenFolderImport();
+              }}
+              className="w-full min-h-[34px] px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium flex items-center gap-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-[0.98] transition-transform duration-100"
+            >
+              <FolderOpen className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Scan Music Folder</span>
+            </button>
+
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => {
@@ -1498,7 +1607,7 @@ export default function App() {
                   updateSettings({ themeMode: nextMode });
                 }}
                 aria-label="Toggle dark mode"
-                className="flex-1 min-h-[40px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium flex items-center justify-center gap-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-95 transition-transform duration-100"
+                className="flex-1 min-h-[34px] px-2 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium flex items-center justify-center gap-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-95 transition-transform duration-100"
               >
                 {settings.themeMode === 'dark' ? (
                   <Moon className="w-3.5 h-3.5" />
@@ -1515,7 +1624,7 @@ export default function App() {
                   updateSettings({ offlineMode: !settings.offlineMode });
                 }}
                 aria-label="Toggle offline mode"
-                className={`flex-1 min-h-[40px] px-3 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 active:scale-95 transition-all duration-100 ${
+                className={`flex-1 min-h-[34px] px-2 rounded-lg border text-xs font-medium flex items-center justify-center gap-1 active:scale-95 transition-all duration-100 ${
                   settings.offlineMode
                     ? 'border-amber-500/60 bg-amber-500/10 accent-text'
                     : 'border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900'
@@ -1530,10 +1639,10 @@ export default function App() {
               type="button"
               onClick={() => {
                 tactile.tap();
-                if (user) updateSettings({ activeTab: 'settings' });
+                if (user) updateSettings({ activeTab: 'settings-cloud' });
                 else void handleSignInGoogle();
               }}
-              className="w-full min-h-[40px] px-3 rounded-lg bg-zinc-100 dark:bg-zinc-900 text-xs font-medium flex items-center gap-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-[0.98] transition-transform duration-100 truncate"
+              className="w-full min-h-[34px] px-2.5 rounded-lg bg-zinc-100 dark:bg-zinc-900 text-xs font-medium flex items-center gap-2 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-800 active:scale-[0.98] transition-transform duration-100 truncate"
             >
               <Cloud className="w-3.5 h-3.5 accent-text shrink-0" />
               <span className="truncate">{user ? user.email : 'Sign in with Gmail'}</span>
@@ -1541,38 +1650,68 @@ export default function App() {
           </div>
         </aside>
 
-        {/* Main Content Area */}
-        <main className="flex-1 min-w-0 flex flex-col">
-          {/* Mobile Horizontal Tab Strip */}
-          <nav
-            aria-label="Primary navigation"
-            className="md:hidden flex items-center gap-1 overflow-x-auto px-3 py-1.5 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shrink-0"
-          >
-            {NAV_ITEMS.map((item) => {
-              const active = settings.activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => {
-                    tactile.tap();
-                    updateSettings({ activeTab: item.id });
-                  }}
-                  className={`min-h-[36px] px-3 rounded-md text-xs font-medium whitespace-nowrap shrink-0 active:scale-95 transition-all duration-100 ${
-                    active
-                      ? 'accent-soft-bg'
-                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
+        {/* Main Viewport Panel */}
+        <main className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
+          {/* Mobile 2-Tier Unscrollable Navigation (Zero Horizontal Scroll) */}
+          <div className="md:hidden shrink-0 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-2.5 py-1.5 space-y-1">
+            {/* Tier 1: Workspaces */}
+            <div className="grid grid-cols-4 gap-1 p-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-900">
+              {WORKSPACES.map((ws) => {
+                const active = activeWorkspace === ws.id;
+                return (
+                  <button
+                    key={ws.id}
+                    type="button"
+                    onClick={() => {
+                      tactile.tap();
+                      updateSettings({ activeTab: ws.items[0].id });
+                    }}
+                    className={`min-h-[30px] px-1 rounded-md text-[11px] font-semibold whitespace-nowrap transition-colors ${
+                      active
+                        ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm'
+                        : 'text-zinc-500 dark:text-zinc-400'
+                    }`}
+                  >
+                    {ws.mobileTitle}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Tier 2: Sub-Pages inside Active Workspace */}
+            <nav
+              aria-label="Section pages"
+              style={{
+                gridTemplateColumns: `repeat(${activeWorkspaceMeta.items.length}, minmax(0, 1fr))`,
+              }}
+              className="grid gap-1"
+            >
+              {activeWorkspaceMeta.items.map((item) => {
+                const active = normalizedActiveTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      tactile.tap();
+                      updateSettings({ activeTab: item.id });
+                    }}
+                    className={`min-h-[30px] px-1 rounded-md text-[11px] font-medium whitespace-nowrap truncate transition-colors ${
+                      active
+                        ? 'accent-soft-bg'
+                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                    }`}
+                  >
+                    {item.shortLabel}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
 
           {audioError && (
-            <div className="mx-4 sm:mx-6 mt-3 px-4 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 flex items-center justify-between gap-3">
-              <span>{audioError}</span>
+            <div className="shrink-0 mx-3 sm:mx-5 mt-2 px-3 py-2 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 flex items-center justify-between gap-2">
+              <span className="truncate">{audioError}</span>
               <button
                 type="button"
                 onClick={() => setAudioError(null)}
@@ -1583,24 +1722,12 @@ export default function App() {
             </div>
           )}
 
-          <div
-            ref={mainScrollContainerRef}
-            onScroll={() => {
-              if (!mainScrollContainerRef.current) return;
-              if (mainScrollTimerRef.current) window.clearTimeout(mainScrollTimerRef.current);
-              mainScrollTimerRef.current = window.setTimeout(() => {
-                if (mainScrollContainerRef.current) {
-                  mainScrollTopRef.current = Math.round(mainScrollContainerRef.current.scrollTop);
-                  persistSessionSnapshot(false);
-                }
-              }, 120);
-            }}
-            className="flex-1 min-h-0 p-4 sm:p-6 overflow-y-auto"
-          >
-            {isLibraryTab(settings.activeTab) && (
+          {/* Fixed Active Page Container (100% overflow-hidden) */}
+          <div className="flex-1 min-h-0 p-3 sm:p-5 overflow-hidden flex flex-col">
+            {isLibraryTab(normalizedActiveTab) && (
               <LibraryBrowser
-                tab={settings.activeTab}
-                viewMode={settings.viewModes[settings.activeTab]}
+                tab={normalizedActiveTab}
+                viewMode={settings.viewModes[normalizedActiveTab]}
                 tracks={visibleTracks}
                 playlists={playlists}
                 currentTrackId={currentTrackId}
@@ -1610,8 +1737,6 @@ export default function App() {
                 selectedGenreFilter={selectedGenreFilter}
                 selectedFolderFilter={selectedFolderFilter}
                 selectedPlaylistFilter={selectedPlaylistFilter}
-                initialScrollTop={libraryScrollTopRef.current}
-                onScrollChange={handleLibraryScrollChange}
                 onChangeViewMode={handleChangeLibraryViewMode}
                 onPlayTrack={handlePlayFromLibrary}
                 onPlayAll={playCollectionQueue}
@@ -1630,8 +1755,9 @@ export default function App() {
               />
             )}
 
-            {settings.activeTab === 'studio' && (
+            {studioPage && (
               <SmartStudioView
+                page={studioPage}
                 user={user}
                 tracks={tracks}
                 smartPlaylists={smartPlaylists}
@@ -1681,13 +1807,17 @@ export default function App() {
               />
             )}
 
-            {settings.activeTab === 'equalizer' && (
+            {eqPage && (
               <EqualizerPanel
+                page={eqPage}
                 enabled={settings.eqEnabled}
                 bands={settings.activeEqBands}
                 preampDb={settings.eqPreampDb}
                 activePresetId={settings.activeEqPresetId}
                 presets={eqPresets}
+                onChangePage={(p) =>
+                  updateSettings({ activeTab: p === 'rack' ? 'eq-rack' : 'eq-presets' })
+                }
                 onToggleEnabled={() => updateSettings({ eqEnabled: !settings.eqEnabled })}
                 onChangeBand={(idx, db) => {
                   const next = [...settings.activeEqBands];
@@ -1737,8 +1867,9 @@ export default function App() {
               />
             )}
 
-            {settings.activeTab === 'settings' && (
+            {settingsPage && (
               <SettingsCloudView
+                page={settingsPage}
                 user={user}
                 settings={settings}
                 cacheStats={cacheStats}
@@ -1839,7 +1970,7 @@ export default function App() {
         }}
       />
 
-      {/* Persistent Bottom Hi-Fi Player Bar */}
+      {/* Persistent Bottom Hi-Fi Player Bar (flex-shrink-0 slot guarantees exact remaining height above) */}
       <PlayerBar
         track={currentTrack}
         isPlaying={isPlaying}
@@ -1876,7 +2007,7 @@ export default function App() {
         }
         onOpenEqualizer={() => {
           tactile.tap();
-          updateSettings({ activeTab: 'equalizer' });
+          updateSettings({ activeTab: 'eq-rack' });
         }}
         onOpenCast={() => {
           tactile.sheet(true);
@@ -1894,6 +2025,7 @@ export default function App() {
         open={nowPlayingOpen}
         track={currentTrack}
         nextTrack={upcomingTrack}
+        queue={queue}
         isPlaying={isPlaying}
         shuffle={settings.shuffle}
         repeatMode={settings.repeatMode}
@@ -1907,6 +2039,7 @@ export default function App() {
         onTogglePlay={() => void handleTogglePlayPause()}
         onPrev={handlePrev}
         onNext={handleNext}
+        onPlayQueueTrack={(qt) => void playTrack(qt, queue)}
         onToggleShuffle={() => {
           tactile.toggle(!settings.shuffle);
           updateSettings({ shuffle: !settings.shuffle });
@@ -1926,7 +2059,7 @@ export default function App() {
         onRateTrack={handleRateTrack}
         onOpenEqualizer={() => {
           tactile.tap();
-          updateSettings({ activeTab: 'equalizer' });
+          updateSettings({ activeTab: 'eq-rack' });
         }}
         onOpenCast={() => {
           tactile.sheet(true);

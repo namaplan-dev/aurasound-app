@@ -87,7 +87,7 @@ export const AlphabetIndexSlider: React.FC<AlphabetIndexSliderProps> = React.mem
     const step = letters.length > 36 ? 2 : 1;
 
     return (
-      <div className="relative flex items-center select-none shrink-0 z-20 pr-0.5 sm:pr-1">
+      <div className="relative h-full min-h-0 flex items-center select-none shrink-0 z-20 pr-0.5 sm:pr-1">
         {/* Enlarged floating popup letter indicator while sliding */}
         {draggingLetter && (
           <div
@@ -153,7 +153,7 @@ export const AlphabetIndexSlider: React.FC<AlphabetIndexSliderProps> = React.mem
             setDragRatio(null);
             lastEmittedRef.current = null;
           }}
-          className="relative flex flex-col items-center justify-between py-3 px-1.5 w-8 sm:w-9 rounded-full bg-zinc-200/80 dark:bg-zinc-900/90 border border-zinc-300/80 dark:border-zinc-700/80 touch-none cursor-grab active:cursor-grabbing min-h-[280px] h-[64vh] max-h-[540px]"
+          className="relative flex flex-col items-center justify-between py-2.5 px-1.5 w-8 sm:w-9 rounded-full bg-zinc-200/80 dark:bg-zinc-900/90 border border-zinc-300/80 dark:border-zinc-700/80 touch-none cursor-grab active:cursor-grabbing h-full max-h-[480px] min-h-[140px]"
         >
           {/* Letter indices along the track */}
           {letters.map((letter, idx) => {

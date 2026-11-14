@@ -1,7 +1,7 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { Track } from '../types/music';
-import { createTrackFingerprint } from './metadataParser';
+import { createTrackFingerprint, inferHierarchyFromPath } from './metadataParser';
 import { repairMojibakeText } from '../utils/textNormalization';
 import defaultVinylCover from '../assets/images/album_nocturne_vinyl_1794587934959.jpg';
 
@@ -13,6 +13,8 @@ interface NativeScannedTrack {
   artist: string;
   album: string;
   genre: string;
+  year?: string;
+  composer?: string;
   durationSec: number;
   fileName: string;
   folderPath: string;
@@ -33,10 +35,44 @@ export interface NativeScanProgress {
   fileName: string;
 }
 
+export interface NativeTagWriteItem {
+  contentUri?: string;
+  filePath?: string;
+  title?: string;
+  artist?: string;
+  album?: string;
+  genre?: string;
+  year?: string;
+  composer?: string;
+}
+
+export interface NativeDeleteResult {
+  deletedCount: number;
+  cancelled: boolean;
+  diskDeleted: boolean;
+}
+
+export interface NativeTagWriteResult {
+  updatedCount: number;
+  embeddedCount?: number;
+  cancelled: boolean;
+}
+
 interface LocalMusicScannerPlugin {
   scanDeviceAudio(): Promise<{ tracks: NativeScannedTrack[]; count: number }>;
+  deleteAudioFiles(options: {
+    uris: string[];
+    paths: string[];
+  }): Promise<NativeDeleteResult>;
+  writeAudioTags(options: {
+    updates: NativeTagWriteItem[];
+  }): Promise<NativeTagWriteResult>;
+  setAsRingtone(options: {
+    contentUri?: string;
+    filePath?: string;
+  }): Promise<{ success: boolean; cancelled: boolean; uri?: string }>;
   addListener(
-    eventName: 'scanProgress',
+    eventName: 'scanProgress' | 'tagWriteProgress',
     listenerFunc: (event: NativeScanProgress) => void
   ): Promise<PluginListenerHandle>;
 }
@@ -52,6 +88,66 @@ export function resolveNativePlaybackUrl(track: Track): string | null {
   const target = track.nativeUri || track.nativePath;
   if (!target) return null;
   return Capacitor.convertFileSrc(target);
+}
+
+export async function setNativeRingtone(
+  track: Track
+): Promise<{ success: boolean; cancelled: boolean; uri?: string }> {
+  if (!isNativeAndroidApp()) {
+    return { success: false, cancelled: false };
+  }
+  return LocalMusicScanner.setAsRingtone({
+    contentUri: track.nativeUri,
+    filePath: track.nativePath,
+  });
+}
+
+export async function deleteNativeAudioFiles(tracks: Track[]): Promise<NativeDeleteResult> {
+  if (!isNativeAndroidApp()) {
+    return { deletedCount: 0, cancelled: false, diskDeleted: false };
+  }
+  const uris = tracks
+    .map((t) => t.nativeUri)
+    .filter((u): u is string => Boolean(u && u.trim()));
+  const paths = tracks
+    .map((t) => t.nativePath)
+    .filter((p): p is string => Boolean(p && p.trim()));
+
+  if (uris.length === 0 && paths.length === 0) {
+    return { deletedCount: 0, cancelled: false, diskDeleted: false };
+  }
+  return LocalMusicScanner.deleteAudioFiles({ uris, paths });
+}
+
+export async function writeNativeAudioTags(
+  updates: NativeTagWriteItem[],
+  onProgress?: (progress: NativeScanProgress) => void
+): Promise<NativeTagWriteResult> {
+  if (!isNativeAndroidApp() || updates.length === 0) {
+    return { updatedCount: 0, embeddedCount: 0, cancelled: false };
+  }
+  let handle: PluginListenerHandle | null = null;
+  if (onProgress) {
+    try {
+      handle = await LocalMusicScanner.addListener('tagWriteProgress', (ev) => {
+        onProgress({
+          current: ev?.current ?? 0,
+          total: ev?.total ?? updates.length,
+          fileName: ev?.fileName || 'Writing audio tags...',
+        });
+      });
+    } catch {
+      handle = null;
+    }
+  }
+
+  try {
+    return await LocalMusicScanner.writeAudioTags({ updates });
+  } finally {
+    if (handle) {
+      void handle.remove();
+    }
+  }
 }
 
 export async function scanAndroidDeviceLibrary(
@@ -89,10 +185,18 @@ export async function scanAndroidDeviceLibrary(
 
   for (let i = 0; i < totalItems; i++) {
     const item = items[i];
-    const title = repairMojibakeText(item.title || item.fileName || 'Untitled Track');
-    const artist = repairMojibakeText(item.artist || 'Unknown Artist');
-    const album = repairMojibakeText(item.album || 'Local Collection');
+    const resolved = inferHierarchyFromPath(
+      item.folderPath || item.filePath,
+      item.fileName,
+      item.title,
+      item.artist,
+      item.album
+    );
+    const title = resolved.title;
+    const artist = resolved.artist;
+    const album = resolved.album;
     const genre = repairMojibakeText(item.genre || 'Local Audio');
+    const yearMatch = String(item.year || '').match(/\b(19\d{2}|20\d{2})\b/);
     const fingerprint = createTrackFingerprint(title, artist, item.fileSize);
     const coverUrl = item.albumArtUri
       ? Capacitor.convertFileSrc(item.albumArtUri)
@@ -104,6 +208,8 @@ export async function scanAndroidDeviceLibrary(
       artist,
       album,
       genre,
+      year: yearMatch ? yearMatch[1] : undefined,
+      composer: item.composer ? repairMojibakeText(item.composer) : undefined,
       duration: Math.max(1, item.durationSec || 180),
       format: item.format || 'MP3',
       sampleRate: item.sampleRate || 44100,
@@ -119,6 +225,7 @@ export async function scanAndroidDeviceLibrary(
       favorite: false,
       rating: 0,
       playCount: 0,
+      skipCount: 0,
       addedAt: item.addedAt || Date.now(),
       offlineCached: true,
       fingerprint,

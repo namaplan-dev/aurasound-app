@@ -511,6 +511,7 @@ export const NowPlayingView = React.memo(
                             className="hover:underline truncate"
                           >
                             {track.album}
+                            {track.year ? ` (${track.year})` : ''}
                           </button>
                         </div>
                         <div className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400 font-mono-tabular truncate">

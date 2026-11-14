@@ -18,10 +18,9 @@ import {
   Volume2,
   Wrench,
 } from 'lucide-react';
-import { AppSettings, AppTaskProgress, StreamingQuality, ThemeAccent } from '../types/music';
+import { AppSettings, StreamingQuality, ThemeAccent } from '../types/music';
 import { tactile } from '../services/tactileFeedback';
 import { APP_VERSION } from '../version';
-import { ProgressBar } from './ProgressBar';
 
 export type SettingsPage = 'audio' | 'devices' | 'theme' | 'widgets' | 'storage' | 'cloud';
 
@@ -32,8 +31,6 @@ interface SettingsCloudViewProps {
   cacheStats: { count: number; totalBytes: number };
   syncBusy: boolean;
   syncMessage: string | null;
-  syncProgress?: AppTaskProgress | null;
-  storageProgress?: AppTaskProgress | null;
   onUpdateSettings: (patch: Partial<AppSettings>) => void;
   onSignInGoogle: () => void;
   onSignOutGoogle: () => void;
@@ -108,8 +105,6 @@ export const SettingsCloudView: React.FC<SettingsCloudViewProps> = ({
   cacheStats,
   syncBusy,
   syncMessage,
-  syncProgress,
-  storageProgress,
   onUpdateSettings,
   onSignInGoogle,
   onSignOutGoogle,
@@ -458,18 +453,6 @@ export const SettingsCloudView: React.FC<SettingsCloudViewProps> = ({
                 <span>Repair Cyrillic / Mojibake Tags</span>
               </button>
             </div>
-
-            {storageProgress && (
-              <ProgressBar
-                compact
-                label={storageProgress.title}
-                detail={storageProgress.detail}
-                current={storageProgress.current}
-                total={storageProgress.total}
-                percent={storageProgress.percent}
-                status={storageProgress.status}
-              />
-            )}
           </section>
         )}
 
@@ -504,11 +487,16 @@ export const SettingsCloudView: React.FC<SettingsCloudViewProps> = ({
               ) : (
                 <button
                   type="button"
+                  disabled={syncBusy}
                   onClick={onSignInGoogle}
-                  className="min-h-[38px] px-3.5 rounded-lg accent-bg text-xs font-medium flex items-center gap-1.5 active:scale-95 transition-transform duration-100"
+                  className="min-h-[38px] px-3.5 rounded-lg accent-bg text-xs font-medium flex items-center gap-1.5 active:scale-95 transition-transform duration-100 disabled:opacity-50"
                 >
-                  <LogIn className="w-3.5 h-3.5" />
-                  <span>Sign in with Gmail</span>
+                  {syncBusy ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <LogIn className="w-3.5 h-3.5" />
+                  )}
+                  <span>{syncBusy ? 'Connecting...' : 'Sign in with Gmail'}</span>
                 </button>
               )}
             </div>
@@ -546,18 +534,6 @@ export const SettingsCloudView: React.FC<SettingsCloudViewProps> = ({
                 />
               </div>
             </div>
-
-            {syncProgress && (
-              <ProgressBar
-                compact
-                label={syncProgress.title}
-                detail={syncProgress.detail}
-                current={syncProgress.current}
-                total={syncProgress.total}
-                percent={syncProgress.percent}
-                status={syncProgress.status}
-              />
-            )}
 
             {syncMessage && (
               <div className="text-[11px] text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-950 px-2.5 py-1.5 rounded-lg truncate">

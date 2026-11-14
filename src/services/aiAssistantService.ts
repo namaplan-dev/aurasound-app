@@ -4,9 +4,10 @@ import {
   DuplicateGroup,
   DuplicateItem,
   TagCleanupSuggestion,
+  TaskItemProgress,
   Track,
 } from '../types/music';
-import { normalizeForSearch, repairMojibakeText } from '../utils/textNormalization';
+import { normalizeForSearch } from '../utils/textNormalization';
 
 const DEFAULT_REMOTE_API_ORIGIN =
   'https://ais-pre-bulzh7ejs2pbrgp7btccwz-471055910043.europe-west2.run.app';
@@ -22,7 +23,31 @@ export function resolveApiUrl(path: string): string {
   return path;
 }
 
-export type StepProgressCallback = (current: number, total: number, detail: string) => void;
+async function fetchWithClientTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs = 40000
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error('AI request timed out. Try a smaller batch size.');
+    }
+    throw err;
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+export type StepProgressCallback = (
+  current: number,
+  total: number,
+  detail: string,
+  item?: TaskItemProgress
+) => void;
 
 function qualityScore(t: Track): number {
   const formatWeight: Record<Track['format'], number> = {
@@ -48,7 +73,9 @@ function cleanTrackTitleForMatch(title: string): string {
       .replace(/\.(flac|alac|wav|wave|mp3|m4a|aac|ogg|opus)$/i, '')
       .replace(/\([^)]*(remaster|live|acoustic|mono|stereo|deluxe|version|edit)[^)]*\)/gi, '')
       .replace(/\[[^\]]*\]/g, '')
-  ).replace(/\s+/g, ' ').trim();
+  )
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 export async function runDuplicateScan(
@@ -57,36 +84,57 @@ export async function runDuplicateScan(
 ): Promise<DuplicateGroup[]> {
   const total = tracks.length;
   if (total < 2) {
-    onProgress(total, total, 'Need at least 2 tracks to scan for duplicates.');
+    onProgress(total, total, 'Need at least 2 tracks to scan for duplicates.', {
+      label: tracks[0]?.title || 'Library check',
+      current: 1,
+      total: 1,
+      percent: 100,
+    });
     return [];
   }
 
   const groupsByKey = new Map<string, Track[]>();
-  const yieldFrame = () => new Promise<void>((r) => setTimeout(r, 12));
+  const yieldFrame = () => new Promise<void>((r) => setTimeout(r, 14));
 
-  // Step 1: Fast batched acoustic/metadata normalization across all tracks
-  const batchSize = 25;
-  for (let i = 0; i < total; i += batchSize) {
-    const slice = tracks.slice(i, i + batchSize);
-    for (const t of slice) {
-      const cleanTitle = cleanTrackTitleForMatch(t.title || t.fileName || '');
-      const cleanArtist = normalizeForSearch(
-        t.artist === 'Unknown Artist' ? '' : t.artist
-      ).trim();
-      const durBucket = Math.round((t.duration || 0) / 4);
-      const key = cleanArtist
-        ? `${cleanArtist}::${cleanTitle}`
-        : `${cleanTitle}::d${durBucket}`;
-      const bucket = groupsByKey.get(key) || [];
-      bucket.push(t);
-      groupsByKey.set(key, bucket);
-    }
+  // Step 1: Per-track acoustic/metadata fingerprinting
+  for (let i = 0; i < total; i++) {
+    const t = tracks[i];
     onProgress(
-      Math.min(i + slice.length, total),
+      i,
       total,
-      `Comparing titles, fingerprints & bitrates (${Math.min(i + slice.length, total)}/${total})`
+      `Inspecting ${i + 1} / ${total}`,
+      {
+        label: `${t.artist} — ${t.title}`,
+        current: 1,
+        total: 2,
+        percent: 50,
+      }
     );
-    await yieldFrame();
+
+    const cleanTitle = cleanTrackTitleForMatch(t.title || t.fileName || '');
+    const cleanArtist = normalizeForSearch(
+      t.artist === 'Unknown Artist' ? '' : t.artist
+    ).trim();
+    const durBucket = Math.round((t.duration || 0) / 4);
+    const key = cleanArtist ? `${cleanArtist}::${cleanTitle}` : `${cleanTitle}::d${durBucket}`;
+    const bucket = groupsByKey.get(key) || [];
+    bucket.push(t);
+    groupsByKey.set(key, bucket);
+
+    onProgress(
+      i + 1,
+      total,
+      `Indexed ${i + 1} / ${total}`,
+      {
+        label: `${t.artist} — ${t.title}`,
+        current: 2,
+        total: 2,
+        percent: 100,
+      }
+    );
+    if (i % 4 === 3 || i === total - 1) {
+      await yieldFrame();
+    }
   }
 
   const candidateGroups: DuplicateGroup[] = [];
@@ -119,17 +167,19 @@ export async function runDuplicateScan(
     });
   }
 
-  // Step 2: AI semantic duplicate check in batches (catches spelling/transliteration/remaster variants)
+  // Step 2: AI semantic duplicate check in batches
   const aiChunkSize = 50;
   for (let i = 0; i < tracks.length; i += aiChunkSize) {
     const chunk = tracks.slice(i, i + aiChunkSize);
-    onProgress(
-      Math.min(i + chunk.length, total),
-      total,
-      `AI semantic duplicate check (${Math.min(i + chunk.length, total)}/${total})...`
-    );
+    const batchLabel = `AI Semantic Batch ${Math.floor(i / aiChunkSize) + 1} (${chunk[0]?.title || 'tracks'})`;
+    onProgress(Math.min(i + chunk.length, total), total, batchLabel, {
+      label: batchLabel,
+      current: 1,
+      total: 2,
+      percent: 45,
+    });
     try {
-      const resp = await fetch(resolveApiUrl('/api/ai/duplicate-scan'), {
+      const resp = await fetchWithClientTimeout(resolveApiUrl('/api/ai/duplicate-scan'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tracks: chunk }),
@@ -180,128 +230,171 @@ export async function runDuplicateScan(
     } catch {
       // Keep local duplicate findings if offline/unreachable
     }
+    onProgress(Math.min(i + chunk.length, total), total, batchLabel, {
+      label: batchLabel,
+      current: 2,
+      total: 2,
+      percent: 100,
+    });
   }
 
-  onProgress(total, total, `Duplicate scan finished (${candidateGroups.length} group(s) found)`);
+  onProgress(total, total, `Duplicate scan finished (${candidateGroups.length} group(s))`, {
+    label: `Found ${candidateGroups.length} duplicate group(s)`,
+    current: 1,
+    total: 1,
+    percent: 100,
+  });
   return candidateGroups;
 }
 
-function localCleanupFallback(orig: Track): TagCleanupSuggestion | null {
-  let cleanTitle = repairMojibakeText(orig.title || orig.fileName || '')
-    .replace(/\.(flac|alac|wav|wave|mp3|m4a|aac|ogg|opus)$/i, '')
-    .replace(/_/g, ' ')
-    .replace(/^\d{1,3}[\s.-]+/, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-  let cleanArtist = repairMojibakeText(orig.artist || 'Unknown Artist')
-    .replace(/_/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  const cleanAlbum = repairMojibakeText(orig.album || 'Local Collection')
-    .replace(/_/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  const cleanGenre = repairMojibakeText(orig.genre || 'Audio').trim();
+const GENERIC_ALBUM_REGEX = /^(|unknown album|unknown|local collection|local audio|music|downloads?|audio|various|none|n\/a)$/i;
+const GENERIC_ARTIST_REGEX = /^(|unknown artist|unknown|various artists|artist|audio|n\/a)$/i;
+const GENERIC_GENRE_REGEX = /^(|unknown|audio|music|other|genre|local)$/i;
 
-  if (cleanArtist === 'Unknown Artist' && cleanTitle.includes(' - ')) {
-    const [a, ...rest] = cleanTitle.split(' - ');
-    if (a.trim() && rest.join(' - ').trim()) {
-      cleanArtist = a.trim();
-      cleanTitle = rest.join(' - ').trim();
-    }
-  }
+export function scoreTrackMetadataNeeds(t: Track): number {
+  let score = 0;
+  if (GENERIC_ALBUM_REGEX.test((t.album || '').trim())) score += 40;
+  if (GENERIC_ARTIST_REGEX.test((t.artist || '').trim())) score += 35;
+  if (!t.year || !/^\d{4}$/.test(t.year.trim())) score += 25;
+  if (GENERIC_GENRE_REGEX.test((t.genre || '').trim())) score += 15;
+  if (/^\d{1,3}[\s._-]+|_|\.(mp3|flac|wav|m4a|ogg|aac|alac)$/i.test(t.title || '')) score += 20;
+  if (/\[[^\]]+\]|\(\s*\d{2,3}\s*kbps\s*\)/i.test(t.title || '')) score += 15;
+  if (/[^\x00-\x7F]/.test(t.title) && /[ÃÐÑ]/.test(t.title)) score += 30;
+  return score;
+}
 
-  const changed =
-    cleanTitle !== orig.title ||
-    cleanArtist !== orig.artist ||
-    cleanAlbum !== orig.album ||
-    cleanGenre !== orig.genre;
+export function prioritizeTracksForTagScan(tracks: Track[]): Track[] {
+  return [...tracks].sort((a, b) => scoreTrackMetadataNeeds(b) - scoreTrackMetadataNeeds(a));
+}
 
-  if (!changed) return null;
-
+export function applyTagSuggestionToTrack(t: Track, s: TagCleanupSuggestion): Track {
+  const nextYear =
+    s.suggestedYear !== undefined
+      ? s.suggestedYear.trim() || undefined
+      : t.year;
   return {
-    trackId: orig.id,
-    currentTitle: orig.title,
-    currentArtist: orig.artist,
-    currentAlbum: orig.album,
-    currentGenre: orig.genre,
-    suggestedTitle: cleanTitle || orig.title,
-    suggestedArtist: cleanArtist || orig.artist,
-    suggestedAlbum: cleanAlbum || orig.album,
-    suggestedGenre: cleanGenre || orig.genre,
-    reason: 'Normalized underscores, track numbers, encoding & artist/title formatting',
-    selected: true,
+    ...t,
+    title: s.suggestedTitle || t.title,
+    artist: s.suggestedArtist || t.artist,
+    album: s.suggestedAlbum || t.album,
+    genre: s.suggestedGenre || t.genre,
+    year: nextYear,
   };
+}
+
+export function applyTagSuggestionsToList(
+  tracks: Track[],
+  suggestions: TagCleanupSuggestion[]
+): Track[] {
+  if (suggestions.length === 0) return tracks;
+  const map = new Map(suggestions.map((s) => [s.trackId, s]));
+  return tracks.map((t) => {
+    const s = map.get(t.id);
+    return s ? applyTagSuggestionToTrack(t, s) : t;
+  });
+}
+
+export interface TagCleanupScanOptions {
+  batchSize?: number;
+  onBatchComplete?: (batchSuggestions: TagCleanupSuggestion[]) => void;
 }
 
 export async function runBatchedTagCleanupScan(
   tracks: Track[],
-  onProgress: StepProgressCallback
+  onProgress: StepProgressCallback,
+  options?: TagCleanupScanOptions
 ): Promise<TagCleanupSuggestion[]> {
   const total = tracks.length;
   if (total === 0) return [];
 
-  const trackMap = new Map(tracks.map((t) => [t.id, t]));
+  const batchSize = Math.max(5, Math.min(40, Math.round(options?.batchSize ?? 15)));
+  const totalBatches = Math.ceil(total / batchSize);
   const suggestionsById = new Map<string, TagCleanupSuggestion>();
-  const batchSize = 20;
 
   for (let i = 0; i < total; i += batchSize) {
     const chunk = tracks.slice(i, i + batchSize);
-    const doneCount = Math.min(i + chunk.length, total);
-    onProgress(
-      doneCount - Math.ceil(chunk.length * 0.5),
-      total,
-      `AI analyzing tags for batch ${Math.floor(i / batchSize) + 1} (${doneCount}/${total} tracks)...`
-    );
+    const batchNum = Math.floor(i / batchSize) + 1;
+    const first = chunk[0];
 
-    let serverSucceeded = false;
-    try {
-      const resp = await fetch(resolveApiUrl('/api/ai/tag-cleanup'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tracks: chunk }),
-      });
-      if (resp.ok) {
-        serverSucceeded = true;
-        const data = (await resp.json()) as {
-          suggestions?: Array<Record<string, string>>;
-        };
-        for (const s of data.suggestions || []) {
-          const orig = trackMap.get(s.trackId);
-          if (!orig) continue;
-          suggestionsById.set(orig.id, {
+    onProgress(i, total, `AI inspecting batch ${batchNum}/${totalBatches} (${chunk.length} tracks)...`, {
+      label: first ? `${first.artist} — ${first.title}` : `Batch ${batchNum}/${totalBatches}`,
+      current: 0,
+      total: chunk.length,
+      percent: 12,
+    });
+
+    const resp = await fetchWithClientTimeout(resolveApiUrl('/api/ai/tag-cleanup'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tracks: chunk }),
+    });
+
+    const payload = (await resp.json().catch(() => ({}))) as {
+      error?: string;
+      suggestions?: Array<Record<string, string>>;
+    };
+
+    if (!resp.ok) {
+      throw new Error(payload.error || `AI metadata service returned HTTP ${resp.status}.`);
+    }
+
+    const batchSuggestions: TagCleanupSuggestion[] = [];
+    for (let k = 0; k < chunk.length; k++) {
+      const orig = chunk[k];
+      const match = (payload.suggestions || []).find((s) => s.trackId === orig.id);
+      if (match) {
+        const nextTitle = (match.suggestedTitle || orig.title).trim() || orig.title;
+        const nextArtist = (match.suggestedArtist || orig.artist).trim() || orig.artist;
+        const nextAlbum = (match.suggestedAlbum || orig.album).trim() || orig.album;
+        const nextGenre = (match.suggestedGenre || orig.genre).trim() || orig.genre;
+        const nextYear = (match.suggestedYear || orig.year || '').trim();
+        const origYear = (orig.year || '').trim();
+
+        const hasRealChange =
+          nextTitle !== orig.title.trim() ||
+          nextArtist !== orig.artist.trim() ||
+          nextAlbum !== orig.album.trim() ||
+          nextGenre !== orig.genre.trim() ||
+          (Boolean(nextYear) && nextYear !== origYear);
+
+        if (hasRealChange) {
+          const item: TagCleanupSuggestion = {
             trackId: orig.id,
             currentTitle: orig.title,
             currentArtist: orig.artist,
             currentAlbum: orig.album,
             currentGenre: orig.genre,
-            suggestedTitle: s.suggestedTitle || orig.title,
-            suggestedArtist: s.suggestedArtist || orig.artist,
-            suggestedAlbum: s.suggestedAlbum || orig.album,
-            suggestedGenre: s.suggestedGenre || orig.genre,
-            reason: s.reason || 'AI normalized metadata tags',
+            currentYear: origYear,
+            suggestedTitle: nextTitle,
+            suggestedArtist: nextArtist,
+            suggestedAlbum: nextAlbum,
+            suggestedGenre: nextGenre,
+            suggestedYear: nextYear,
+            reason: (match.reason || 'AI identified & corrected metadata').trim(),
             selected: true,
-          });
+          };
+          suggestionsById.set(orig.id, item);
+          batchSuggestions.push(item);
         }
       }
-    } catch {
-      serverSucceeded = false;
-    }
 
-    if (!serverSucceeded) {
-      for (const orig of chunk) {
-        const localFix = localCleanupFallback(orig);
-        if (localFix) {
-          suggestionsById.set(orig.id, localFix);
+      const itemPercent = Math.round(((k + 1) / Math.max(1, chunk.length)) * 100);
+      onProgress(
+        i + k + 1,
+        total,
+        `Batch ${batchNum}/${totalBatches} · Fixed ${batchSuggestions.length} in batch`,
+        {
+          label: `${orig.artist} — ${orig.title}`,
+          current: k + 1,
+          total: chunk.length,
+          percent: itemPercent,
         }
-      }
+      );
     }
 
-    onProgress(
-      doneCount,
-      total,
-      `Inspected ${doneCount} of ${total} tracks (${suggestionsById.size} improvement(s) found)`
-    );
+    if (batchSuggestions.length > 0) {
+      options?.onBatchComplete?.(batchSuggestions);
+    }
   }
 
   return Array.from(suggestionsById.values());
@@ -350,12 +443,13 @@ export async function runOriginalAlbumArtScan(
 
   for (let i = 0; i < total; i += batchSize) {
     const chunk = tracks.slice(i, i + batchSize);
-    const doneCount = Math.min(i + chunk.length, total);
-    onProgress(
-      i,
-      total,
-      `Searching original album covers for "${chunk[0]?.title || 'tracks'}" (${doneCount}/${total})...`
-    );
+    const first = chunk[0];
+    onProgress(i, total, `Matching artwork (${i + 1}–${Math.min(i + chunk.length, total)}/${total})`, {
+      label: first ? `${first.artist} — ${first.album || first.title}` : 'Album Art Query',
+      current: 1,
+      total: 3,
+      percent: 33,
+    });
 
     let handledByServer = false;
     try {
@@ -373,18 +467,29 @@ export async function runOriginalAlbumArtScan(
             sourceLabel?: string;
           }>;
         };
-        for (const r of data.results || []) {
-          const orig = trackMap.get(r.trackId);
-          if (!orig || !r.coverUrl) continue;
-          found.push({
-            trackId: orig.id,
-            title: orig.title,
-            artist: orig.artist,
-            album: orig.album,
-            currentCoverUrl: orig.coverUrl,
-            suggestedCoverUrl: r.coverUrl,
-            sourceLabel: r.sourceLabel || 'Original Release Artwork',
-            selected: true,
+        for (let k = 0; k < chunk.length; k++) {
+          const orig = chunk[k];
+          const match = (data.results || []).find((r) => r.trackId === orig.id);
+          if (match && match.coverUrl) {
+            const target = trackMap.get(orig.id);
+            if (target) {
+              found.push({
+                trackId: target.id,
+                title: target.title,
+                artist: target.artist,
+                album: target.album,
+                currentCoverUrl: target.coverUrl,
+                suggestedCoverUrl: match.coverUrl,
+                sourceLabel: match.sourceLabel || 'Original Release Artwork',
+                selected: true,
+              });
+            }
+          }
+          onProgress(i + k + 1, total, `Checked ${i + k + 1} / ${total}`, {
+            label: `${orig.artist} — ${orig.title}`,
+            current: 3,
+            total: 3,
+            percent: 100,
           });
         }
       }
@@ -395,11 +500,12 @@ export async function runOriginalAlbumArtScan(
     if (!handledByServer) {
       for (let j = 0; j < chunk.length; j++) {
         const t = chunk[j];
-        onProgress(
-          i + j + 1,
-          total,
-          `Searching cover for "${t.artist} — ${t.title}" (${i + j + 1}/${total})`
-        );
+        onProgress(i + j, total, `Querying catalog for "${t.title}"`, {
+          label: `${t.artist} — ${t.title}`,
+          current: 1,
+          total: 2,
+          percent: 50,
+        });
         const match = await clientItunesCoverLookup(t.artist, t.album, t.title);
         if (match) {
           found.push({
@@ -413,14 +519,14 @@ export async function runOriginalAlbumArtScan(
             selected: true,
           });
         }
+        onProgress(i + j + 1, total, `Checked ${i + j + 1} / ${total}`, {
+          label: `${t.artist} — ${t.title}`,
+          current: 2,
+          total: 2,
+          percent: 100,
+        });
       }
     }
-
-    onProgress(
-      doneCount,
-      total,
-      `Checked ${doneCount} of ${total} tracks · Found ${found.length} original cover(s)`
-    );
   }
 
   return found;
@@ -430,7 +536,12 @@ export async function resizeArtworkFileToDataUrl(
   file: File,
   onProgress?: StepProgressCallback
 ): Promise<string> {
-  onProgress?.(1, 4, `Reading image "${file.name}"...`);
+  onProgress?.(1, 4, `Reading image "${file.name}"...`, {
+    label: file.name,
+    current: 1,
+    total: 4,
+    percent: 25,
+  });
 
   const rawDataUrl = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -439,7 +550,12 @@ export async function resizeArtworkFileToDataUrl(
     reader.readAsDataURL(file);
   });
 
-  onProgress?.(2, 4, 'Decoding artwork dimensions...');
+  onProgress?.(2, 4, 'Decoding artwork dimensions...', {
+    label: file.name,
+    current: 2,
+    total: 4,
+    percent: 50,
+  });
   const img = await new Promise<HTMLImageElement>((resolve, reject) => {
     const el = new Image();
     el.onload = () => resolve(el);
@@ -447,7 +563,12 @@ export async function resizeArtworkFileToDataUrl(
     el.src = rawDataUrl;
   });
 
-  onProgress?.(3, 4, 'Optimizing cover art to 512×512 hi-res JPEG...');
+  onProgress?.(3, 4, 'Optimizing cover art to 512×512 hi-res JPEG...', {
+    label: file.name,
+    current: 3,
+    total: 4,
+    percent: 75,
+  });
   const maxDim = 512;
   const size = Math.min(maxDim, Math.max(img.width, img.height, 256));
   const canvas = document.createElement('canvas');
@@ -464,6 +585,11 @@ export async function resizeArtworkFileToDataUrl(
   ctx.drawImage(img, dx, dy, drawW, drawH);
 
   const optimized = canvas.toDataURL('image/jpeg', 0.86);
-  onProgress?.(4, 4, 'Original album cover ready to apply.');
+  onProgress?.(4, 4, 'Original album cover ready to apply.', {
+    label: file.name,
+    current: 4,
+    total: 4,
+    percent: 100,
+  });
   return optimized;
 }

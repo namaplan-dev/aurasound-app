@@ -13,6 +13,7 @@ interface PaginationBarProps {
   rangeStartIndex?: number;
   onStepPrev?: () => void;
   onStepNext?: () => void;
+  onJumpTop?: () => void;
 }
 
 export const PaginationBar: React.FC<PaginationBarProps> = ({
@@ -25,6 +26,7 @@ export const PaginationBar: React.FC<PaginationBarProps> = ({
   rangeStartIndex,
   onStepPrev,
   onStepNext,
+  onJumpTop,
 }) => {
   if (totalItems === 0) return null;
 
@@ -54,8 +56,22 @@ export const PaginationBar: React.FC<PaginationBarProps> = ({
 
   return (
     <div className="shrink-0 flex items-center justify-between gap-2 pt-2 border-t border-zinc-200/80 dark:border-zinc-800/80 select-none">
-      <div className="text-[11px] font-mono-tabular text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
-        {start}–{end} of {totalItems} {itemLabel}
+      <div className="flex items-center gap-2 text-[11px] font-mono-tabular text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+        <span>
+          {start}–{end} of {totalItems} {itemLabel}
+        </span>
+        {onJumpTop && typeof rangeStartIndex === 'number' && rangeStartIndex > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              tactile.tap();
+              onJumpTop();
+            }}
+            className="font-sans font-medium accent-text underline"
+          >
+            Top
+          </button>
+        )}
       </div>
 
       {totalPages > 1 || canPrev || canNext ? (

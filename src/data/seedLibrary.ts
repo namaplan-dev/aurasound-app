@@ -97,6 +97,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   autoCloudBackup: true,
   tactileSounds: true,
   hapticFeedback: true,
+  sortBy: { field: 'title', ascending: true },
 };
 
 export const BUNDLED_COVERS = {

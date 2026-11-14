@@ -7,22 +7,33 @@ import { tactile } from '../services/tactileFeedback';
 interface ShareModalProps {
   open: boolean;
   track: Track | null;
+  mode?: 'track' | 'app';
   onClose: () => void;
 }
 
-export const ShareModal: React.FC<ShareModalProps> = ({ open, track, onClose }) => {
+export const ShareModal: React.FC<ShareModalProps> = ({
+  open,
+  track,
+  mode = 'track',
+  onClose,
+}) => {
   const [copied, setCopied] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
-  if (!open || !track) return null;
+  if (!open) return null;
 
-  const shareText = `Listening to "${track.title}" by ${track.artist} (${track.format} ${track.bitDepth}-bit/${Math.round(
-    track.sampleRate / 1000
-  )}kHz) on AuraSound`;
+  const isAppShare = mode === 'app' || !track;
+  const shareText = isAppShare
+    ? `Check out AuraSound — Hi-Res FLAC/WAV music player with 10-band EQ, smart metadata cleanup, and cloud sync.`
+    : `Listening to "${track.title}" by ${track.artist} (${track.format} ${track.bitDepth}-bit/${Math.round(
+        track.sampleRate / 1000
+      )}kHz) on AuraSound`;
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(shareText);
+      await navigator.clipboard.writeText(
+        isAppShare ? `${shareText} ${window.location.href}` : shareText
+      );
       tactile.success();
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -36,7 +47,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ open, track, onClose }) 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${track.title} — ${track.artist}`,
+          title: isAppShare ? 'AuraSound Hi-Res Audio Player' : `${track.title} — ${track.artist}`,
           text: shareText,
           url: window.location.href,
         });
@@ -51,6 +62,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ open, track, onClose }) 
   };
 
   const handleDownloadCard = () => {
+    if (!track) return;
     const canvas = document.createElement('canvas');
     canvas.width = 960;
     canvas.height = 420;
@@ -98,7 +110,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({ open, track, onClose }) 
         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-200 dark:border-zinc-800">
           <div className="flex items-center gap-2">
             <Share2 className="w-5 h-5 accent-text" />
-            <h3 className="text-base font-display font-semibold">Broadcast Current Track</h3>
+            <h3 className="text-base font-display font-semibold">
+              {isAppShare ? 'Share AuraSound' : 'Broadcast Current Track'}
+            </h3>
           </div>
           <button
             type="button"
@@ -111,18 +125,24 @@ export const ShareModal: React.FC<ShareModalProps> = ({ open, track, onClose }) 
         </div>
 
         <div className="p-5 space-y-4">
-          <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
-            <CoverArt src={track.coverUrl} alt={track.title} className="w-16 h-16 rounded-lg" />
-            <div className="min-w-0">
-              <div className="text-sm font-semibold truncate">{track.title}</div>
-              <div className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
-                {track.artist} · {track.album}
-              </div>
-              <div className="text-xs font-mono-tabular text-zinc-500 mt-1">
-                {track.format} · {track.bitDepth}b/{Math.round(track.sampleRate / 1000)}kHz
+          {!isAppShare && track ? (
+            <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
+              <CoverArt src={track.coverUrl} alt={track.title} className="w-16 h-16 rounded-lg" />
+              <div className="min-w-0">
+                <div className="text-sm font-semibold truncate">{track.title}</div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
+                  {track.artist} · {track.album}
+                </div>
+                <div className="text-xs font-mono-tabular text-zinc-500 mt-1">
+                  {track.format} · {track.bitDepth}b/{Math.round(track.sampleRate / 1000)}kHz
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed">
+              {shareText}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <button
@@ -139,18 +159,20 @@ export const ShareModal: React.FC<ShareModalProps> = ({ open, track, onClose }) 
               className="min-h-[44px] px-4 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-medium flex items-center justify-center gap-2"
             >
               {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-              <span>{copied ? 'Copied' : 'Copy Status'}</span>
+              <span>{copied ? 'Copied' : 'Copy Link'}</span>
             </button>
           </div>
 
-          <button
-            type="button"
-            onClick={handleDownloadCard}
-            className="w-full min-h-[44px] px-4 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-medium flex items-center justify-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            <span>Download Share Card (PNG)</span>
-          </button>
+          {!isAppShare && track && (
+            <button
+              type="button"
+              onClick={handleDownloadCard}
+              className="w-full min-h-[44px] px-4 rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-sm font-medium flex items-center justify-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download Share Card (PNG)</span>
+            </button>
+          )}
 
           {status && <p className="text-xs text-zinc-500 text-center">{status}</p>}
         </div>

@@ -90,13 +90,33 @@ class TactileFeedbackEngine {
     }
   }
 
-  /** Precision handle grab on right-side A-Z / А-Я slider */
-  public sliderGrab(): void {
-    this.vibrate(10);
-    this.playTone(210, 115, 0.022, 0.036, 'sine');
+  /** Synchronously prime/resume AudioContext inside pointerdown gesture */
+  public unlock(): void {
+    this.getContext();
   }
 
-  /** Intelligent throttled notch detent as slider crosses letters */
+  /** Precision handle grab on right-side A-Z / А-Я slider */
+  public sliderGrab(): void {
+    this.unlock();
+    this.vibrate(8);
+    this.playTone(240, 140, 0.02, 0.038, 'sine');
+  }
+
+  /** Crisp, brief acoustic tick & haptic pulse whenever a new letter pops during scroll */
+  public letterPop(ratio: number, isBoundary = false): void {
+    this.vibrate(isBoundary ? 9 : 6);
+    const clamped = Math.max(0, Math.min(1, ratio));
+    const baseFreq = isBoundary ? 1240 : 780 + clamped * 420;
+    this.playTone(
+      baseFreq,
+      baseFreq * 0.68,
+      isBoundary ? 0.022 : 0.015,
+      isBoundary ? 0.055 : 0.045,
+      'triangle'
+    );
+  }
+
+  /** Intelligent throttled notch detent as slider crosses steps */
   public sliderDetent(ratio: number, isBoundary = false): void {
     const now = performance.now();
     if (!isBoundary && now - this.lastDetentAt < 22) {

@@ -17,6 +17,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(LocalMusicScannerPlugin.class);
         registerPlugin(AuraWidgetPlugin.class);
+        registerPlugin(NativeAuthPlugin.class);
         super.onCreate(savedInstanceState);
 
         Window window = getWindow();
@@ -55,6 +56,12 @@ public class MainActivity extends BridgeActivity {
 
     private void handleWidgetIntent(Intent intent) {
         if (intent == null) return;
+        if (intent.getData() != null) {
+            String uriString = intent.getData().toString();
+            if (uriString.startsWith("aurasound://auth")) {
+                NativeAuthPlugin.dispatchAuthCallback(uriString);
+            }
+        }
         String action = intent.getStringExtra(WidgetStateHelper.EXTRA_WIDGET_ACTION);
         if (action != null && !action.isEmpty()) {
             WidgetStateHelper.setPendingAction(this, action);

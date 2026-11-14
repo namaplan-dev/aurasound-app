@@ -32,6 +32,10 @@ export const TaskProgressDock: React.FC<TaskProgressDockProps> = ({
             current={task.current}
             total={task.total}
             percent={task.percent}
+            itemLabel={task.itemLabel}
+            itemCurrent={task.itemCurrent}
+            itemTotal={task.itemTotal}
+            itemPercent={task.itemPercent}
             status={task.status}
           />
           <button

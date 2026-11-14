@@ -71,6 +71,7 @@ interface ParsedTags {
   album?: string;
   genre?: string;
   year?: string;
+  composer?: string;
   sampleRate?: number;
   bitDepth?: number;
   coverDataUrl?: string;
@@ -108,6 +109,7 @@ function parseId3v2(buf: Uint8Array): ParsedTags {
       else if (id === 'TP1') tags.artist = decodeId3Text(frame[0], frame.subarray(1));
       else if (id === 'TAL') tags.album = decodeId3Text(frame[0], frame.subarray(1));
       else if (id === 'TCO') tags.genre = decodeId3Text(frame[0], frame.subarray(1));
+      else if (id === 'TCM') tags.composer = decodeId3Text(frame[0], frame.subarray(1));
       pos += size;
     } else {
       const id = String.fromCharCode(buf[pos], buf[pos + 1], buf[pos + 2], buf[pos + 3]);
@@ -120,6 +122,7 @@ function parseId3v2(buf: Uint8Array): ParsedTags {
       else if (id === 'TPE1') tags.artist = decodeId3Text(frame[0], frame.subarray(1));
       else if (id === 'TALB') tags.album = decodeId3Text(frame[0], frame.subarray(1));
       else if (id === 'TCON') tags.genre = decodeId3Text(frame[0], frame.subarray(1));
+      else if (id === 'TCOM') tags.composer = decodeId3Text(frame[0], frame.subarray(1));
       else if (id === 'TYER' || id === 'TDRC') tags.year = decodeId3Text(frame[0], frame.subarray(1)).slice(0, 4);
       else if (id === 'APIC' && !tags.coverDataUrl && frame.length > 8) {
         let idx = 1;
@@ -195,6 +198,7 @@ function parseFlac(buf: Uint8Array): ParsedTags {
             else if (key === 'ARTIST') tags.artist = val;
             else if (key === 'ALBUM') tags.album = val;
             else if (key === 'GENRE') tags.genre = val;
+            else if (key === 'COMPOSER') tags.composer = val;
             else if (key === 'DATE' || key === 'YEAR') tags.year = val.slice(0, 4);
           }
         }
@@ -224,6 +228,124 @@ function parseFlac(buf: Uint8Array): ParsedTags {
   return tags;
 }
 
+function parseOggVorbisComments(buf: Uint8Array): ParsedTags {
+  const tags: ParsedTags = {};
+  // Locate "\x03vorbis" or "OpusTags" packet
+  let start = -1;
+  for (let i = 0; i + 8 < buf.length; i++) {
+    if (
+      buf[i] === 0x03 &&
+      buf[i + 1] === 0x76 &&
+      buf[i + 2] === 0x6f &&
+      buf[i + 3] === 0x72 &&
+      buf[i + 4] === 0x62 &&
+      buf[i + 5] === 0x69 &&
+      buf[i + 6] === 0x73
+    ) {
+      start = i + 7;
+      break;
+    }
+    if (
+      buf[i] === 0x4f &&
+      buf[i + 1] === 0x70 &&
+      buf[i + 2] === 0x75 &&
+      buf[i + 3] === 0x73 &&
+      buf[i + 4] === 0x54 &&
+      buf[i + 5] === 0x61 &&
+      buf[i + 6] === 0x67 &&
+      buf[i + 7] === 0x73
+    ) {
+      start = i + 8;
+      break;
+    }
+  }
+  if (start < 0 || start + 8 > buf.length) return tags;
+
+  const vendorLen = readUint32LE(buf, start);
+  let pos = start + 4 + vendorLen;
+  if (pos + 4 > buf.length || vendorLen > 4096) return tags;
+
+  const count = readUint32LE(buf, pos);
+  pos += 4;
+  for (let i = 0; i < count && i < 128 && pos + 4 <= buf.length; i++) {
+    const len = readUint32LE(buf, pos);
+    pos += 4;
+    if (len <= 0 || len > 16384 || pos + len > buf.length) break;
+    const comment = repairMojibakeText(
+      new TextDecoder('utf-8').decode(buf.subarray(pos, pos + len))
+    );
+    pos += len;
+    const eq = comment.indexOf('=');
+    if (eq > 0) {
+      const key = comment.slice(0, eq).toUpperCase();
+      const val = comment.slice(eq + 1).trim();
+      if (key === 'TITLE') tags.title = val;
+      else if (key === 'ARTIST') tags.artist = val;
+      else if (key === 'ALBUM') tags.album = val;
+      else if (key === 'GENRE') tags.genre = val;
+      else if (key === 'COMPOSER') tags.composer = val;
+      else if (key === 'DATE' || key === 'YEAR') tags.year = val.slice(0, 4);
+    }
+  }
+  return tags;
+}
+
+function findAsciiSequence(buf: Uint8Array, seq: string, from = 0): number {
+  const target = Array.from(seq).map((ch) => ch.charCodeAt(0));
+  for (let i = from; i + target.length <= buf.length; i++) {
+    let ok = true;
+    for (let j = 0; j < target.length; j++) {
+      if (buf[i + j] !== target[j]) {
+        ok = false;
+        break;
+      }
+    }
+    if (ok) return i;
+  }
+  return -1;
+}
+
+function parseMp4Ilst(buf: Uint8Array): ParsedTags {
+  const tags: ParsedTags = {};
+  const ilstIdx = findAsciiSequence(buf, 'ilst');
+  if (ilstIdx < 4 || ilstIdx + 8 > buf.length) return tags;
+
+  const ilstSize = readUint32BE(buf, ilstIdx - 4);
+  const ilstEnd = Math.min(buf.length, ilstIdx - 4 + Math.max(ilstSize, 16));
+  let pos = ilstIdx + 4;
+
+  while (pos + 8 <= ilstEnd) {
+    const atomSize = readUint32BE(buf, pos);
+    if (atomSize < 8 || pos + atomSize > ilstEnd) break;
+    const atomType = String.fromCharCode(buf[pos + 4], buf[pos + 5], buf[pos + 6], buf[pos + 7]);
+
+    const dataIdx = findAsciiSequence(buf.subarray(0, pos + atomSize), 'data', pos + 8);
+    if (dataIdx >= pos + 12 && dataIdx + 12 <= pos + atomSize) {
+      const dataSize = readUint32BE(buf, dataIdx - 4);
+      const dataEnd = Math.min(pos + atomSize, dataIdx - 4 + dataSize);
+      const typeFlag = readUint32BE(buf, dataIdx + 4) & 0xff;
+      const payload = buf.subarray(dataIdx + 12, dataEnd);
+
+      if (atomType === 'covr' && !tags.coverDataUrl && payload.length > 32) {
+        const mime = typeFlag === 14 ? 'image/png' : 'image/jpeg';
+        tags.coverDataUrl = bytesToDataUrl(mime, payload);
+      } else if (typeFlag === 1 && payload.length > 0) {
+        const textVal = repairMojibakeText(new TextDecoder('utf-8').decode(payload));
+        if (atomType === '\u00a9nam') tags.title = textVal;
+        else if (atomType === '\u00a9ART') tags.artist = textVal;
+        else if (atomType === 'aART' && !tags.artist) tags.artist = textVal;
+        else if (atomType === '\u00a9alb') tags.album = textVal;
+        else if (atomType === '\u00a9gen') tags.genre = textVal;
+        else if (atomType === '\u00a9wrt') tags.composer = textVal;
+        else if (atomType === '\u00a9day') tags.year = textVal.slice(0, 4);
+      }
+    }
+    pos += atomSize;
+  }
+
+  return tags;
+}
+
 function detectFormat(fileName: string): Track['format'] {
   const ext = fileName.split('.').pop()?.toLowerCase() || '';
   if (ext === 'flac') return 'FLAC';
@@ -234,20 +356,122 @@ function detectFormat(fileName: string): Track['format'] {
   return 'MP3';
 }
 
-function cleanFileNameTitle(fileName: string): { title: string; artist: string } {
-  const withoutExt = fileName.replace(/\.[^/.]+$/, '').replace(/^\d+[\s._-]+/, '');
-  const repaired = repairMojibakeText(withoutExt);
-  const dashSplit = repaired.split(' - ');
+const GENERIC_FOLDER_NAMES = new Set([
+  '',
+  'music',
+  'downloads',
+  'download',
+  'audio',
+  'sounds',
+  'media',
+  'my music',
+  'local imports',
+  'device music',
+  'internal storage',
+  'sdcard',
+  'external',
+  'storage',
+  'emulated',
+  '0',
+]);
+
+function isGenericFolderName(name: string): boolean {
+  return GENERIC_FOLDER_NAMES.has(name.trim().toLowerCase());
+}
+
+function isMissingTag(val: string | undefined, kind: 'artist' | 'album' | 'title'): boolean {
+  const clean = (val || '').trim().toLowerCase();
+  if (!clean || clean === '<unknown>' || clean === 'unknown' || clean === 'n/a') return true;
+  if (kind === 'artist') {
+    return clean === 'unknown artist' || clean === 'various' || clean === 'artist';
+  }
+  if (kind === 'album') {
+    return (
+      clean === 'unknown album' ||
+      clean === 'local collection' ||
+      clean === 'local audio' ||
+      clean === 'audio' ||
+      GENERIC_FOLDER_NAMES.has(clean)
+    );
+  }
+  return false;
+}
+
+export function cleanFileNameTitle(fileName: string): { title: string; artist: string } {
+  const stripped = fileName
+    .replace(/\.[^/.]+$/, '')
+    .replace(/\s+(mp3|flac|wav|m4a|ogg|aac|alac)$/i, '')
+    .replace(/\[[^\]]*(flac|mp3|wav|alac|aac|ogg|kbps|web|cd|vinyl|remaster)[^\]]*\]/gi, '')
+    .replace(/\(\s*\d{2,3}\s*kbps\s*\)/gi, '')
+    .replace(/_/g, ' ')
+    .replace(/^\s*\d{1,3}[\s._-]+(?=\S)/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const repaired = repairMojibakeText(stripped);
+  const dashSplit = repaired.split(/\s+[-–—]\s+/);
   if (dashSplit.length >= 2) {
-    return {
-      artist: dashSplit[0].trim(),
-      title: dashSplit.slice(1).join(' - ').trim(),
-    };
+    const candidateArtist = dashSplit[0].replace(/^\d{1,3}[\s._-]+/, '').trim();
+    const candidateTitle = dashSplit
+      .slice(1)
+      .join(' - ')
+      .replace(/^\d{1,3}[\s._-]+(?=\S)/, '')
+      .trim();
+    if (candidateArtist && candidateTitle) {
+      return {
+        artist: candidateArtist,
+        title: candidateTitle,
+      };
+    }
   }
   return {
     artist: 'Unknown Artist',
-    title: repaired.replace(/_/g, ' ').trim() || fileName,
+    title: repaired || fileName,
   };
+}
+
+export function inferHierarchyFromPath(
+  folderPath: string | undefined,
+  fileName: string | undefined,
+  rawTitle?: string,
+  rawArtist?: string,
+  rawAlbum?: string
+): { title: string; artist: string; album: string } {
+  const fallback = cleanFileNameTitle(fileName || rawTitle || 'Untitled Track');
+  const parts = (folderPath || '')
+    .split(/[\\/]/)
+    .map((p) => repairMojibakeText(p.replace(/_/g, ' ').trim()))
+    .filter(Boolean);
+
+  const parentFolder = parts.length >= 1 ? parts[parts.length - 1] : '';
+  const grandParentFolder = parts.length >= 2 ? parts[parts.length - 2] : '';
+
+  let title = repairMojibakeText(rawTitle || '').trim();
+  if (!title || title === fileName || /^\d{1,3}[\s._-]+/.test(title)) {
+    title = fallback.title;
+  }
+
+  let artist = repairMojibakeText(rawArtist || '').trim();
+  if (isMissingTag(artist, 'artist')) {
+    if (!isMissingTag(fallback.artist, 'artist')) {
+      artist = fallback.artist;
+    } else if (grandParentFolder && !isGenericFolderName(grandParentFolder)) {
+      artist = grandParentFolder;
+    } else {
+      artist = 'Unknown Artist';
+    }
+  }
+
+  let album = repairMojibakeText(rawAlbum || '').trim();
+  if (isMissingTag(album, 'album')) {
+    if (parentFolder && !isGenericFolderName(parentFolder) && parentFolder.toLowerCase() !== artist.toLowerCase()) {
+      album = parentFolder;
+    } else {
+      album = 'Local Collection';
+    }
+  }
+
+  return { title, artist, album };
 }
 
 export function createTrackFingerprint(title: string, artist: string, size?: number): string {
@@ -296,6 +520,13 @@ export async function parseLocalAudioFile(file: File): Promise<Track> {
   let parsed: ParsedTags = {};
   if (format === 'FLAC') {
     parsed = parseFlac(bytes);
+  } else if (format === 'OGG') {
+    parsed = parseOggVorbisComments(bytes);
+  } else if (format === 'ALAC' || format === 'AAC') {
+    parsed = parseMp4Ilst(bytes);
+    if (!parsed.title && !parsed.artist) {
+      parsed = parseId3v2(bytes);
+    }
   } else {
     parsed = parseId3v2(bytes);
   }
@@ -311,33 +542,42 @@ export async function parseLocalAudioFile(file: File): Promise<Track> {
     }
   }
 
-  const fallback = cleanFileNameTitle(file.name);
   const relPath = (file as File & { webkitRelativePath?: string }).webkitRelativePath || '';
   const folderParts = relPath.split('/').filter(Boolean);
   const folderPath = folderParts.length > 1 ? folderParts.slice(0, -1).join('/') : 'Local Imports';
 
-  const title = repairMojibakeText(parsed.title || fallback.title);
-  const artist = repairMojibakeText(parsed.artist || fallback.artist);
-  const album = repairMojibakeText(
-    parsed.album || (folderParts.length >= 2 ? folderParts[folderParts.length - 2] : 'Local Collection')
+  const resolved = inferHierarchyFromPath(
+    folderParts.length > 1 ? folderPath : '',
+    file.name,
+    parsed.title,
+    parsed.artist,
+    parsed.album
   );
-  const genre = repairMojibakeText((parsed.genre || 'Hi-Res Local').replace(/^\(\d+\)/, '').trim()) || 'Hi-Res Local';
+  const genre =
+    repairMojibakeText((parsed.genre || 'Hi-Res Local').replace(/^\(\d+\)/, '').trim()) ||
+    'Hi-Res Local';
 
   const duration = await probeAudioDuration(file);
   const sampleRate = parsed.sampleRate || (format === 'FLAC' || format === 'WAV' ? 96000 : 44100);
-  const bitDepth = parsed.bitDepth || (format === 'FLAC' || format === 'WAV' || format === 'ALAC' ? 24 : 16);
+  const bitDepth =
+    parsed.bitDepth || (format === 'FLAC' || format === 'WAV' || format === 'ALAC' ? 24 : 16);
   const bitrateKbps =
-    duration > 0 ? Math.max(128, Math.round((file.size * 8) / duration / 1000)) : format === 'FLAC' ? 1411 : 320;
+    duration > 0
+      ? Math.max(128, Math.round((file.size * 8) / duration / 1000))
+      : format === 'FLAC'
+      ? 1411
+      : 320;
 
-  const fingerprint = createTrackFingerprint(title, artist, file.size);
+  const fingerprint = createTrackFingerprint(resolved.title, resolved.artist, file.size);
 
   return {
     id: `local_${fingerprint}_${Date.now().toString(36)}`,
-    title,
-    artist,
-    album,
+    title: resolved.title,
+    artist: resolved.artist,
+    album: resolved.album,
     genre,
     year: parsed.year,
+    composer: parsed.composer ? repairMojibakeText(parsed.composer) : undefined,
     duration,
     format,
     sampleRate,
@@ -351,6 +591,7 @@ export async function parseLocalAudioFile(file: File): Promise<Track> {
     favorite: false,
     rating: 0,
     playCount: 0,
+    skipCount: 0,
     addedAt: Date.now(),
     offlineCached: true,
     fingerprint,

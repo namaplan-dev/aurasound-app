@@ -1,4 +1,4 @@
-import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import {
   Cloud,
@@ -12,7 +12,6 @@ import {
   Moon,
   Music,
   Palette,
-  Search,
   Sliders,
   Smartphone,
   Sparkles,
@@ -22,7 +21,6 @@ import {
   Volume2,
   Wand2,
   WifiOff,
-  X,
 } from 'lucide-react';
 import {
   AppSettings,
@@ -35,6 +33,7 @@ import {
   SessionState,
   SmartPlaylist,
   TagCleanupSuggestion,
+  TaskItemProgress,
   Track,
   ViewMode,
 } from './types/music';
@@ -42,6 +41,8 @@ import { audioEngine } from './services/audioEngine';
 import { auth } from './services/firebaseClient';
 import {
   backupToCloud,
+  completeRedirectSignInIfAny,
+  formatCloudAuthError,
   restoreFromCloud,
   signInWithGoogleAccount,
   signOutGoogleAccount,
@@ -69,11 +70,30 @@ import {
   saveSmartPlaylists,
   saveTracks,
 } from './services/storageService';
-import { matchesNormalizedQuery, repairMojibakeText } from './utils/textNormalization';
-import { LibraryBrowser, LibraryTab } from './components/LibraryBrowser';
+import { repairMojibakeText } from './utils/textNormalization';
+import { applyTagSuggestionsToList } from './services/aiAssistantService';
+import { LibraryBrowser, LibraryTab, TrackMetadataPatch } from './components/LibraryBrowser';
+import {
+  parseM3uPlaylist,
+  exportPlaylistAsM3u8,
+} from './services/playlistFileService';
+import {
+  deleteNativeAudioFiles,
+  isNativeAndroidApp,
+  scanAndroidDeviceLibrary,
+  writeNativeAudioTags,
+} from './services/nativeScanner';
+import {
+  deleteTracksFromWebFolder,
+  saveTrackFileHandle,
+  writeTracksTagsToWebStorage,
+} from './services/localFileHandleService';
+import { AudioTagUpdate } from './services/audioTagWriter';
+import { applyTrackAsRingtone } from './services/ringtoneService';
 import { EqualizerPage, EqualizerPanel } from './components/EqualizerPanel';
 import { SmartStudioView, StudioPage } from './components/SmartStudioView';
 import { SettingsCloudView, SettingsPage } from './components/SettingsCloudView';
+import { SlidablePageViewport, SlidableTabStrip } from './components/SlidableTabs';
 import { PlayerBar } from './components/PlayerBar';
 import { NowPlayingSheetHandle, NowPlayingView } from './components/NowPlayingView';
 import { HomescreenWidget } from './components/HomescreenWidget';
@@ -83,7 +103,6 @@ import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { TaskProgressDock } from './components/TaskProgressDock';
 import { tactile } from './services/tactileFeedback';
-import { isNativeAndroidApp, scanAndroidDeviceLibrary } from './services/nativeScanner';
 import {
   subscribeNativeWidgetActions,
   syncNativeWidgets,
@@ -232,16 +251,14 @@ export default function App() {
   const [nowPlayingOpen, setNowPlayingOpen] = useState<boolean>(true);
   const [castOpen, setCastOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [shareMode, setShareMode] = useState<'track' | 'app'>('track');
 
   // Import, Cloud & Global Task Progress state
   const [importingFiles, setImportingFiles] = useState(false);
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [cacheStats, setCacheStats] = useState({ count: 0, totalBytes: 0 });
   const [syncBusy, setSyncBusy] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [activeTasks, setActiveTasks] = useState<AppTaskProgress[]>([]);
-  const [syncProgress, setSyncProgress] = useState<AppTaskProgress | null>(null);
-  const [storageProgress, setStorageProgress] = useState<AppTaskProgress | null>(null);
   const taskCleanupTimersRef = useRef<Map<string, number>>(new Map());
   const nowPlayingSheetRef = useRef<NowPlayingSheetHandle | null>(null);
 
@@ -262,7 +279,8 @@ export default function App() {
       detail: string,
       current: number,
       total: number,
-      status: 'running' | 'done' | 'error' = 'running'
+      status: 'running' | 'done' | 'error' = 'running',
+      item?: TaskItemProgress
     ) => {
       const percent =
         total > 0
@@ -278,20 +296,21 @@ export default function App() {
         current,
         total,
         percent,
+        itemLabel: item?.label,
+        itemCurrent: item?.current,
+        itemTotal: item?.total,
+        itemPercent: item?.percent,
         status,
         updatedAt: Date.now(),
       };
 
       setActiveTasks((prev) => {
         const idx = prev.findIndex((t) => t.id === id);
-        if (idx === -1) return [...prev.slice(-3), entry];
+        if (idx === -1) return [...prev.slice(-2), entry];
         const next = [...prev];
         next[idx] = entry;
         return next;
       });
-
-      if (category === 'cloud-sync') setSyncProgress(entry);
-      if (category === 'library-maintenance') setStorageProgress(entry);
 
       const oldTimer = taskCleanupTimersRef.current.get(id);
       if (oldTimer) {
@@ -301,7 +320,7 @@ export default function App() {
       if (status !== 'running') {
         const timer = window.setTimeout(() => {
           dismissTask(id);
-        }, status === 'done' ? 3800 : 6000);
+        }, status === 'done' ? 3500 : 6000);
         taskCleanupTimersRef.current.set(id, timer);
       }
     },
@@ -398,8 +417,9 @@ export default function App() {
     void refreshCacheStats();
   }, [refreshCacheStats]);
 
-  // Subscribe to Firebase Auth state
+  // Subscribe to Firebase Auth state & complete any redirect sign-in on Web
   useEffect(() => {
+    void completeRedirectSignInIfAny();
     const unsub = onAuthStateChanged(auth, (authUser) => {
       setUser(authUser);
     });
@@ -587,21 +607,11 @@ export default function App() {
     persistSessionSnapshot,
   ]);
 
-  const deferredSearchQuery = useDeferredValue(searchQuery);
-
-  // Visible tracks respect Search (Lithuanian diacritic-insensitive + Cyrillic) & Offline Mode
+  // Visible tracks respect Offline Mode (type-scoped Search filtering happens in LibraryBrowser)
   const visibleTracks = useMemo(() => {
-    return tracks.filter((t) => {
-      if (settings.offlineMode && !t.offlineCached && t.source !== 'local') {
-        return false;
-      }
-      if (!deferredSearchQuery.trim()) return true;
-      return matchesNormalizedQuery(
-        [t.title, t.artist, t.album, t.genre, t.folderPath, t.fileName],
-        deferredSearchQuery
-      );
-    });
-  }, [tracks, settings.offlineMode, deferredSearchQuery]);
+    if (!settings.offlineMode) return tracks;
+    return tracks.filter((t) => t.offlineCached || t.source === 'local');
+  }, [tracks, settings.offlineMode]);
 
   const updateSettings = useCallback((patch: Partial<AppSettings>) => {
     setSettings((prev) => ({ ...prev, ...patch }));
@@ -629,6 +639,17 @@ export default function App() {
       if (customQueue && customQueue.length > 0) {
         setQueue(customQueue);
       }
+      if (track.eqPresetId) {
+        const assignedPreset = eqPresets.find((p) => p.id === track.eqPresetId);
+        if (assignedPreset) {
+          updateSettings({
+            activeEqPresetId: assignedPreset.id,
+            activeEqBands: [...assignedPreset.bands],
+            eqPreampDb: assignedPreset.preampDb,
+            eqEnabled: true,
+          });
+        }
+      }
       setCurrentTrackId(track.id);
       audioEngine.resetVirtualTime();
       const upcoming = getNextTrackInQueue(track.id, nextQueue);
@@ -641,7 +662,7 @@ export default function App() {
         )
       );
     },
-    [queue, getNextTrackInQueue]
+    [queue, getNextTrackInQueue, eqPresets, updateSettings]
   );
 
   const playCollectionQueue = useCallback(
@@ -663,16 +684,33 @@ export default function App() {
     [playTrack, updateSettings]
   );
 
+  const advanceToNextTrack = useCallback(
+    (isManualSkip: boolean) => {
+      if (isManualSkip && currentTrackId) {
+        const now = Date.now();
+        setTracks((prev) =>
+          prev.map((t) =>
+            t.id === currentTrackId
+              ? { ...t, skipCount: (t.skipCount || 0) + 1, lastSkippedAt: now }
+              : t
+          )
+        );
+      }
+      const activeQ = queue.length > 0 ? queue : visibleTracks;
+      if (activeQ.length === 0) return;
+      if (settings.repeatMode === 'one' && currentTrack) {
+        void playTrack(currentTrack, activeQ);
+        return;
+      }
+      const next = getNextTrackInQueue(currentTrackId, activeQ);
+      if (next) void playTrack(next, activeQ);
+    },
+    [queue, visibleTracks, settings.repeatMode, currentTrack, currentTrackId, getNextTrackInQueue, playTrack]
+  );
+
   const handleNext = useCallback(() => {
-    const activeQ = queue.length > 0 ? queue : visibleTracks;
-    if (activeQ.length === 0) return;
-    if (settings.repeatMode === 'one' && currentTrack) {
-      void playTrack(currentTrack, activeQ);
-      return;
-    }
-    const next = getNextTrackInQueue(currentTrackId, activeQ);
-    if (next) void playTrack(next, activeQ);
-  }, [queue, visibleTracks, settings.repeatMode, currentTrack, currentTrackId, getNextTrackInQueue, playTrack]);
+    advanceToNextTrack(true);
+  }, [advanceToNextTrack]);
 
   const handlePrev = useCallback(() => {
     const activeQ = queue.length > 0 ? queue : visibleTracks;
@@ -687,9 +725,9 @@ export default function App() {
   useEffect(() => {
     audioEngine.setMediaHandlers(handlePrev, handleNext);
     return audioEngine.subscribeTrackEnd(() => {
-      handleNext();
+      advanceToNextTrack(false);
     });
-  }, [handlePrev, handleNext]);
+  }, [handlePrev, handleNext, advanceToNextTrack]);
 
   const handleTogglePlayPause = useCallback(async () => {
     if (!currentTrack && visibleTracks.length > 0) {
@@ -777,21 +815,562 @@ export default function App() {
     [tracks, refreshCacheStats]
   );
 
+  const handlePlayNext = useCallback(
+    (track: Track) => {
+      setQueue((prev) => {
+        const filtered = prev.filter((t) => t.id !== track.id);
+        if (!currentTrackId) return [track, ...filtered];
+        const curIdx = filtered.findIndex((t) => t.id === currentTrackId);
+        if (curIdx === -1) return [track, ...filtered];
+        return [...filtered.slice(0, curIdx + 1), track, ...filtered.slice(curIdx + 1)];
+      });
+    },
+    [currentTrackId]
+  );
+
+  const handlePlayNextMany = useCallback(
+    (items: Track[]) => {
+      if (items.length === 0) return;
+      const incomingIds = new Set(items.map((t) => t.id));
+      setQueue((prev) => {
+        const filtered = prev.filter((t) => !incomingIds.has(t.id));
+        if (!currentTrackId) return [...items, ...filtered];
+        const curIdx = filtered.findIndex((t) => t.id === currentTrackId);
+        if (curIdx === -1) return [...items, ...filtered];
+        return [...filtered.slice(0, curIdx + 1), ...items, ...filtered.slice(curIdx + 1)];
+      });
+    },
+    [currentTrackId]
+  );
+
+  const handleAddToQueue = useCallback((track: Track) => {
+    setQueue((prev) => {
+      const filtered = prev.filter((t) => t.id !== track.id);
+      return [...filtered, track];
+    });
+  }, []);
+
+  const handleAddTracksToQueue = useCallback((items: Track[]) => {
+    if (items.length === 0) return;
+    const incomingIds = new Set(items.map((t) => t.id));
+    setQueue((prev) => {
+      const filtered = prev.filter((t) => !incomingIds.has(t.id));
+      return [...filtered, ...items];
+    });
+  }, []);
+
+  const handlePlaySingleTrack = useCallback(
+    (track: Track) => {
+      updateSettings({ shuffle: false });
+      void playTrack(track, [track]);
+    },
+    [playTrack, updateSettings]
+  );
+
+  const handleShuffleFromTrack = useCallback(
+    (track: Track) => {
+      const pool = visibleTracks.filter((t) => t.id !== track.id);
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      updateSettings({ shuffle: true });
+      void playTrack(track, [track, ...pool]);
+    },
+    [visibleTracks, playTrack, updateSettings]
+  );
+
+  const handleAssignEqPreset = useCallback(
+    (trackIds: string[], presetId: string | undefined) => {
+      if (trackIds.length === 0) return;
+      const targetSet = new Set(trackIds);
+      setTracks((prev) =>
+        prev.map((t) => (targetSet.has(t.id) ? { ...t, eqPresetId: presetId } : t))
+      );
+      setQueue((prev) =>
+        prev.map((t) => (targetSet.has(t.id) ? { ...t, eqPresetId: presetId } : t))
+      );
+      if (presetId) {
+        const preset = eqPresets.find((p) => p.id === presetId);
+        if (preset) {
+          updateSettings({
+            activeEqPresetId: preset.id,
+            activeEqBands: [...preset.bands],
+            eqPreampDb: preset.preampDb,
+            eqEnabled: true,
+          });
+        }
+      }
+      tactile.success();
+    },
+    [eqPresets, updateSettings]
+  );
+
+  const handleSetRingtone = useCallback(
+    async (track: Track) => {
+      const taskId = `ringtone_${Date.now()}`;
+      reportTaskProgress(
+        taskId,
+        'library-maintenance',
+        'Setting Ringtone',
+        `Preparing "${track.title}" as ringtone...`,
+        1,
+        2,
+        'running',
+        { label: track.title, current: 1, total: 2, percent: 50 }
+      );
+      try {
+        const res = await applyTrackAsRingtone(track);
+        if (res.ok) {
+          tactile.success();
+          reportTaskProgress(
+            taskId,
+            'library-maintenance',
+            'Ringtone Ready',
+            res.message,
+            2,
+            2,
+            'done',
+            { label: res.message, current: 2, total: 2, percent: 100 }
+          );
+        } else {
+          reportTaskProgress(
+            taskId,
+            'library-maintenance',
+            'Ringtone Notice',
+            res.message,
+            2,
+            2,
+            'error',
+            { label: res.message, current: 2, total: 2, percent: 100 }
+          );
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Unable to set ringtone.';
+        reportTaskProgress(
+          taskId,
+          'library-maintenance',
+          'Ringtone Failed',
+          msg,
+          2,
+          2,
+          'error',
+          { label: msg, current: 2, total: 2, percent: 100 }
+        );
+      }
+    },
+    [reportTaskProgress]
+  );
+
+  const persistTracksTagsToSource = useCallback(
+    async (updatedTracks: Track[]) => {
+      if (updatedTracks.length === 0) return;
+      const localTargets = updatedTracks.filter((t) => t.source === 'local');
+      if (localTargets.length === 0) return;
+
+      const taskId = `tag_write_${Date.now()}`;
+      reportTaskProgress(
+        taskId,
+        'library-maintenance',
+        'Writing Tags to Source Files',
+        `Updating embedded tags for ${localTargets.length} file(s)...`,
+        0,
+        localTargets.length,
+        'running',
+        { label: localTargets[0]?.title || 'Preparing audio files...', current: 0, total: 1, percent: 0 }
+      );
+
+      try {
+        if (isNativeAndroidApp()) {
+          const payload = localTargets
+            .filter((t) => t.nativeUri || t.nativePath)
+            .map((t) => ({
+              contentUri: t.nativeUri,
+              filePath: t.nativePath,
+              title: t.title,
+              artist: t.artist,
+              album: t.album,
+              genre: t.genre,
+              year: t.year || '',
+              composer: t.composer || '',
+            }));
+
+          const res = await writeNativeAudioTags(payload, (prog) => {
+            reportTaskProgress(
+              taskId,
+              'library-maintenance',
+              'Writing Tags to Source Files',
+              `Saving ${prog.current} of ${prog.total} file(s)`,
+              prog.current,
+              Math.max(1, prog.total),
+              'running',
+              { label: prog.fileName, current: 1, total: 1, percent: 100 }
+            );
+          });
+
+          if (res.cancelled) {
+            reportTaskProgress(
+              taskId,
+              'library-maintenance',
+              'Source Write Permission Declined',
+              'Tags saved inside AuraSound; grant Android write prompt to embed in external files.',
+              localTargets.length,
+              localTargets.length,
+              'error',
+              { label: 'Permission declined', current: 1, total: 1, percent: 100 }
+            );
+            return;
+          }
+
+          reportTaskProgress(
+            taskId,
+            'library-maintenance',
+            'Audio Tags Saved to Device Files',
+            `Embedded tags in ${res.updatedCount} file(s) & refreshed Android MediaStore`,
+            localTargets.length,
+            localTargets.length,
+            'done',
+            { label: `${res.updatedCount} source file(s) updated`, current: 1, total: 1, percent: 100 }
+          );
+          return;
+        }
+
+        const webItems = localTargets.map((t) => ({
+          track: t,
+          tags: {
+            title: t.title,
+            artist: t.artist,
+            album: t.album,
+            genre: t.genre,
+            year: t.year,
+            composer: t.composer,
+          } satisfies AudioTagUpdate,
+        }));
+
+        const summary = await writeTracksTagsToWebStorage(webItems, (curr, tot, label) => {
+          reportTaskProgress(
+            taskId,
+            'library-maintenance',
+            'Writing Tags to Source Files',
+            `Embedding tags (${curr}/${tot})`,
+            curr,
+            tot,
+            'running',
+            { label, current: 1, total: 1, percent: 100 }
+          );
+        });
+
+        const detailMsg =
+          summary.diskWrittenCount > 0
+            ? `Embedded tags directly into ${summary.diskWrittenCount} disk file(s)`
+            : summary.cacheUpdatedCount > 0
+            ? `Updated tags in ${summary.cacheUpdatedCount} cached file(s) (use Scan Music Folder to write directly to disk)`
+            : `Updated metadata in library (${summary.unsupportedFormatCount} format(s) read-only on Web)`;
+
+        reportTaskProgress(
+          taskId,
+          'library-maintenance',
+          'Tag Update Complete',
+          detailMsg,
+          localTargets.length,
+          localTargets.length,
+          summary.permissionDeniedCount > 0 && summary.diskWrittenCount === 0 ? 'error' : 'done',
+          { label: detailMsg, current: 1, total: 1, percent: 100 }
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Unable to write audio tags to source files.';
+        reportTaskProgress(
+          taskId,
+          'library-maintenance',
+          'Source Tag Write Error',
+          msg,
+          localTargets.length,
+          localTargets.length,
+          'error',
+          { label: msg, current: 1, total: 1, percent: 100 }
+        );
+      }
+    },
+    [reportTaskProgress]
+  );
+
+  const handleEditTracksMetadata = useCallback(
+    (trackIds: string[], patch: TrackMetadataPatch) => {
+      if (trackIds.length === 0) return;
+      const targetSet = new Set(trackIds);
+      const changedTracks: Track[] = [];
+
+      const applyPatch = (t: Track): Track => {
+        if (!targetSet.has(t.id)) return t;
+        const next: Track = {
+          ...t,
+          title: patch.title !== undefined && patch.title.trim() ? patch.title.trim() : t.title,
+          artist: patch.artist !== undefined && patch.artist.trim() ? patch.artist.trim() : t.artist,
+          album: patch.album !== undefined && patch.album.trim() ? patch.album.trim() : t.album,
+          genre: patch.genre !== undefined && patch.genre.trim() ? patch.genre.trim() : t.genre,
+          year: patch.year !== undefined ? patch.year.trim() || undefined : t.year,
+          composer: patch.composer !== undefined ? patch.composer.trim() || undefined : t.composer,
+        };
+        changedTracks.push(next);
+        return next;
+      };
+
+      const nextList = tracksRef.current.map(applyPatch);
+      setTracks(nextList);
+      setQueue((prev) => prev.map((t) => {
+        const updated = changedTracks.find((c) => c.id === t.id);
+        return updated || t;
+      }));
+      tactile.success();
+
+      if (changedTracks.length > 0) {
+        void persistTracksTagsToSource(changedTracks);
+      }
+    },
+    [persistTracksTagsToSource]
+  );
+
+  const handleDeleteTracks = useCallback(
+    (trackIds: string[]) => {
+      if (trackIds.length === 0) return;
+      void (async () => {
+        const removeSet = new Set(trackIds);
+        const targetTracks = tracksRef.current.filter((t) => removeSet.has(t.id));
+        if (targetTracks.length === 0) return;
+
+        const taskId = `delete_${Date.now()}`;
+        reportTaskProgress(
+          taskId,
+          'library-maintenance',
+          'Deleting Audio Files',
+          `Removing ${targetTracks.length} track(s) from source folder & library...`,
+          1,
+          2,
+          'running',
+          { label: targetTracks[0]?.title || 'Deleting files...', current: 1, total: 2, percent: 50 }
+        );
+
+        let resultSummary = `Deleted ${targetTracks.length} track(s) from library`;
+
+        if (isNativeAndroidApp()) {
+          const nativeTargets = targetTracks.filter((t) => t.nativeUri || t.nativePath);
+          if (nativeTargets.length > 0) {
+            try {
+              const res = await deleteNativeAudioFiles(nativeTargets);
+              if (res.cancelled) {
+                reportTaskProgress(
+                  taskId,
+                  'library-maintenance',
+                  'Delete Cancelled',
+                  'Android storage permission was declined — source files were kept.',
+                  2,
+                  2,
+                  'error',
+                  { label: 'No files were deleted', current: 2, total: 2, percent: 100 }
+                );
+                return;
+              }
+              resultSummary = `Permanently deleted ${res.deletedCount} file(s) from device storage`;
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : 'Unable to delete source files on Android.';
+              reportTaskProgress(
+                taskId,
+                'library-maintenance',
+                'Delete Failed',
+                msg,
+                2,
+                2,
+                'error',
+                { label: msg, current: 2, total: 2, percent: 100 }
+              );
+              return;
+            }
+          }
+        } else {
+          const webSummary = await deleteTracksFromWebFolder(targetTracks);
+          if (webSummary.diskDeletedCount > 0) {
+            resultSummary = `Deleted ${webSummary.diskDeletedCount} file(s) from source folder`;
+          } else if (webSummary.permissionDeniedCount > 0) {
+            reportTaskProgress(
+              taskId,
+              'library-maintenance',
+              'Folder Write Permission Declined',
+              'Grant disk write permission when deleting to remove files from your source folder.',
+              2,
+              2,
+              'error',
+              { label: 'Permission declined', current: 2, total: 2, percent: 100 }
+            );
+            return;
+          }
+        }
+
+        const remaining = tracksRef.current.filter((t) => !removeSet.has(t.id));
+        trackIds.forEach((id) => {
+          void deleteAudioBlobFromCache(id);
+        });
+
+        setTracks(remaining);
+        setQueue((prev) => prev.filter((t) => !removeSet.has(t.id)));
+        setPlaylists((prev) =>
+          prev.map((pl) => ({
+            ...pl,
+            trackIds: pl.trackIds.filter((id) => !removeSet.has(id)),
+          }))
+        );
+
+        if (selectedAlbumFilter && !remaining.some((t) => t.album === selectedAlbumFilter)) {
+          setSelectedAlbumFilter(null);
+        }
+        if (selectedArtistFilter && !remaining.some((t) => t.artist === selectedArtistFilter)) {
+          setSelectedArtistFilter(null);
+        }
+        if (selectedGenreFilter && !remaining.some((t) => t.genre === selectedGenreFilter)) {
+          setSelectedGenreFilter(null);
+        }
+        if (
+          selectedFolderFilter &&
+          !remaining.some((t) => (t.folderPath || 'Local Imports') === selectedFolderFilter)
+        ) {
+          setSelectedFolderFilter(null);
+        }
+
+        if (currentTrackId && removeSet.has(currentTrackId)) {
+          const nextTrack = remaining[0] || null;
+          setCurrentTrackId(nextTrack?.id || null);
+          if (!nextTrack && isPlaying) {
+            void audioEngine.togglePlayPause();
+          }
+        }
+        void refreshCacheStats();
+        tactile.success();
+        reportTaskProgress(
+          taskId,
+          'library-maintenance',
+          'Files Deleted',
+          resultSummary,
+          2,
+          2,
+          'done',
+          { label: resultSummary, current: 2, total: 2, percent: 100 }
+        );
+      })();
+    },
+    [
+      currentTrackId,
+      isPlaying,
+      refreshCacheStats,
+      reportTaskProgress,
+      selectedAlbumFilter,
+      selectedArtistFilter,
+      selectedFolderFilter,
+      selectedGenreFilter,
+    ]
+  );
+
+  const handleImportM3uFiles = useCallback(
+    async (fileList: FileList | File[], baseTracks?: Track[]) => {
+      const m3uFiles = Array.from(fileList).filter((f) => /\.(m3u8?|pls)$/i.test(f.name));
+      if (m3uFiles.length === 0) return;
+
+      const lookupLibrary = baseTracks && baseTracks.length > 0 ? baseTracks : tracksRef.current;
+      const importedPlaylists: Playlist[] = [];
+      let totalMatched = 0;
+
+      for (const file of m3uFiles) {
+        try {
+          const text = await file.text();
+          const parsed = parseM3uPlaylist(file.name, text, lookupLibrary);
+          if (parsed.matchedTrackIds.length > 0 || parsed.totalEntries > 0) {
+            totalMatched += parsed.matchedTrackIds.length;
+            importedPlaylists.push({
+              id: `pl_m3u_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+              name: parsed.playlistName,
+              description: `Imported M3U (${parsed.matchedTrackIds.length}/${parsed.totalEntries} matched)`,
+              trackIds: parsed.matchedTrackIds,
+              source: 'local',
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+            });
+          }
+        } catch {
+          // ignore unreadable playlist file
+        }
+      }
+
+      if (importedPlaylists.length > 0) {
+        setPlaylists((prev) => {
+          const existingByName = new Map(prev.map((p) => [p.name.toLowerCase(), p]));
+          const additions: Playlist[] = [];
+          const mergedIds = new Map<string, string[]>();
+
+          for (const imp of importedPlaylists) {
+            const existing = existingByName.get(imp.name.toLowerCase());
+            if (existing) {
+              const combined = Array.from(new Set([...existing.trackIds, ...imp.trackIds]));
+              mergedIds.set(existing.id, combined);
+            } else {
+              additions.push(imp);
+            }
+          }
+
+          const updatedExisting = prev.map((p) =>
+            mergedIds.has(p.id)
+              ? { ...p, trackIds: mergedIds.get(p.id) || p.trackIds, updatedAt: Date.now() }
+              : p
+          );
+          return [...additions, ...updatedExisting];
+        });
+        tactile.success();
+        reportTaskProgress(
+          `m3u_${Date.now()}`,
+          'file-import',
+          'M3U Playlists Imported',
+          `Loaded ${importedPlaylists.length} playlist(s) · ${totalMatched} matched track(s)`,
+          1,
+          1,
+          'done',
+          { label: importedPlaylists[0].name, current: 1, total: 1, percent: 100 }
+        );
+      }
+    },
+    [reportTaskProgress]
+  );
+
   const handleImportFiles = useCallback(
-    async (fileList: FileList | File[] | null) => {
-      if (!fileList || fileList.length === 0) return;
+    async (
+      fileList: FileList | File[] | null,
+      existingTaskId?: string,
+      webHandlesMap?: Map<File, { fileHandle: FileSystemFileHandle; dirHandle: FileSystemDirectoryHandle; fileName: string }>,
+      extraM3uFiles?: File[]
+    ) => {
+      if (!fileList || fileList.length === 0) {
+        if (extraM3uFiles && extraM3uFiles.length > 0) {
+          await handleImportM3uFiles(extraM3uFiles);
+        }
+        return;
+      }
       setImportingFiles(true);
       const audioExts = /\.(flac|alac|wav|wave|mp3|m4a|aac|ogg|oga|opus)$/i;
-      const audioFiles = Array.from(fileList).filter(
+      const m3uExts = /\.(m3u8?|pls)$/i;
+      const allFiles = Array.from(fileList);
+      const audioFiles = allFiles.filter(
         (file) => file.type.startsWith('audio/') || audioExts.test(file.name)
       );
+      const discoveredM3us = [
+        ...allFiles.filter((file) => m3uExts.test(file.name)),
+        ...(extraM3uFiles || []),
+      ];
 
       if (audioFiles.length === 0) {
         setImportingFiles(false);
+        if (discoveredM3us.length > 0) {
+          await handleImportM3uFiles(discoveredM3us);
+        }
         return;
       }
 
-      const taskId = `import_${Date.now()}`;
+      const taskId = existingTaskId || `import_${Date.now()}`;
       const totalFiles = audioFiles.length;
       reportTaskProgress(
         taskId,
@@ -799,34 +1378,59 @@ export default function App() {
         'Importing Audio Files',
         `Reading metadata for ${totalFiles} file(s)...`,
         0,
-        totalFiles
+        totalFiles,
+        'running',
+        { label: audioFiles[0]?.name || 'Preparing files...', current: 0, total: 1, percent: 0 }
       );
 
       let totalAdded = 0;
       let processed = 0;
       const batchSize = 6;
+      const allNewlyParsed: Track[] = [];
 
       try {
         for (let i = 0; i < audioFiles.length; i += batchSize) {
           const slice = audioFiles.slice(i, i + batchSize);
-          const parsedBatch = await Promise.all(
-            slice.map(async (file) => {
-              const parsed = await parseLocalAudioFile(file);
-              audioEngine.registerLocalUrl(parsed.id, file);
-              void saveAudioBlobToCache(parsed.id, file);
-              return parsed;
-            })
-          );
+          const parsedBatch: Track[] = [];
+          for (let j = 0; j < slice.length; j++) {
+            const file = slice[j];
+            reportTaskProgress(
+              taskId,
+              'file-import',
+              'Importing Audio Files',
+              `Track ${processed + j + 1} of ${totalFiles}`,
+              processed + j,
+              totalFiles,
+              'running',
+              { label: file.name, current: 1, total: 2, percent: 50 }
+            );
+            const parsed = await parseLocalAudioFile(file);
+            audioEngine.registerLocalUrl(parsed.id, file);
+            void saveAudioBlobToCache(parsed.id, file);
+            const handleMeta = webHandlesMap?.get(file);
+            if (handleMeta) {
+              void saveTrackFileHandle(
+                parsed.id,
+                handleMeta.fileName,
+                handleMeta.fileHandle,
+                handleMeta.dirHandle
+              );
+            }
+            parsedBatch.push(parsed);
+            allNewlyParsed.push(parsed);
+            reportTaskProgress(
+              taskId,
+              'file-import',
+              'Importing Audio Files',
+              `Cached ${processed + j + 1} of ${totalFiles}`,
+              processed + j + 1,
+              totalFiles,
+              'running',
+              { label: parsed.title || file.name, current: 2, total: 2, percent: 100 }
+            );
+          }
 
           processed += slice.length;
-          reportTaskProgress(
-            taskId,
-            'file-import',
-            'Importing Audio Files',
-            `Imported ${slice[slice.length - 1]?.name || 'audio'} (${processed}/${totalFiles})`,
-            processed,
-            totalFiles
-          );
 
           if (parsedBatch.length > 0) {
             totalAdded += parsedBatch.length;
@@ -837,6 +1441,11 @@ export default function App() {
               return [...uniqueNew, ...prev];
             });
           }
+        }
+
+        if (discoveredM3us.length > 0) {
+          const combinedLibrary = [...allNewlyParsed, ...tracksRef.current];
+          await handleImportM3uFiles(discoveredM3us, combinedLibrary);
         }
 
         if (totalAdded > 0) {
@@ -852,23 +1461,26 @@ export default function App() {
           `Added ${totalAdded} audio track(s) to library`,
           totalFiles,
           totalFiles,
-          'done'
+          'done',
+          { label: `${totalAdded} track(s) ready`, current: 1, total: 1, percent: 100 }
         );
       } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Unable to import selected files.';
         reportTaskProgress(
           taskId,
           'file-import',
           'Import Failed',
-          err instanceof Error ? err.message : 'Unable to import selected files.',
+          msg,
           processed,
           totalFiles,
-          'error'
+          'error',
+          { label: msg, current: 1, total: 1, percent: 100 }
         );
       } finally {
         setImportingFiles(false);
       }
     },
-    [refreshCacheStats, reportTaskProgress]
+    [handleImportM3uFiles, refreshCacheStats, reportTaskProgress]
   );
 
   const handleScanNativeAndroid = useCallback(
@@ -883,17 +1495,27 @@ export default function App() {
         'Scanning Device Music Folders',
         'Reading Android MediaStore index...',
         0,
-        100
+        100,
+        'running',
+        { label: 'Preparing Android MediaStore...', current: 0, total: 1, percent: 15 }
       );
       try {
         const scannedTracks = await scanAndroidDeviceLibrary((prog) => {
+          const itemTotal = Math.max(1, prog.total);
           reportTaskProgress(
             taskId,
             'device-scan',
             'Scanning Device Music Folders',
-            prog.fileName || 'Scanning audio files...',
+            `${prog.current} / ${itemTotal} audio files`,
             prog.current,
-            Math.max(1, prog.total)
+            itemTotal,
+            'running',
+            {
+              label: prog.fileName || 'Scanning audio files...',
+              current: 1,
+              total: 1,
+              percent: 100,
+            }
           );
         });
         if (scannedTracks.length > 0) {
@@ -923,7 +1545,8 @@ export default function App() {
             `Loaded ${scannedTracks.length} track(s) from device storage`,
             scannedTracks.length,
             scannedTracks.length,
-            'done'
+            'done',
+            { label: `${scannedTracks.length} track(s) indexed`, current: 1, total: 1, percent: 100 }
           );
         } else {
           if (!silentIfEmpty) {
@@ -936,7 +1559,8 @@ export default function App() {
             'No music tracks found (clips shorter than 10s skipped)',
             1,
             1,
-            'done'
+            'done',
+            { label: 'Scan finished', current: 1, total: 1, percent: 100 }
           );
         }
         return scannedTracks.length;
@@ -948,7 +1572,12 @@ export default function App() {
         if (!silentIfEmpty) {
           setAudioError(msg);
         }
-        reportTaskProgress(taskId, 'device-scan', 'Device Scan Error', msg, 0, 1, 'error');
+        reportTaskProgress(taskId, 'device-scan', 'Device Scan Error', msg, 0, 1, 'error', {
+          label: msg,
+          current: 1,
+          total: 1,
+          percent: 100,
+        });
         return 0;
       } finally {
         setImportingFiles(false);
@@ -967,13 +1596,31 @@ export default function App() {
         taskId,
         'cloud-sync',
         'Signing in with Gmail',
-        'Authorizing Google account...',
+        'Step 1 / 3 · Authorizing account',
         1,
-        2
+        3,
+        'running',
+        { label: 'Google OAuth consent', current: 1, total: 2, percent: 50 }
       );
       const signedUser = await signInWithGoogleAccount();
       tactile.success();
-      const cloud = await restoreFromCloud(signedUser);
+      reportTaskProgress(
+        taskId,
+        'cloud-sync',
+        'Signing in with Gmail',
+        'Step 2 / 3 · Checking cloud backup',
+        2,
+        3,
+        'running',
+        { label: signedUser.email || 'Checking backup...', current: 1, total: 2, percent: 70 }
+      );
+      let cloud = null;
+      try {
+        cloud = await restoreFromCloud(signedUser);
+      } catch {
+        // Non-blocking if user has no cloud backup or offline right now
+        cloud = null;
+      }
       if (cloud) {
         setSyncMessage(`Signed in as ${signedUser.email}. Cloud backup ready to restore or sync.`);
       } else {
@@ -984,14 +1631,20 @@ export default function App() {
         'cloud-sync',
         'Gmail Connected',
         signedUser.email || 'Signed in',
-        2,
-        2,
-        'done'
+        3,
+        3,
+        'done',
+        { label: signedUser.email || 'Connected', current: 1, total: 1, percent: 100 }
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Google sign-in cancelled or failed.';
+      const msg = formatCloudAuthError(err);
       setSyncMessage(msg);
-      reportTaskProgress(taskId, 'cloud-sync', 'Gmail Sign-In Failed', msg, 2, 2, 'error');
+      reportTaskProgress(taskId, 'cloud-sync', 'Gmail Sign-In Failed', msg, 3, 3, 'error', {
+        label: msg,
+        current: 1,
+        total: 1,
+        percent: 100,
+      });
     } finally {
       setSyncBusy(false);
     }
@@ -1007,9 +1660,11 @@ export default function App() {
           taskId,
           'cloud-sync',
           'Backing Up to Cloud',
-          'Packaging settings, playlists, EQ presets & ratings...',
+          'Step 1 / 3 · Packaging settings, EQ presets & playlists',
           1,
-          3
+          3,
+          'running',
+          { label: `${playlists.length} playlists · ${eqPresets.length} EQ presets`, current: 1, total: 3, percent: 33 }
         );
       }
       try {
@@ -1023,9 +1678,11 @@ export default function App() {
             taskId,
             'cloud-sync',
             'Backing Up to Cloud',
-            `Uploading snapshot for ${user.email}...`,
+            `Step 2 / 3 · Uploading snapshot for ${user.email}`,
             2,
-            3
+            3,
+            'running',
+            { label: `Uploading ${tracks.length} track preferences`, current: 2, total: 3, percent: 75 }
           );
         }
         const ts = await backupToCloud({
@@ -1046,13 +1703,23 @@ export default function App() {
           tactile.success();
           const msg = `Backed up to ${user.email} at ${new Date(ts).toLocaleTimeString()}.`;
           setSyncMessage(msg);
-          reportTaskProgress(taskId, 'cloud-sync', 'Cloud Backup Complete', msg, 3, 3, 'done');
+          reportTaskProgress(taskId, 'cloud-sync', 'Cloud Backup Complete', msg, 3, 3, 'done', {
+            label: 'All cloud collections synced',
+            current: 3,
+            total: 3,
+            percent: 100,
+          });
         }
       } catch (err) {
         if (!silent) {
-          const msg = err instanceof Error ? err.message : 'Cloud backup failed.';
+          const msg = formatCloudAuthError(err);
           setSyncMessage(msg);
-          reportTaskProgress(taskId, 'cloud-sync', 'Cloud Backup Error', msg, 3, 3, 'error');
+          reportTaskProgress(taskId, 'cloud-sync', 'Cloud Backup Error', msg, 3, 3, 'error', {
+            label: msg,
+            current: 3,
+            total: 3,
+            percent: 100,
+          });
         }
       } finally {
         if (!silent) setSyncBusy(false);
@@ -1070,9 +1737,11 @@ export default function App() {
       taskId,
       'cloud-sync',
       'Restoring from Cloud',
-      `Fetching backup for ${user.email}...`,
+      `Step 1 / 3 · Fetching backup for ${user.email}`,
       1,
-      3
+      3,
+      'running',
+      { label: user.email || 'Fetching cloud snapshot', current: 1, total: 3, percent: 33 }
     );
     try {
       const data = await restoreFromCloud(user);
@@ -1085,7 +1754,8 @@ export default function App() {
           'No cloud backup found for this account yet.',
           3,
           3,
-          'done'
+          'done',
+          { label: 'No backup found', current: 3, total: 3, percent: 100 }
         );
         return;
       }
@@ -1093,9 +1763,11 @@ export default function App() {
         taskId,
         'cloud-sync',
         'Restoring from Cloud',
-        'Applying playlists, EQ presets & track ratings...',
+        'Step 2 / 3 · Applying playlists, EQ presets & ratings',
         2,
-        3
+        3,
+        'running',
+        { label: `Applying ${data.playlists?.length || 0} playlists & track ratings`, current: 2, total: 3, percent: 75 }
       );
       if (data.settings) {
         updateSettings(data.settings);
@@ -1126,10 +1798,15 @@ export default function App() {
               favorite: p.favorite,
               rating: p.rating,
               playCount: Math.max(t.playCount, p.playCount || 0),
+              skipCount: Math.max(t.skipCount || 0, p.skipCount || 0),
+              lastSkippedAt: p.lastSkippedAt || t.lastSkippedAt,
               title: p.title || t.title,
               artist: p.artist || t.artist,
               album: p.album || t.album,
               genre: p.genre || t.genre,
+              year: p.year || t.year,
+              composer: p.composer || t.composer,
+              eqPresetId: p.eqPresetId || t.eqPresetId,
             };
           })
         );
@@ -1147,11 +1824,21 @@ export default function App() {
       tactile.success();
       const msg = `Restored settings, playlists, EQ presets, and playback point from ${user.email}.`;
       setSyncMessage(msg);
-      reportTaskProgress(taskId, 'cloud-sync', 'Cloud Restore Complete', msg, 3, 3, 'done');
+      reportTaskProgress(taskId, 'cloud-sync', 'Cloud Restore Complete', msg, 3, 3, 'done', {
+        label: 'Cloud state applied',
+        current: 3,
+        total: 3,
+        percent: 100,
+      });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Restore failed.';
+      const msg = formatCloudAuthError(err);
       setSyncMessage(msg);
-      reportTaskProgress(taskId, 'cloud-sync', 'Cloud Restore Error', msg, 3, 3, 'error');
+      reportTaskProgress(taskId, 'cloud-sync', 'Cloud Restore Error', msg, 3, 3, 'error', {
+        label: msg,
+        current: 3,
+        total: 3,
+        percent: 100,
+      });
     } finally {
       setSyncBusy(false);
     }
@@ -1247,14 +1934,31 @@ export default function App() {
     );
   }, []);
 
-  const handleCreatePlaylist = useCallback((name: string) => {
+  const handleAddTracksToPlaylist = useCallback((trackIds: string[], playlistId: string) => {
+    if (trackIds.length === 0) return;
+    setPlaylists((prev) =>
+      prev.map((pl) => {
+        if (pl.id !== playlistId) return pl;
+        const existing = new Set(pl.trackIds);
+        const additions = trackIds.filter((id) => !existing.has(id));
+        if (additions.length === 0) return pl;
+        return { ...pl, trackIds: [...pl.trackIds, ...additions], updatedAt: Date.now() };
+      })
+    );
+  }, []);
+
+  const handleCreatePlaylist = useCallback((name: string, initialTrackIds?: string[]) => {
     tactile.success();
+    const uniqueInitial = initialTrackIds ? Array.from(new Set(initialTrackIds)) : [];
     setPlaylists((prev) => [
       {
         id: `pl_${Date.now().toString(36)}`,
         name,
-        description: 'Custom playlist',
-        trackIds: [],
+        description:
+          uniqueInitial.length > 0
+            ? `${uniqueInitial.length} track(s)`
+            : 'Custom playlist',
+        trackIds: uniqueInitial,
         source: 'local',
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -1262,6 +1966,13 @@ export default function App() {
       ...prev,
     ]);
   }, []);
+
+  const handleExportPlaylistM3u = useCallback((playlistId: string) => {
+    const pl = playlists.find((p) => p.id === playlistId);
+    if (!pl) return;
+    tactile.success();
+    exportPlaylistAsM3u8(pl, tracksRef.current);
+  }, [playlists]);
 
   const handleDeletePlaylist = useCallback((playlistId: string) => {
     tactile.tap();
@@ -1315,25 +2026,39 @@ export default function App() {
       return;
     }
 
+    type PickerDir = FileSystemDirectoryHandle & {
+      values: () => AsyncIterable<
+        | (FileSystemFileHandle & { kind: 'file'; name: string })
+        | (FileSystemDirectoryHandle & { kind: 'directory'; name: string; values: () => AsyncIterable<unknown> })
+      >;
+    };
+
     const picker = (
       window as Window & {
-        showDirectoryPicker?: (opts?: { mode?: 'read' }) => Promise<{
-          name: string;
-          values: () => AsyncIterable<{
-            kind: 'file' | 'directory';
-            name: string;
-            getFile?: () => Promise<File>;
-            values?: () => AsyncIterable<unknown>;
-          }>;
-        }>;
+        showDirectoryPicker?: (opts?: { mode?: 'read' | 'readwrite' }) => Promise<PickerDir>;
       }
     ).showDirectoryPicker;
 
     if (typeof picker === 'function') {
       try {
-        const dirHandle = await picker({ mode: 'read' });
+        let dirHandle: PickerDir;
+        try {
+          dirHandle = await picker({ mode: 'readwrite' });
+        } catch (permErr) {
+          if (permErr instanceof DOMException && permErr.name === 'AbortError') {
+            return;
+          }
+          dirHandle = await picker({ mode: 'read' });
+        }
+
         const audioExts = /\.(flac|alac|wav|wave|mp3|m4a|aac|ogg|oga|opus)$/i;
+        const m3uExts = /\.(m3u8?|pls)$/i;
         const collected: File[] = [];
+        const collectedM3u: File[] = [];
+        const webHandlesMap = new Map<
+          File,
+          { fileHandle: FileSystemFileHandle; dirHandle: FileSystemDirectoryHandle; fileName: string }
+        >();
         const walkTaskId = `folder_walk_${Date.now()}`;
         reportTaskProgress(
           walkTaskId,
@@ -1341,38 +2066,45 @@ export default function App() {
           'Scanning Music Folder',
           `Opening "${dirHandle.name}"...`,
           0,
-          0
+          0,
+          'running',
+          { label: dirHandle.name, current: 0, total: 1, percent: 10 }
         );
 
-        const walk = async (handle: {
-          values: () => AsyncIterable<{
-            kind: 'file' | 'directory';
-            name: string;
-            getFile?: () => Promise<File>;
-            values?: () => AsyncIterable<unknown>;
-          }>;
-        }, prefix: string) => {
+        const walk = async (handle: PickerDir, prefix: string) => {
           for await (const entry of handle.values()) {
-            if (entry.kind === 'file' && entry.getFile && audioExts.test(entry.name)) {
-              const f = await entry.getFile();
-              Object.defineProperty(f, 'webkitRelativePath', {
-                value: `${prefix}/${entry.name}`,
-                configurable: true,
-              });
-              collected.push(f);
-              if (collected.length % 5 === 1) {
-                reportTaskProgress(
-                  walkTaskId,
-                  'device-scan',
-                  'Scanning Music Folder',
-                  `Found ${collected.length} track(s): ${entry.name}`,
-                  collected.length,
-                  collected.length + 5
-                );
+            if (entry.kind === 'file' && typeof entry.getFile === 'function') {
+              if (audioExts.test(entry.name)) {
+                const f = await entry.getFile();
+                Object.defineProperty(f, 'webkitRelativePath', {
+                  value: `${prefix}/${entry.name}`,
+                  configurable: true,
+                });
+                collected.push(f);
+                webHandlesMap.set(f, {
+                  fileHandle: entry,
+                  dirHandle: handle,
+                  fileName: entry.name,
+                });
+                if (collected.length % 5 === 1) {
+                  reportTaskProgress(
+                    walkTaskId,
+                    'device-scan',
+                    'Scanning Music Folder',
+                    `Found ${collected.length} track(s)`,
+                    collected.length,
+                    collected.length + 5,
+                    'running',
+                    { label: entry.name, current: 1, total: 1, percent: 100 }
+                  );
+                }
+              } else if (m3uExts.test(entry.name)) {
+                const mf = await entry.getFile();
+                collectedM3u.push(mf);
               }
-            } else if (entry.kind === 'directory' && entry.values) {
+            } else if (entry.kind === 'directory' && typeof entry.values === 'function') {
               await walk(
-                entry as typeof handle,
+                entry as PickerDir,
                 `${prefix}/${entry.name}`
               );
             }
@@ -1380,17 +2112,19 @@ export default function App() {
         };
 
         await walk(dirHandle, dirHandle.name);
-        reportTaskProgress(
-          walkTaskId,
-          'device-scan',
-          'Folder Scan Complete',
-          `Found ${collected.length} audio file(s)`,
-          Math.max(1, collected.length),
-          Math.max(1, collected.length),
-          'done'
-        );
-        if (collected.length > 0) {
-          await handleImportFiles(collected);
+        if (collected.length > 0 || collectedM3u.length > 0) {
+          await handleImportFiles(collected, walkTaskId, webHandlesMap, collectedM3u);
+        } else {
+          reportTaskProgress(
+            walkTaskId,
+            'device-scan',
+            'Folder Scan Complete',
+            'No audio files found in folder',
+            1,
+            1,
+            'done',
+            { label: dirHandle.name, current: 1, total: 1, percent: 100 }
+          );
         }
         return;
       } catch (err) {
@@ -1417,7 +2151,7 @@ export default function App() {
         multiple
         // @ts-expect-error webkitdirectory is supported in Chromium/Safari/Firefox
         webkitdirectory=""
-        accept="audio/*,.flac,.alac,.wav,.mp3,.m4a,.aac,.ogg"
+        accept="audio/*,.flac,.alac,.wav,.mp3,.m4a,.aac,.ogg,.opus,.m3u,.m3u8"
         onChange={(e) => {
           void handleImportFiles(e.target.files);
           e.target.value = '';
@@ -1428,7 +2162,7 @@ export default function App() {
         ref={filesInputRef}
         type="file"
         multiple
-        accept="audio/*,.flac,.alac,.wav,.mp3,.m4a,.aac,.ogg"
+        accept="audio/*,.flac,.alac,.wav,.mp3,.m4a,.aac,.ogg,.opus,.m3u,.m3u8"
         onChange={(e) => {
           void handleImportFiles(e.target.files);
           e.target.value = '';
@@ -1451,49 +2185,7 @@ export default function App() {
             </span>
           </div>
 
-          {/* Desktop/Tablet Inline Search */}
-          <div className="hidden sm:block relative flex-1 max-w-md">
-            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search songs, artists, Lithuanian or Cyrillic..."
-              aria-label="Search library"
-              className="w-full min-h-[38px] pl-9 pr-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                aria-label="Clear search"
-                onClick={() => {
-                  tactile.tap();
-                  setSearchQuery('');
-                }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-600"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <button
-              type="button"
-              aria-label="Toggle search"
-              onClick={() => {
-                tactile.tap();
-                setMobileSearchOpen((v) => !v);
-              }}
-              className={`sm:hidden min-w-[38px] min-h-[38px] rounded-lg flex items-center justify-center border transition-colors ${
-                mobileSearchOpen || searchQuery
-                  ? 'border-amber-500/50 bg-amber-500/10 accent-text'
-                  : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300'
-              }`}
-            >
-              <Search className="w-4 h-4" />
-            </button>
-
             <PWAInstallButton />
 
             <button
@@ -1520,37 +2212,6 @@ export default function App() {
             </button>
           </div>
         </div>
-
-        {/* Collapsible Mobile Search Row */}
-        {(mobileSearchOpen || searchQuery.length > 0) && (
-          <div className="sm:hidden pb-2">
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search songs, artists, albums..."
-                aria-label="Search library"
-                className="w-full min-h-[36px] pl-8 pr-8 rounded-lg bg-zinc-100 dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/40"
-              />
-              {(searchQuery || mobileSearchOpen) && (
-                <button
-                  type="button"
-                  aria-label="Close search"
-                  onClick={() => {
-                    tactile.tap();
-                    setSearchQuery('');
-                    setMobileSearchOpen(false);
-                  }}
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-600"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          </div>
-        )}
       </header>
 
       {/* Middle Unscrollable Workspace (Desktop Sidebar + Page Viewport) */}
@@ -1657,9 +2318,8 @@ export default function App() {
 
         {/* Main Viewport Panel */}
         <main className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
-          {/* Mobile 2-Tier Unscrollable Navigation (Zero Horizontal Scroll) */}
-          <div className="md:hidden shrink-0 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-2 py-1 space-y-1">
-            {/* Tier 1: Workspaces */}
+          {/* Mobile Workspace Switcher (4 top-level workspaces) */}
+          <div className="md:hidden shrink-0 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-2 py-1">
             <div className="grid grid-cols-4 gap-1 p-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-900">
               {WORKSPACES.map((ws) => {
                 const active = activeWorkspace === ws.id;
@@ -1682,37 +2342,18 @@ export default function App() {
                 );
               })}
             </div>
-
-            {/* Tier 2: Sub-Pages inside Active Workspace */}
-            <nav
-              aria-label="Section pages"
-              style={{
-                gridTemplateColumns: `repeat(${activeWorkspaceMeta.items.length}, minmax(0, 1fr))`,
-              }}
-              className="grid gap-1"
-            >
-              {activeWorkspaceMeta.items.map((item) => {
-                const active = normalizedActiveTab === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => {
-                      tactile.tap();
-                      updateSettings({ activeTab: item.id });
-                    }}
-                    className={`min-h-[28px] px-0.5 rounded-md text-[11px] font-medium whitespace-nowrap truncate transition-colors ${
-                      active
-                        ? 'accent-soft-bg'
-                        : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
-                    }`}
-                  >
-                    {item.shortLabel}
-                  </button>
-                );
-              })}
-            </nav>
           </div>
+
+          {/* Slidable Rocket-Player-Style Top Menu Choices Bar */}
+          <SlidableTabStrip
+            items={activeWorkspaceMeta.items.map((item) => ({
+              id: item.id,
+              label: item.label,
+            }))}
+            activeId={normalizedActiveTab}
+            onSelect={(nextId) => updateSettings({ activeTab: nextId as NavigationTab })}
+            className="shrink-0"
+          />
 
           {audioError && (
             <div className="shrink-0 mx-3 sm:mx-5 mt-1.5 px-3 py-1.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-300 flex items-center justify-between gap-2">
@@ -1727,14 +2368,27 @@ export default function App() {
             </div>
           )}
 
-          {/* Fixed Active Page Container (100% overflow-hidden) */}
-          <div className="flex-1 min-h-0 p-2.5 sm:p-4 overflow-hidden flex flex-col">
+          {/* Fixed Slidable Active Page Container (100% overflow-hidden) */}
+          <SlidablePageViewport
+            pageIds={activeWorkspaceMeta.items.map((item) => item.id)}
+            activePageId={normalizedActiveTab}
+            pageLabels={Object.fromEntries(
+              activeWorkspaceMeta.items.map((item) => [item.id, item.label])
+            )}
+            onChangePage={(nextId) => updateSettings({ activeTab: nextId as NavigationTab })}
+            disabled={nowPlayingOpen || castOpen || shareOpen}
+            className="flex-1 min-h-0 p-2.5 sm:p-4 flex flex-col"
+          >
             {isLibraryTab(normalizedActiveTab) && (
               <LibraryBrowser
                 tab={normalizedActiveTab}
                 viewMode={settings.viewModes[normalizedActiveTab]}
+                themeMode={settings.themeMode}
+                sortBy={settings.sortBy || { field: 'title', ascending: true }}
                 tracks={visibleTracks}
                 playlists={playlists}
+                eqPresets={eqPresets}
+                searchQuery={searchQuery}
                 currentTrackId={currentTrackId}
                 isPlaying={isPlaying}
                 selectedAlbumFilter={selectedAlbumFilter}
@@ -1742,21 +2396,53 @@ export default function App() {
                 selectedGenreFilter={selectedGenreFilter}
                 selectedFolderFilter={selectedFolderFilter}
                 selectedPlaylistFilter={selectedPlaylistFilter}
+                onChangeSearchQuery={setSearchQuery}
                 onChangeViewMode={handleChangeLibraryViewMode}
+                onChangeSortBy={(nextSort) => updateSettings({ sortBy: nextSort })}
                 onPlayTrack={handlePlayFromLibrary}
+                onPlaySingleTrack={handlePlaySingleTrack}
+                onShuffleFromTrack={handleShuffleFromTrack}
+                onPlayNext={handlePlayNext}
+                onPlayNextMany={handlePlayNextMany}
+                onAddToQueue={handleAddToQueue}
+                onAddTracksToQueue={handleAddTracksToQueue}
                 onPlayAll={playCollectionQueue}
                 onToggleFavorite={handleToggleFavorite}
-                onRateTrack={handleRateTrack}
                 onToggleOfflineCache={handleToggleOfflineCacheCb}
                 onAddTrackToPlaylist={handleAddTrackToPlaylist}
+                onAddTracksToPlaylist={handleAddTracksToPlaylist}
                 onCreatePlaylist={handleCreatePlaylist}
+                onEditTracksMetadata={handleEditTracksMetadata}
+                onAssignEqPreset={handleAssignEqPreset}
+                onSetRingtone={(track) => void handleSetRingtone(track)}
+                onDeleteTracks={handleDeleteTracks}
                 onDeletePlaylist={handleDeletePlaylist}
+                onExportPlaylistM3u={handleExportPlaylistM3u}
+                onImportM3uFiles={(files) => void handleImportM3uFiles(files)}
                 onSelectAlbum={handleSelectAlbum}
                 onSelectArtist={handleSelectArtist}
                 onSelectGenre={handleSelectGenre}
                 onSelectFolder={handleSelectFolder}
                 onSelectPlaylist={handleSelectPlaylist}
                 onImportLocalFolder={handleOpenFolderImport}
+                onOpenSettings={() => {
+                  tactile.tap();
+                  updateSettings({ activeTab: 'settings-audio' });
+                }}
+                onOpenEqualizer={() => {
+                  tactile.tap();
+                  updateSettings({ activeTab: 'eq-rack' });
+                }}
+                onToggleTheme={() => {
+                  const nextMode = settings.themeMode === 'dark' ? 'light' : 'dark';
+                  tactile.toggle(nextMode === 'dark');
+                  updateSettings({ themeMode: nextMode });
+                }}
+                onShareApp={() => {
+                  tactile.sheet(true);
+                  setShareMode('app');
+                  setShareOpen(true);
+                }}
               />
             )}
 
@@ -1775,30 +2461,17 @@ export default function App() {
                 }
                 onUpdateDailyRecommendations={setDailyRecs}
                 onApplyTagCleanups={(suggestions: TagCleanupSuggestion[]) => {
-                  const map = new Map(suggestions.map((s) => [s.trackId, s]));
-                  setTracks((prev) =>
-                    prev.map((t) => {
-                      const s = map.get(t.id);
-                      if (!s) return t;
-                      return {
-                        ...t,
-                        title: s.suggestedTitle,
-                        artist: s.suggestedArtist,
-                        album: s.suggestedAlbum,
-                        genre: s.suggestedGenre,
-                      };
-                    })
-                  );
-                }}
-                onRemoveDuplicateTracks={(trackIds: string[]) => {
-                  const removeSet = new Set(trackIds);
-                  setTracks((prev) => prev.filter((t) => !removeSet.has(t.id)));
-                  setQueue((prev) => prev.filter((t) => !removeSet.has(t.id)));
-                  if (currentTrackId && removeSet.has(currentTrackId)) {
-                    const remaining = tracksRef.current.filter((t) => !removeSet.has(t.id));
-                    setCurrentTrackId(remaining[0]?.id || null);
+                  if (suggestions.length === 0) return;
+                  const sugIds = new Set(suggestions.map((s) => s.trackId));
+                  const nextTracks = applyTagSuggestionsToList(tracksRef.current, suggestions);
+                  setTracks(nextTracks);
+                  setQueue((prev) => applyTagSuggestionsToList(prev, suggestions));
+                  const updatedSubset = nextTracks.filter((t) => sugIds.has(t.id));
+                  if (updatedSubset.length > 0) {
+                    void persistTracksTagsToSource(updatedSubset);
                   }
                 }}
+                onRemoveDuplicateTracks={handleDeleteTracks}
                 onApplyArtworkUpdates={(updates) => {
                   const map = new Map(updates.map((u) => [u.trackId, u.coverUrl]));
                   setTracks((prev) =>
@@ -1880,8 +2553,6 @@ export default function App() {
                 cacheStats={cacheStats}
                 syncBusy={syncBusy}
                 syncMessage={syncMessage}
-                syncProgress={syncProgress}
-                storageProgress={storageProgress}
                 onUpdateSettings={updateSettings}
                 onSignInGoogle={() => void handleSignInGoogle()}
                 onSignOutGoogle={() => void signOutGoogleAccount()}
@@ -1896,7 +2567,9 @@ export default function App() {
                     'Clearing Offline Cache',
                     'Removing cached audio blobs...',
                     1,
-                    2
+                    2,
+                    'running',
+                    { label: `${cacheStats.count} cached item(s)`, current: 1, total: 2, percent: 50 }
                   );
                   void clearAudioCache().then(() => {
                     setTracks((prev) =>
@@ -1912,7 +2585,8 @@ export default function App() {
                       'Freed device offline storage',
                       2,
                       2,
-                      'done'
+                      'done',
+                      { label: '0 cached items remaining', current: 2, total: 2, percent: 100 }
                     );
                   });
                 }}
@@ -1926,7 +2600,9 @@ export default function App() {
                     'Repairing Cyrillic & Mojibake Tags',
                     `Fixing encoding across ${total} tracks...`,
                     total,
-                    Math.max(1, total)
+                    Math.max(1, total),
+                    'running',
+                    { label: 'Normalizing Windows-1251 & UTF-8', current: 1, total: 2, percent: 50 }
                   );
                   setTracks((prev) =>
                     prev.map((t) => ({
@@ -1945,12 +2621,13 @@ export default function App() {
                     `Checked ${total} track(s)`,
                     Math.max(1, total),
                     Math.max(1, total),
-                    'done'
+                    'done',
+                    { label: `Verified ${total} tracks`, current: 2, total: 2, percent: 100 }
                   );
                 }}
               />
             )}
-          </div>
+          </SlidablePageViewport>
         </main>
       </div>
 
@@ -2020,6 +2697,7 @@ export default function App() {
         }}
         onOpenShare={() => {
           tactile.sheet(true);
+          setShareMode('track');
           setShareOpen(true);
         }}
       />
@@ -2072,6 +2750,7 @@ export default function App() {
         }}
         onOpenShare={() => {
           tactile.sheet(true);
+          setShareMode('track');
           setShareOpen(true);
         }}
         onGoToAlbum={(album) => {
@@ -2106,6 +2785,7 @@ export default function App() {
       <ShareModal
         open={shareOpen}
         track={currentTrack}
+        mode={shareMode}
         onClose={() => {
           tactile.sheet(false);
           setShareOpen(false);

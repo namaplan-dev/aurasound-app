@@ -69,6 +69,10 @@ export function loadSettings(): AppSettings {
       ...DEFAULT_SETTINGS.viewModes,
       ...(saved.viewModes || {}),
     },
+    sortBy: {
+      field: saved.sortBy?.field || DEFAULT_SETTINGS.sortBy?.field || 'title',
+      ascending: saved.sortBy?.ascending !== undefined ? saved.sortBy.ascending : true,
+    },
   };
 }
 

@@ -42,6 +42,7 @@ export interface Track {
   album: string;
   genre: string;
   year?: string;
+  composer?: string;
   duration: number; // seconds
   format: 'FLAC' | 'ALAC' | 'WAV' | 'MP3' | 'AAC' | 'OGG';
   sampleRate: number; // e.g. 96000, 48000, 44100
@@ -65,10 +66,34 @@ export interface Track {
   rating: number; // 0 to 5
   playCount: number;
   lastPlayedAt?: number;
+  skipCount?: number;
+  lastSkippedAt?: number;
   addedAt: number;
   offlineCached: boolean;
+  /** Optional EQ preset ID assigned specifically to this track/collection */
+  eqPresetId?: string;
   /** Hashed key for matching cloud metadata across sessions */
   fingerprint: string;
+}
+
+export type LibrarySortField =
+  | 'title'
+  | 'addedAt'
+  | 'artist'
+  | 'album'
+  | 'year'
+  | 'playCount'
+  | 'lastPlayedAt'
+  | 'rating'
+  | 'skipCount'
+  | 'lastSkippedAt'
+  | 'genre'
+  | 'composer'
+  | 'folders';
+
+export interface LibrarySortConfig {
+  field: LibrarySortField;
+  ascending: boolean;
 }
 
 export interface Playlist {
@@ -145,6 +170,7 @@ export interface AppSettings {
   lastPositionSec?: number;
   tactileSounds?: boolean;
   hapticFeedback?: boolean;
+  sortBy?: LibrarySortConfig;
 }
 
 export interface SessionState {
@@ -179,6 +205,11 @@ export interface CloudBackupPayload {
     artist?: string;
     album?: string;
     genre?: string;
+    year?: string;
+    composer?: string;
+    skipCount?: number;
+    lastSkippedAt?: number;
+    eqPresetId?: string;
   }>;
   dailyRecommendations: DailyRecommendation[];
   updatedAt?: unknown;
@@ -191,12 +222,15 @@ export interface TagCleanupSuggestion {
   currentArtist: string;
   currentAlbum: string;
   currentGenre: string;
+  currentYear?: string;
   suggestedTitle: string;
   suggestedArtist: string;
   suggestedAlbum: string;
   suggestedGenre: string;
+  suggestedYear?: string;
   reason: string;
   selected: boolean;
+  applied?: boolean;
 }
 
 export type AppTaskCategory =
@@ -210,6 +244,13 @@ export type AppTaskCategory =
   | 'cloud-sync'
   | 'library-maintenance';
 
+export interface TaskItemProgress {
+  label: string;
+  current: number;
+  total: number;
+  percent: number;
+}
+
 export interface AppTaskProgress {
   id: string;
   category: AppTaskCategory;
@@ -218,6 +259,10 @@ export interface AppTaskProgress {
   current: number;
   total: number;
   percent: number;
+  itemLabel?: string;
+  itemCurrent?: number;
+  itemTotal?: number;
+  itemPercent?: number;
   status: 'running' | 'done' | 'error';
   updatedAt: number;
 }

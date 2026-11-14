@@ -6,6 +6,10 @@ interface AlphabetIndexSliderProps {
   letters: string[];
   populatedLetters?: Set<string>;
   activeLetter?: string;
+  /** Transient letter popped from direct library touch-scrolling */
+  externalPopupLetter?: string | null;
+  /** Optional vertical pixel offset matching the aligned library item row (defaults to Row 1 at top) */
+  alignedTopPx?: number;
   onSelectLetter: (letter: string) => void;
 }
 
@@ -16,7 +20,13 @@ function getScriptHint(letter: string): string {
 }
 
 export const AlphabetIndexSlider: React.FC<AlphabetIndexSliderProps> = React.memo(
-  ({ letters, activeLetter, onSelectLetter }) => {
+  ({
+    letters,
+    activeLetter,
+    externalPopupLetter,
+    alignedTopPx = 2,
+    onSelectLetter,
+  }) => {
     const railRef = useRef<HTMLDivElement | null>(null);
     const [draggingLetter, setDraggingLetter] = useState<string | null>(null);
     const [dragRatio, setDragRatio] = useState<number | null>(null);
@@ -53,11 +63,7 @@ export const AlphabetIndexSlider: React.FC<AlphabetIndexSliderProps> = React.mem
         if (isInitialGrab || lastEmittedRef.current !== letter) {
           lastEmittedRef.current = letter;
           const isBoundary = idx === 0 || idx === letters.length - 1;
-          if (isInitialGrab) {
-            tactile.sliderGrab();
-          } else {
-            tactile.sliderDetent(idx / Math.max(1, letters.length - 1), isBoundary);
-          }
+          tactile.letterPop(idx / Math.max(1, letters.length - 1), isBoundary);
           onSelectLetter(letter);
         }
       },
@@ -72,15 +78,16 @@ export const AlphabetIndexSlider: React.FC<AlphabetIndexSliderProps> = React.mem
     }, []);
 
     const activeIdx = useMemo(() => {
-      const target = draggingLetter || activeLetter;
+      const target = draggingLetter || externalPopupLetter || activeLetter;
       if (!target || letters.length === 0) return 0;
       const found = letters.indexOf(target);
       return found >= 0 ? found : 0;
-    }, [draggingLetter, activeLetter, letters]);
+    }, [draggingLetter, externalPopupLetter, activeLetter, letters]);
 
     if (letters.length === 0) return null;
 
-    const currentLetter = draggingLetter || activeLetter || letters[0];
+    const currentLetter = draggingLetter || externalPopupLetter || activeLetter || letters[0];
+    const poppedLetter = draggingLetter || externalPopupLetter || null;
     const thumbRatio =
       letters.length === 1
         ? 0.5
@@ -93,21 +100,24 @@ export const AlphabetIndexSlider: React.FC<AlphabetIndexSliderProps> = React.mem
 
     return (
       <div
+        data-no-swipe="true"
         style={{ touchAction: 'none' }}
         className="relative h-full min-h-0 flex items-center select-none shrink-0 z-20 touch-none"
       >
-        {/* Floating enlarged popup letter indicator while sliding */}
-        {draggingLetter && (
+        {/* Row-aligned floating enlarged popup letter indicator pointing directly to matched Row 1 item */}
+        {poppedLetter && (
           <div
             aria-hidden="true"
-            style={{ top: `${clampedPct}%` }}
-            className="absolute right-14 sm:right-16 -translate-y-1/2 w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-zinc-900/95 dark:bg-zinc-50/95 text-white dark:text-zinc-950 border-2 border-amber-500/80 shadow-2xl backdrop-blur-md flex flex-col items-center justify-center pointer-events-none transition-[top] duration-75 ease-out"
+            style={{ top: `${Math.max(2, alignedTopPx)}px` }}
+            className="absolute right-12 sm:right-14 w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-zinc-900/95 dark:bg-zinc-50/95 text-white dark:text-zinc-950 border-2 border-amber-500 shadow-2xl backdrop-blur-md flex flex-col items-center justify-center pointer-events-none transition-[top] duration-75 ease-out"
           >
-            <span className="text-5xl sm:text-6xl font-display font-bold leading-none">
-              {draggingLetter}
+            {/* Left-pointing alignment indicator pointing straight at the matched library row */}
+            <span className="absolute -left-2 top-5 w-3.5 h-3.5 rotate-45 bg-zinc-900 dark:bg-zinc-50 border-l-2 border-b-2 border-amber-500" />
+            <span className="text-4xl sm:text-5xl font-display font-bold leading-none">
+              {poppedLetter}
             </span>
-            <span className="mt-1.5 text-[11px] font-mono-tabular uppercase tracking-wider opacity-70">
-              {getScriptHint(draggingLetter)}
+            <span className="mt-1 text-[10px] font-mono-tabular uppercase tracking-wider opacity-75">
+              {getScriptHint(poppedLetter)}
             </span>
           </div>
         )}
@@ -127,18 +137,19 @@ export const AlphabetIndexSlider: React.FC<AlphabetIndexSliderProps> = React.mem
             if (e.key === 'ArrowDown' && activeIdx < letters.length - 1) {
               e.preventDefault();
               const next = letters[activeIdx + 1];
-              tactile.sliderDetent((activeIdx + 1) / Math.max(1, letters.length - 1));
+              tactile.letterPop((activeIdx + 1) / Math.max(1, letters.length - 1));
               onSelectLetter(next);
             } else if (e.key === 'ArrowUp' && activeIdx > 0) {
               e.preventDefault();
               const prev = letters[activeIdx - 1];
-              tactile.sliderDetent((activeIdx - 1) / Math.max(1, letters.length - 1));
+              tactile.letterPop((activeIdx - 1) / Math.max(1, letters.length - 1));
               onSelectLetter(prev);
             }
           }}
           onPointerDown={(e) => {
             e.preventDefault();
             e.stopPropagation();
+            tactile.unlock();
             isDraggingRef.current = true;
             activePointerIdRef.current = e.pointerId;
             try {

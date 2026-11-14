@@ -8,6 +8,7 @@ import {
   Play,
   Plus,
   RefreshCw,
+  RotateCcw,
   Shuffle,
   Sparkles,
   Trash2,
@@ -22,10 +23,13 @@ import {
   SmartPlaylist,
   SmartRule,
   TagCleanupSuggestion,
+  TaskItemProgress,
   Track,
 } from '../types/music';
 import { evaluateSmartPlaylist } from '../services/smartPlaylistEngine';
 import {
+  applyTagSuggestionsToList,
+  prioritizeTracksForTagScan,
   resizeArtworkFileToDataUrl,
   resolveApiUrl,
   runBatchedTagCleanupScan,
@@ -33,21 +37,11 @@ import {
   runOriginalAlbumArtScan,
 } from '../services/aiAssistantService';
 import { tactile } from '../services/tactileFeedback';
-import { ProgressBar } from './ProgressBar';
 import { PaginationBar } from './PaginationBar';
 import { useViewportPageSize } from '../hooks/useViewportPageSize';
 import { CoverArt } from './CoverArt';
 
 export type StudioPage = 'mixes' | 'playlists' | 'duplicates' | 'tags' | 'artwork';
-
-interface InlineProgress {
-  label: string;
-  detail: string;
-  current: number;
-  total: number;
-  percent: number;
-  status: 'running' | 'done' | 'error';
-}
 
 interface SmartStudioViewProps {
   page: StudioPage;
@@ -70,7 +64,8 @@ interface SmartStudioViewProps {
     detail: string,
     current: number,
     total: number,
-    status?: 'running' | 'done' | 'error'
+    status?: 'running' | 'done' | 'error',
+    item?: TaskItemProgress
   ) => void;
 }
 
@@ -115,13 +110,11 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
 }) => {
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
-  const [playlistProgress, setPlaylistProgress] = useState<InlineProgress | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [playlistViewTab, setPlaylistViewTab] = useState<'list' | 'create'>('list');
   const [creatorMode, setCreatorMode] = useState<'ai' | 'rules'>('ai');
 
   const [dailyLoading, setDailyLoading] = useState(false);
-  const [dailyProgress, setDailyProgress] = useState<InlineProgress | null>(null);
 
   // Manual rule-based smart playlist state
   const [manualName, setManualName] = useState('');
@@ -130,21 +123,30 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
   const [manualMinRating, setManualMinRating] = useState(0);
   const [manualFavOnly, setManualFavOnly] = useState(false);
 
+  // Adjustable AI Scan Scope & Batch Controls
+  const [scanLimitInput, setScanLimitInput] = useState<string>('15');
+  const [batchSize, setBatchSize] = useState<number>(15);
+  const [autoApplyTags, setAutoApplyTags] = useState<boolean>(true);
+
+  const effectiveScanCount = useMemo(() => {
+    if (tracks.length === 0) return 0;
+    const parsed = Number.parseInt(scanLimitInput, 10);
+    if (!Number.isFinite(parsed) || parsed < 1) return Math.min(15, tracks.length);
+    return Math.min(tracks.length, parsed);
+  }, [scanLimitInput, tracks.length]);
+
   // AI Tag Cleanup state
   const [tagLoading, setTagLoading] = useState(false);
-  const [tagProgress, setTagProgress] = useState<InlineProgress | null>(null);
   const [tagSuggestions, setTagSuggestions] = useState<TagCleanupSuggestion[]>([]);
   const [tagStatus, setTagStatus] = useState<string | null>(null);
 
   // AI Duplicate Scanner state
   const [dupLoading, setDupLoading] = useState(false);
-  const [dupProgress, setDupProgress] = useState<InlineProgress | null>(null);
   const [dupGroups, setDupGroups] = useState<DuplicateGroup[]>([]);
   const [dupStatus, setDupStatus] = useState<string | null>(null);
 
   // AI Original Album Art Finder & Manual Uploader state
   const [artLoading, setArtLoading] = useState(false);
-  const [artProgress, setArtProgress] = useState<InlineProgress | null>(null);
   const [artSuggestions, setArtSuggestions] = useState<ArtworkSuggestion[]>([]);
   const [artStatus, setArtStatus] = useState<string | null>(null);
   const [artSubTab, setArtSubTab] = useState<'ai' | 'upload'>('ai');
@@ -218,18 +220,16 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
   }, [page]);
 
   const report = (
-    setter: React.Dispatch<React.SetStateAction<InlineProgress | null>>,
     taskId: string,
     category: AppTaskCategory,
     label: string,
     detail: string,
     current: number,
     total: number,
-    status: 'running' | 'done' | 'error' = 'running'
+    status: 'running' | 'done' | 'error' = 'running',
+    item?: TaskItemProgress
   ) => {
-    const pct = total > 0 ? Math.round((current / total) * 100) : status === 'done' ? 100 : 0;
-    setter({ label, detail, current, total, percent: pct, status });
-    onTaskProgress(taskId, category, label, detail, current, total, status);
+    onTaskProgress(taskId, category, label, detail, current, total, status, item);
   };
 
   const handleGenerateAiPlaylist = async (e: React.FormEvent) => {
@@ -240,13 +240,14 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
     setAiLoading(true);
     setAiError(null);
     report(
-      setPlaylistProgress,
       taskId,
       'ai-playlist',
       'AI Smart Playlist',
       'Collecting listening history & library profile...',
       1,
-      3
+      3,
+      'running',
+      { label: `Prompt: ${clean.slice(0, 36)}`, current: 1, total: 3, percent: 33 }
     );
 
     try {
@@ -256,13 +257,14 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
         .map((t) => ({ title: t.title, artist: t.artist, genre: t.genre, playCount: t.playCount }));
 
       report(
-        setPlaylistProgress,
         taskId,
         'ai-playlist',
         'AI Smart Playlist',
         `Curating playlist for "${clean.slice(0, 32)}"...`,
         2,
-        3
+        3,
+        'running',
+        { label: `Matching ${tracks.length} tracks`, current: 2, total: 3, percent: 67 }
       );
 
       const resp = await fetch(resolveApiUrl('/api/ai/smart-playlist'), {
@@ -306,19 +308,24 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
       setAiPrompt('');
       setPlaylistViewTab('list');
       report(
-        setPlaylistProgress,
         taskId,
         'ai-playlist',
         'AI Smart Playlist Ready',
         `Created "${created.name}"`,
         3,
         3,
-        'done'
+        'done',
+        { label: created.name, current: 3, total: 3, percent: 100 }
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Unable to generate smart playlist.';
       setAiError(msg);
-      report(setPlaylistProgress, taskId, 'ai-playlist', 'AI Playlist Error', msg, 3, 3, 'error');
+      report(taskId, 'ai-playlist', 'AI Playlist Error', msg, 3, 3, 'error', {
+        label: msg,
+        current: 3,
+        total: 3,
+        percent: 100,
+      });
     } finally {
       setAiLoading(false);
     }
@@ -329,13 +336,14 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
     setDailyLoading(true);
     setAiError(null);
     report(
-      setDailyProgress,
       taskId,
       'ai-mixes',
       'Refreshing Daily Mixes',
       'Analyzing top genres and favorite artists...',
       1,
-      3
+      3,
+      'running',
+      { label: `Profiling ${tracks.length} tracks`, current: 1, total: 3, percent: 33 }
     );
 
     try {
@@ -354,13 +362,14 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
       const favoriteArtists = [...artistCounts.keys()].slice(0, 6);
 
       report(
-        setDailyProgress,
         taskId,
         'ai-mixes',
         'Refreshing Daily Mixes',
         'Composing 3 personalized mixes with AI...',
         2,
-        3
+        3,
+        'running',
+        { label: topGenres.join(', ') || 'Personal Mixes', current: 2, total: 3, percent: 67 }
       );
 
       const resp = await fetch(resolveApiUrl('/api/ai/daily-mix'), {
@@ -383,19 +392,24 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
         tactile.success();
       }
       report(
-        setDailyProgress,
         taskId,
         'ai-mixes',
         'Daily Mixes Updated',
         `Generated ${mixes.length} tailored mixes`,
         3,
         3,
-        'done'
+        'done',
+        { label: `Ready: ${mixes.length} decks`, current: 3, total: 3, percent: 100 }
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Daily mix refresh failed.';
       setAiError(msg);
-      report(setDailyProgress, taskId, 'ai-mixes', 'Daily Mixes Error', msg, 3, 3, 'error');
+      report(taskId, 'ai-mixes', 'Daily Mixes Error', msg, 3, 3, 'error', {
+        label: msg,
+        current: 3,
+        total: 3,
+        percent: 100,
+      });
     } finally {
       setDailyLoading(false);
     }
@@ -432,100 +446,223 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
   };
 
   const handleScanTagsWithAi = async () => {
-    if (tracks.length === 0) return;
+    if (tracks.length === 0 || effectiveScanCount === 0) return;
+    const scopedTracks = prioritizeTracksForTagScan(tracks).slice(0, effectiveScanCount);
     const taskId = `ai_tags_${Date.now()}`;
     setTagLoading(true);
     setTagStatus(null);
+    setTagSuggestions([]);
     setAiError(null);
     setTagPage(0);
+
     report(
-      setTagProgress,
       taskId,
       'ai-tags',
-      'AI Song Tag Cleanup',
-      `Preparing ${tracks.length} tracks...`,
+      'AI Metadata & Spelling Scan',
+      `Scanning ${scopedTracks.length} prioritized track(s) in batches of ${batchSize}...`,
       0,
-      tracks.length
+      scopedTracks.length,
+      'running',
+      { label: scopedTracks[0]?.title || 'Initializing AI scan', current: 0, total: 1, percent: 0 }
     );
 
     try {
-      const mapped = await runBatchedTagCleanupScan(tracks, (current, total, detail) => {
-        report(setTagProgress, taskId, 'ai-tags', 'AI Song Tag Cleanup', detail, current, total);
-      });
-      setTagSuggestions(mapped);
+      const mapped = await runBatchedTagCleanupScan(
+        scopedTracks,
+        (current, total, detail, item) => {
+          report(
+            taskId,
+            'ai-tags',
+            autoApplyTags ? 'AI Auto-Fixing Tags & Spelling' : 'AI Metadata & Spelling Scan',
+            detail,
+            current,
+            total,
+            'running',
+            item
+          );
+        },
+        {
+          batchSize,
+          onBatchComplete: (batch) => {
+            const stamped = batch.map((item) => ({ ...item, applied: autoApplyTags }));
+            if (autoApplyTags && stamped.length > 0) {
+              onApplyTagCleanups(stamped);
+            }
+            setTagSuggestions((prev) => {
+              const seen = new Set(prev.map((x) => x.trackId));
+              return [...prev, ...stamped.filter((x) => !seen.has(x.trackId))];
+            });
+          },
+        }
+      );
+
       if (mapped.length === 0) {
-        setTagStatus('All scanned tracks already have clean metadata tags.');
+        setTagStatus(`Scanned ${scopedTracks.length} track(s) — metadata is already clean and accurate.`);
       } else {
         tactile.success();
+        setTagStatus(
+          autoApplyTags
+            ? `Scanned ${scopedTracks.length} track(s): automatically corrected ${mapped.length} track(s) across titles, artists, albums, years & spelling.`
+            : `Scanned ${scopedTracks.length} track(s): found ${mapped.length} metadata & spelling improvement(s) ready to apply.`
+        );
       }
       report(
-        setTagProgress,
         taskId,
         'ai-tags',
-        'Tag Cleanup Scan Complete',
-        `Found ${mapped.length} track(s) with suggested tag fixes`,
-        tracks.length,
-        tracks.length,
-        'done'
+        autoApplyTags ? 'AI Tag Auto-Fix Complete' : 'AI Tag Scan Complete',
+        autoApplyTags
+          ? `Applied ${mapped.length} correction(s) across ${scopedTracks.length} track(s)`
+          : `Found ${mapped.length} suggested improvement(s)`,
+        scopedTracks.length,
+        scopedTracks.length,
+        'done',
+        { label: `${mapped.length} track(s) updated`, current: 1, total: 1, percent: 100 }
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unable to scan library tags.';
+      const msg = err instanceof Error ? err.message : 'Unable to scan library tags with AI.';
       setAiError(msg);
-      report(setTagProgress, taskId, 'ai-tags', 'Tag Scan Error', msg, 0, tracks.length, 'error');
+      report(taskId, 'ai-tags', 'AI Tag Scan Error', msg, 0, scopedTracks.length, 'error', {
+        label: msg,
+        current: 1,
+        total: 1,
+        percent: 100,
+      });
     } finally {
       setTagLoading(false);
     }
   };
 
+  const handleRevertAppliedSuggestion = (s: TagCleanupSuggestion) => {
+    tactile.tap();
+    onApplyTagCleanups([
+      {
+        ...s,
+        suggestedTitle: s.currentTitle,
+        suggestedArtist: s.currentArtist,
+        suggestedAlbum: s.currentAlbum,
+        suggestedGenre: s.currentGenre,
+        suggestedYear: s.currentYear || '',
+      },
+    ]);
+    setTagSuggestions((prev) =>
+      prev.map((item) =>
+        item.trackId === s.trackId ? { ...item, applied: false, selected: false } : item
+      )
+    );
+  };
+
   const handleScanDuplicatesWithAi = async () => {
-    if (tracks.length === 0) return;
+    if (tracks.length < 2) return;
+    const scopedTracks = prioritizeTracksForTagScan(tracks).slice(0, effectiveScanCount);
     const taskId = `ai_dups_${Date.now()}`;
     setDupLoading(true);
     setDupStatus(null);
     setAiError(null);
     setDupPage(0);
+
     report(
-      setDupProgress,
       taskId,
       'ai-duplicates',
-      'AI Duplicate Scanner',
-      `Inspecting ${tracks.length} tracks...`,
+      'Stage 1/2 · Auto-Fixing Tags Before Duplicate Check',
+      `Analyzing ${scopedTracks.length} track(s) in batches of ${batchSize}...`,
       0,
-      tracks.length
+      100,
+      'running',
+      { label: scopedTracks[0]?.title || 'Preparing AI tag verification', current: 0, total: 1, percent: 0 }
     );
 
+    const appliedFixes = new Map<string, TagCleanupSuggestion>();
+
     try {
-      const foundGroups = await runDuplicateScan(tracks, (current, total, detail) => {
-        report(
-          setDupProgress,
-          taskId,
-          'ai-duplicates',
-          'AI Duplicate Scanner',
-          detail,
-          current,
-          total
+      // Stage 1 (0 -> 60%): Run true AI tag/album/year/spelling correction and apply to library
+      if (scopedTracks.length > 0) {
+        await runBatchedTagCleanupScan(
+          scopedTracks,
+          (curr, tot, detail, item) => {
+            const overallPercent = Math.min(60, Math.round((curr / Math.max(1, tot)) * 60));
+            report(
+              taskId,
+              'ai-duplicates',
+              'Stage 1/2 · Auto-Fixing Tags & Spelling',
+              detail,
+              overallPercent,
+              100,
+              'running',
+              item
+            );
+          },
+          {
+            batchSize,
+            onBatchComplete: (batch) => {
+              const stamped = batch.map((s) => ({ ...s, applied: true }));
+              stamped.forEach((s) => appliedFixes.set(s.trackId, s));
+              onApplyTagCleanups(stamped);
+            },
+          }
         );
-      });
-      setDupGroups(foundGroups);
-      if (foundGroups.length === 0) {
-        setDupStatus('No duplicate tracks detected across your library.');
-      } else {
-        tactile.success();
       }
+
+      // Build post-correction track snapshot immediately so Stage 2 evaluates cleaned tags (not stale state)
+      const fixList = Array.from(appliedFixes.values());
+      const correctedTracks = applyTagSuggestionsToList(tracks, fixList);
+
       report(
-        setDupProgress,
         taskId,
         'ai-duplicates',
-        'Duplicate Scan Complete',
-        `Found ${foundGroups.length} duplicate group(s)`,
-        tracks.length,
-        tracks.length,
-        'done'
+        'Stage 2/2 · Scanning Duplicates',
+        `Comparing ${correctedTracks.length} tracks using corrected metadata...`,
+        60,
+        100,
+        'running',
+        { label: `Applied ${fixList.length} tag correction(s)`, current: 1, total: 2, percent: 50 }
+      );
+
+      // Stage 2 (60 -> 100%): Duplicate detection on corrected metadata
+      const foundGroups = await runDuplicateScan(correctedTracks, (curr, tot, detail, item) => {
+        const overallPercent = 60 + Math.min(40, Math.round((curr / Math.max(1, tot)) * 40));
+        report(
+          taskId,
+          'ai-duplicates',
+          'Stage 2/2 · Scanning Duplicates',
+          detail,
+          overallPercent,
+          100,
+          'running',
+          item
+        );
+      });
+
+      setDupGroups(foundGroups);
+      const fixPrefix =
+        fixList.length > 0
+          ? `Auto-corrected ${fixList.length} track(s) (titles/albums/years/spelling) before comparing. `
+          : `Verified ${scopedTracks.length} track(s) before comparing. `;
+      if (foundGroups.length === 0) {
+        setDupStatus(`${fixPrefix}No duplicate tracks detected.`);
+      } else {
+        tactile.success();
+        setDupStatus(`${fixPrefix}Found ${foundGroups.length} duplicate group(s).`);
+      }
+
+      report(
+        taskId,
+        'ai-duplicates',
+        'Smart Tag Fix & Duplicate Scan Complete',
+        `${fixList.length} tag fix(es) · ${foundGroups.length} duplicate group(s)`,
+        100,
+        100,
+        'done',
+        { label: `Found ${foundGroups.length} duplicate group(s)`, current: 1, total: 1, percent: 100 }
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Duplicate scan failed.';
+      const msg = err instanceof Error ? err.message : 'Tag correction or duplicate scan failed.';
       setAiError(msg);
-      report(setDupProgress, taskId, 'ai-duplicates', 'Duplicate Scan Error', msg, 0, tracks.length, 'error');
+      report(taskId, 'ai-duplicates', 'Duplicate Scan Error', msg, 0, 100, 'error', {
+        label: msg,
+        current: 1,
+        total: 1,
+        percent: 100,
+      });
     } finally {
       setDupLoading(false);
     }
@@ -540,25 +677,27 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
     setArtAiPage(0);
     setArtSubTab('ai');
     report(
-      setArtProgress,
       taskId,
       'ai-artwork',
       'AI Original Album Art Finder',
       `Preparing ${tracks.length} tracks for artwork matching...`,
       0,
-      tracks.length
+      tracks.length,
+      'running',
+      { label: tracks[0]?.title || 'Initializing', current: 0, total: 1, percent: 0 }
     );
 
     try {
-      const found = await runOriginalAlbumArtScan(tracks, (current, total, detail) => {
+      const found = await runOriginalAlbumArtScan(tracks, (current, total, detail, item) => {
         report(
-          setArtProgress,
           taskId,
           'ai-artwork',
           'AI Original Album Art Finder',
           detail,
           current,
-          total
+          total,
+          'running',
+          item
         );
       });
       setArtSuggestions(found);
@@ -568,19 +707,24 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
         tactile.success();
       }
       report(
-        setArtProgress,
         taskId,
         'ai-artwork',
         'Album Art Lookup Complete',
         `Found ${found.length} original album cover(s)`,
         tracks.length,
         tracks.length,
-        'done'
+        'done',
+        { label: `Matched ${found.length} cover(s)`, current: 1, total: 1, percent: 100 }
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to search original album art.';
       setAiError(msg);
-      report(setArtProgress, taskId, 'ai-artwork', 'Album Art Lookup Error', msg, 0, tracks.length, 'error');
+      report(taskId, 'ai-artwork', 'Album Art Lookup Error', msg, 0, tracks.length, 'error', {
+        label: msg,
+        current: 1,
+        total: 1,
+        percent: 100,
+      });
     } finally {
       setArtLoading(false);
     }
@@ -591,16 +735,16 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
     const targetTrack = tracks.find((t) => t.id === uploadTargetTrackId);
     const taskId = `art_upload_${Date.now()}`;
     try {
-      const optimizedUrl = await resizeArtworkFileToDataUrl(file, (current, total, detail) => {
+      const optimizedUrl = await resizeArtworkFileToDataUrl(file, (current, total, detail, item) => {
         report(
-          setArtProgress,
           taskId,
           'ai-artwork',
           `Uploading Cover Art${targetTrack ? `: ${targetTrack.title}` : ''}`,
           detail,
           current,
           total,
-          current === total ? 'done' : 'running'
+          current === total ? 'done' : 'running',
+          item
         );
       });
 
@@ -610,7 +754,12 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Artwork upload failed.';
       setAiError(msg);
-      report(setArtProgress, taskId, 'ai-artwork', 'Artwork Upload Failed', msg, 0, 4, 'error');
+      report(taskId, 'ai-artwork', 'Artwork Upload Failed', msg, 0, 4, 'error', {
+        label: file.name,
+        current: 1,
+        total: 1,
+        percent: 100,
+      });
     } finally {
       setUploadTargetTrackId(null);
     }
@@ -794,11 +943,11 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
             <button
               type="button"
               onClick={handleScanDuplicatesWithAi}
-              disabled={dupLoading || tracks.length < 2}
+              disabled={dupLoading || tagLoading || tracks.length < 2}
               className="min-h-[36px] px-3.5 rounded-lg accent-bg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-50"
             >
               {dupLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CopyCheck className="w-3.5 h-3.5" />}
-              <span>{dupLoading ? 'Scanning...' : 'Scan Duplicates'}</span>
+              <span>{dupLoading ? 'Fixing & Scanning...' : `Fix & Scan (${effectiveScanCount})`}</span>
             </button>
           )}
 
@@ -806,11 +955,17 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
             <button
               type="button"
               onClick={handleScanTagsWithAi}
-              disabled={tagLoading || tracks.length === 0}
+              disabled={tagLoading || dupLoading || tracks.length === 0}
               className="min-h-[36px] px-3.5 rounded-lg accent-bg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-50"
             >
               {tagLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wand2 className="w-3.5 h-3.5" />}
-              <span>{tagLoading ? 'Scanning...' : 'Scan & Fix Tags'}</span>
+              <span>
+                {tagLoading
+                  ? 'Scanning...'
+                  : autoApplyTags
+                  ? `Auto-Fix (${effectiveScanCount})`
+                  : `Scan (${effectiveScanCount})`}
+              </span>
             </button>
           )}
 
@@ -872,20 +1027,6 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
       {/* PAGE 1: DAILY MIXES */}
       {page === 'mixes' && (
         <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
-          {dailyProgress && (
-            <div className="shrink-0">
-              <ProgressBar
-                compact
-                label={dailyProgress.label}
-                detail={dailyProgress.detail}
-                current={dailyProgress.current}
-                total={dailyProgress.total}
-                percent={dailyProgress.percent}
-                status={dailyProgress.status}
-              />
-            </div>
-          )}
-
           <div ref={mixesRef} className="flex-1 min-h-0 overflow-hidden">
             {pagedMixes.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center gap-3">
@@ -1091,17 +1232,6 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
                 </form>
               )}
 
-              {playlistProgress && (
-                <ProgressBar
-                  compact
-                  label={playlistProgress.label}
-                  detail={playlistProgress.detail}
-                  current={playlistProgress.current}
-                  total={playlistProgress.total}
-                  percent={playlistProgress.percent}
-                  status={playlistProgress.status}
-                />
-              )}
             </div>
           </div>
 
@@ -1196,23 +1326,80 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
 
       {/* PAGE 3: AI DUPLICATE SCANNER */}
       {page === 'duplicates' && (
-        <div className="flex-1 min-h-0 flex flex-col gap-2.5 overflow-hidden">
-          {dupProgress && (
-            <div className="shrink-0">
-              <ProgressBar
-                compact
-                label={dupProgress.label}
-                detail={dupProgress.detail}
-                current={dupProgress.current}
-                total={dupProgress.total}
-                percent={dupProgress.percent}
-                status={dupProgress.status}
+        <div className="flex-1 min-h-0 flex flex-col gap-2 overflow-hidden">
+          <div className="shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 px-2.5 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-1 flex-wrap">
+              <span className="text-[11px] font-medium text-zinc-500 mr-0.5">Auto-fix items:</span>
+              {[15, 50, 150].map((preset) => {
+                const clamped = Math.min(preset, Math.max(1, tracks.length));
+                const active = effectiveScanCount === clamped && scanLimitInput === String(clamped);
+                return (
+                  <button
+                    key={preset}
+                    type="button"
+                    disabled={dupLoading || tracks.length === 0}
+                    onClick={() => {
+                      tactile.tap();
+                      setScanLimitInput(String(clamped));
+                    }}
+                    className={`min-h-[28px] px-2 rounded-md text-[11px] font-medium transition-colors ${
+                      active
+                        ? 'accent-bg'
+                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                    }`}
+                  >
+                    {preset}
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                disabled={dupLoading || tracks.length === 0}
+                onClick={() => {
+                  tactile.tap();
+                  setScanLimitInput(String(tracks.length));
+                }}
+                className={`min-h-[28px] px-2 rounded-md text-[11px] font-medium transition-colors ${
+                  effectiveScanCount === tracks.length && tracks.length > 0
+                    ? 'accent-bg'
+                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                }`}
+              >
+                All ({tracks.length})
+              </button>
+              <input
+                type="number"
+                min={1}
+                max={Math.max(1, tracks.length)}
+                value={scanLimitInput}
+                disabled={dupLoading || tracks.length === 0}
+                onChange={(e) => setScanLimitInput(e.target.value)}
+                aria-label="Custom number of items to correct before duplicate scan"
+                className="w-16 h-7 px-2 rounded-md bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs font-mono-tabular text-center focus:outline-none"
               />
             </div>
-          )}
+
+            <div className="flex items-center gap-2">
+              <select
+                value={batchSize}
+                disabled={dupLoading}
+                onChange={(e) => setBatchSize(Number(e.target.value))}
+                aria-label="AI batch size"
+                className="h-7 px-2 rounded-md bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[11px]"
+              >
+                <option value={10}>10 / batch</option>
+                <option value={15}>15 / batch</option>
+                <option value={25}>25 / batch</option>
+                <option value={40}>40 / batch</option>
+              </select>
+              <span className="hidden sm:inline text-[11px] text-zinc-500 truncate">
+                Auto-fixes tags &amp; spelling first, then scans duplicates
+              </span>
+            </div>
+          </div>
 
           {dupStatus && (
-            <div className="shrink-0 text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-900 px-3 py-2 rounded-lg">
+            <div className="shrink-0 text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-900 px-3 py-1.5 rounded-lg">
               {dupStatus}
             </div>
           )}
@@ -1334,23 +1521,91 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
 
       {/* PAGE 4: AI TAG CLEANUP */}
       {page === 'tags' && (
-        <div className="flex-1 min-h-0 flex flex-col gap-2.5 overflow-hidden">
-          {tagProgress && (
-            <div className="shrink-0">
-              <ProgressBar
-                compact
-                label={tagProgress.label}
-                detail={tagProgress.detail}
-                current={tagProgress.current}
-                total={tagProgress.total}
-                percent={tagProgress.percent}
-                status={tagProgress.status}
+        <div className="flex-1 min-h-0 flex flex-col gap-2 overflow-hidden">
+          <div className="shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 px-2.5 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-1 flex-wrap">
+              <span className="text-[11px] font-medium text-zinc-500 mr-0.5">Items:</span>
+              {[15, 50, 150].map((preset) => {
+                const clamped = Math.min(preset, Math.max(1, tracks.length));
+                const active = effectiveScanCount === clamped && scanLimitInput === String(clamped);
+                return (
+                  <button
+                    key={preset}
+                    type="button"
+                    disabled={tagLoading || tracks.length === 0}
+                    onClick={() => {
+                      tactile.tap();
+                      setScanLimitInput(String(clamped));
+                    }}
+                    className={`min-h-[28px] px-2 rounded-md text-[11px] font-medium transition-colors ${
+                      active
+                        ? 'accent-bg'
+                        : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                    }`}
+                  >
+                    {preset}
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                disabled={tagLoading || tracks.length === 0}
+                onClick={() => {
+                  tactile.tap();
+                  setScanLimitInput(String(tracks.length));
+                }}
+                className={`min-h-[28px] px-2 rounded-md text-[11px] font-medium transition-colors ${
+                  effectiveScanCount === tracks.length && tracks.length > 0
+                    ? 'accent-bg'
+                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700'
+                }`}
+              >
+                All ({tracks.length})
+              </button>
+              <input
+                type="number"
+                min={1}
+                max={Math.max(1, tracks.length)}
+                value={scanLimitInput}
+                disabled={tagLoading || tracks.length === 0}
+                onChange={(e) => setScanLimitInput(e.target.value)}
+                aria-label="Custom number of items to scan"
+                className="w-16 h-7 px-2 rounded-md bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs font-mono-tabular text-center focus:outline-none"
               />
             </div>
-          )}
+
+            <div className="flex items-center gap-2.5">
+              <select
+                value={batchSize}
+                disabled={tagLoading}
+                onChange={(e) => setBatchSize(Number(e.target.value))}
+                aria-label="AI batch size"
+                className="h-7 px-2 rounded-md bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-[11px]"
+              >
+                <option value={10}>10 / batch</option>
+                <option value={15}>15 / batch</option>
+                <option value={25}>25 / batch</option>
+                <option value={40}>40 / batch</option>
+              </select>
+
+              <label className="flex items-center gap-1.5 text-[11px] font-medium text-zinc-700 dark:text-zinc-300 cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  checked={autoApplyTags}
+                  disabled={tagLoading}
+                  onChange={(e) => {
+                    tactile.toggle(e.target.checked);
+                    setAutoApplyTags(e.target.checked);
+                  }}
+                  className="w-3.5 h-3.5 accent-amber-500"
+                />
+                <span>Auto-apply fixes</span>
+              </label>
+            </div>
+          </div>
 
           {tagStatus && (
-            <div className="shrink-0 text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-900 px-3 py-2 rounded-lg">
+            <div className="shrink-0 text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-900 px-3 py-1.5 rounded-lg">
               {tagStatus}
             </div>
           )}
@@ -1360,58 +1615,84 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
               <div className="h-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 flex flex-col items-center justify-center text-center p-6 gap-2">
                 <Wand2 className="w-9 h-9 text-zinc-400 opacity-60" />
                 <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  AI Metadata & Tag Cleanup ({tracks.length} tracks)
+                  AI Metadata, Album &amp; Spelling Fix ({effectiveScanCount} of {tracks.length})
                 </div>
                 <p className="text-xs text-zinc-500 max-w-md">
-                  Detects messy filenames, track numbers in titles, missing album/genre tags, and encoding issues while preserving Lithuanian & Cyrillic spelling.
+                  Identifies unknown albums, missing release years, wrong artists/genres, and misspelled titles while preserving Lithuanian &amp; Cyrillic scripts.
                 </p>
               </div>
             ) : (
               <div className="divide-y divide-zinc-200 dark:divide-zinc-800 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 px-2">
                 {pagedTagSuggestions.map((s) => (
-                  <label
+                  <div
                     key={s.trackId}
-                    className="flex items-start gap-2.5 py-2 cursor-pointer h-[70px]"
+                    className="flex items-center gap-2.5 py-1.5 h-[70px]"
                   >
-                    <input
-                      type="checkbox"
-                      checked={s.selected}
-                      onChange={() => {
-                        tactile.toggle(!s.selected);
-                        setTagSuggestions((prev) =>
-                          prev.map((item) =>
-                            item.trackId === s.trackId ? { ...item, selected: !item.selected } : item
-                          )
-                        );
-                      }}
-                      className="mt-1 w-4 h-4 accent-amber-500 shrink-0"
-                    />
+                    {!s.applied ? (
+                      <input
+                        type="checkbox"
+                        checked={s.selected}
+                        onChange={() => {
+                          tactile.toggle(!s.selected);
+                          setTagSuggestions((prev) =>
+                            prev.map((item) =>
+                              item.trackId === s.trackId ? { ...item, selected: !item.selected } : item
+                            )
+                          );
+                        }}
+                        className="w-4 h-4 accent-amber-500 shrink-0 cursor-pointer"
+                      />
+                    ) : (
+                      <span
+                        title="Applied to library"
+                        className="w-5 h-5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                      </span>
+                    )}
                     <div className="min-w-0 flex-1 text-xs space-y-0.5">
                       <div className="text-zinc-500 line-through truncate">
-                        {s.currentArtist} — {s.currentTitle} ({s.currentAlbum})
+                        {s.currentArtist} — {s.currentTitle} ({s.currentAlbum}
+                        {s.currentYear ? ` · ${s.currentYear}` : ''})
                       </div>
                       <div className="text-zinc-900 dark:text-zinc-100 font-medium truncate">
-                        {s.suggestedArtist} — {s.suggestedTitle} ({s.suggestedAlbum} · {s.suggestedGenre})
+                        {s.suggestedArtist} — {s.suggestedTitle} ({s.suggestedAlbum}
+                        {s.suggestedYear ? ` · ${s.suggestedYear}` : ''} · {s.suggestedGenre})
                       </div>
                       <div className="text-[11px] text-zinc-500 truncate">{s.reason}</div>
                     </div>
-                  </label>
+                    {s.applied ? (
+                      <button
+                        type="button"
+                        onClick={() => handleRevertAppliedSuggestion(s)}
+                        className="min-h-[28px] px-2 rounded-md border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[11px] text-zinc-600 dark:text-zinc-300 flex items-center gap-1 shrink-0"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Revert</span>
+                      </button>
+                    ) : null}
+                  </div>
                 ))}
               </div>
             )}
           </div>
 
-          {tagSuggestions.length > 0 && (
+          {tagSuggestions.some((s) => !s.applied) && (
             <div className="shrink-0 flex justify-end">
               <button
                 type="button"
                 onClick={() => {
-                  const chosen = tagSuggestions.filter((s) => s.selected);
+                  const chosen = tagSuggestions.filter((s) => !s.applied && s.selected);
                   if (chosen.length > 0) {
                     tactile.success();
                     onApplyTagCleanups(chosen);
-                    setTagSuggestions([]);
-                    setTagStatus(`Updated ${chosen.length} track(s).`);
+                    const appliedIds = new Set(chosen.map((c) => c.trackId));
+                    setTagSuggestions((prev) =>
+                      prev.map((item) =>
+                        appliedIds.has(item.trackId) ? { ...item, applied: true } : item
+                      )
+                    );
+                    setTagStatus(`Applied corrections to ${chosen.length} track(s).`);
                   }
                 }}
                 className="min-h-[38px] px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium flex items-center gap-1.5 active:scale-95 transition-transform duration-100"
@@ -1436,20 +1717,6 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
       {/* PAGE 5: AI ALBUM ART FINDER & MANUAL DEVICE UPLOAD */}
       {page === 'artwork' && (
         <div className="flex-1 min-h-0 flex flex-col gap-2.5 overflow-hidden">
-          {artProgress && (
-            <div className="shrink-0">
-              <ProgressBar
-                compact
-                label={artProgress.label}
-                detail={artProgress.detail}
-                current={artProgress.current}
-                total={artProgress.total}
-                percent={artProgress.percent}
-                status={artProgress.status}
-              />
-            </div>
-          )}
-
           {artStatus && (
             <div className="shrink-0 text-xs text-zinc-600 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-900 px-3 py-2 rounded-lg">
               {artStatus}

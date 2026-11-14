@@ -1,21 +1,36 @@
 import React, { useEffect, useState } from 'react';
-import { Cast, Check, RefreshCw, Speaker, X } from 'lucide-react';
+import { Cast, Check, Mic2, RefreshCw, Speaker, Tv, X } from 'lucide-react';
+import { Track } from '../types/music';
 import { audioEngine } from '../services/audioEngine';
+import {
+  getActiveCastConnectionCount,
+  registerPresentationConnection,
+} from '../services/karaokeCastChannel';
 import { PaginationBar } from './PaginationBar';
 import { tactile } from '../services/tactileFeedback';
 
 interface CastModalProps {
   open: boolean;
+  track?: Track | null;
+  karaokeOffsetMs?: number;
+  onLaunchTvStage?: () => void;
   onClose: () => void;
 }
 
 const DEVICES_PER_PAGE = 3;
 
-export const CastModal: React.FC<CastModalProps> = ({ open, onClose }) => {
+export const CastModal: React.FC<CastModalProps> = ({
+  open,
+  track,
+  karaokeOffsetMs = 0,
+  onLaunchTvStage,
+  onClose,
+}) => {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedId, setSelectedId] = useState<string>('default');
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [page, setPage] = useState(0);
+  const [connectedDisplays, setConnectedDisplays] = useState(0);
 
   const loadDevices = async () => {
     try {
@@ -35,6 +50,7 @@ export const CastModal: React.FC<CastModalProps> = ({ open, onClose }) => {
   useEffect(() => {
     if (open) {
       setStatusMsg(null);
+      setConnectedDisplays(getActiveCastConnectionCount());
       void loadDevices();
     }
   }, [open]);
@@ -70,13 +86,55 @@ export const CastModal: React.FC<CastModalProps> = ({ open, onClose }) => {
     }
   };
 
+  const handleLaunchKaraokeDisplay = async () => {
+    tactile.tap();
+    const PresentationCtor = (
+      window as unknown as {
+        PresentationRequest?: new (urls: string[]) => {
+          start: () => Promise<{
+            readyState?: string;
+            send?: (data: string) => void;
+            close?: () => void;
+            addEventListener?: (type: string, cb: () => void) => void;
+          }>;
+        };
+      }
+    ).PresentationRequest;
+
+    if (PresentationCtor) {
+      try {
+        const displayUrl = `${window.location.origin}/?karaoke-display=1`;
+        const req = new PresentationCtor([displayUrl]);
+        const conn = await req.start();
+        registerPresentationConnection(conn);
+        setConnectedDisplays(getActiveCastConnectionCount());
+        tactile.success();
+        setStatusMsg('Karaoke TV Display connected & synchronized live!');
+        return;
+      } catch (err) {
+        const name = err instanceof DOMException ? err.name : '';
+        if (name === 'AbortError' || name === 'NotAllowedError') {
+          setStatusMsg('Display picker dismissed. Launching in-app Karaoke Stage instead.');
+        }
+      }
+    }
+
+    if (onLaunchTvStage) {
+      tactile.success();
+      onClose();
+      onLaunchTvStage();
+    } else {
+      setStatusMsg('Open Fullscreen Stage on Now Playing for TV-ready karaoke projection.');
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-hidden">
       <div className="w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-200 dark:border-zinc-800">
           <div className="flex items-center gap-2.5">
             <Cast className="w-5 h-5 accent-text" />
-            <h3 className="text-base font-display font-semibold">Cast & Audio Output</h3>
+            <h3 className="text-base font-display font-semibold">Cast, Karaoke TV & Output</h3>
           </div>
           <button
             type="button"
@@ -88,15 +146,46 @@ export const CastModal: React.FC<CastModalProps> = ({ open, onClose }) => {
           </button>
         </div>
 
-        <div className="p-4 sm:p-5 space-y-3.5">
+        <div className="p-4 sm:p-5 space-y-3">
+          <button
+            type="button"
+            onClick={handleLaunchKaraokeDisplay}
+            className="w-full min-h-[44px] px-4 rounded-xl accent-bg text-sm font-medium flex items-center justify-center gap-2"
+          >
+            <Tv className="w-4 h-4" />
+            <span>
+              {connectedDisplays > 0
+                ? `Karaoke TV Connected (${connectedDisplays}) · Launch Stage`
+                : 'Cast / Launch Karaoke TV Display'}
+            </span>
+          </button>
+
           <button
             type="button"
             onClick={handleCastPrompt}
-            className="w-full min-h-[44px] px-4 rounded-xl accent-bg text-sm font-medium flex items-center justify-center gap-2"
+            className="w-full min-h-[40px] px-4 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-xs sm:text-sm font-medium flex items-center justify-center gap-2"
           >
-            <Cast className="w-4 h-4" />
-            <span>Cast to Smart Speaker / Chromecast</span>
+            <Cast className="w-4 h-4 accent-text" />
+            <span>Cast Audio to Smart Speaker / Chromecast</span>
           </button>
+
+          {track && (
+            <div className="rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/60 p-2.5 text-[11px] text-zinc-600 dark:text-zinc-300 flex items-start gap-2">
+              <Mic2 className="w-4 h-4 accent-text shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <div className="font-medium truncate">
+                  {track.title} · {track.lyrics?.trim() ? 'Lyrics Ready' : 'No Embedded Lyrics'}
+                </div>
+                <div className="text-zinc-500 dark:text-zinc-400">
+                  Casting or using Bluetooth speakers? Use -0.5s / +0.5s sync in Karaoke Stage (offset:{' '}
+                  {karaokeOffsetMs > 0
+                    ? `+${(karaokeOffsetMs / 1000).toFixed(1)}s`
+                    : `${(karaokeOffsetMs / 1000).toFixed(1)}s`}
+                  ).
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center justify-between pt-1">
             <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">

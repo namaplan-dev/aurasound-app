@@ -11627,6 +11627,7 @@ function registerSW(options = {}) {
 }
 // node_modules/@firebase/util/dist/postinstall.mjs
 var import_react = /* @__PURE__ */ __toESM(require_react());
+var import_react_dom = require_react_dom();
 /**
 * @license
 * Copyright 2025 Google LLC
@@ -21394,6 +21395,19 @@ var createLucideIcon = (iconName, iconNode) => {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var ArrowRight = createLucideIcon("arrow-right", [["path", {
+	d: "M5 12h14",
+	key: "1ays0h"
+}], ["path", {
+	d: "m12 5 7 7-7 7",
+	key: "xquz4c"
+}]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var ArrowUpDown = createLucideIcon("arrow-up-down", [
 	["path", {
 		d: "m21 16-4 4-4-4",
@@ -21596,6 +21610,21 @@ var CircleCheck = createLucideIcon("circle-check", [["circle", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Clock = createLucideIcon("clock", [["path", {
+	d: "M12 6v6l4 2",
+	key: "mmk7yg"
+}], ["circle", {
+	cx: "12",
+	cy: "12",
+	r: "10",
+	key: "1mglay"
+}]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var CloudDownload = createLucideIcon("cloud-download", [
 	["path", {
 		d: "M12 13v8l-4-4",
@@ -21784,6 +21813,26 @@ var FolderOpen = createLucideIcon("folder-open", [["path", {
 	d: "m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2",
 	key: "usdka0"
 }]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var FolderPlus = createLucideIcon("folder-plus", [
+	["path", {
+		d: "M12 10v6",
+		key: "1bos4e"
+	}],
+	["path", {
+		d: "M9 13h6",
+		key: "1uhe8q"
+	}],
+	["path", {
+		d: "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z",
+		key: "1kt360"
+	}]
+]);
 /**
 * @license lucide-react v0.546.0 - ISC
 *
@@ -22191,6 +22240,30 @@ var MicVocal = createLucideIcon("mic-vocal", [
 		cy: "7",
 		r: "5",
 		key: "d08jfb"
+	}]
+]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Minimize2 = createLucideIcon("minimize-2", [
+	["path", {
+		d: "m14 10 7-7",
+		key: "oa77jy"
+	}],
+	["path", {
+		d: "M20 10h-6V4",
+		key: "mjg0md"
+	}],
+	["path", {
+		d: "m3 21 7-7",
+		key: "tjx5ai"
+	}],
+	["path", {
+		d: "M4 14h6v6",
+		key: "rmj7iw"
 	}]
 ]);
 /**
@@ -22681,6 +22754,20 @@ var SquareCheckBig = createLucideIcon("square-check-big", [["path", {
 * This source code is licensed under the ISC license.
 * See the LICENSE file in the root directory of this source tree.
 */
+var Square = createLucideIcon("square", [["rect", {
+	width: "18",
+	height: "18",
+	x: "3",
+	y: "3",
+	rx: "2",
+	key: "afitv7"
+}]]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
 var Star = createLucideIcon("star", [["path", {
 	d: "M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z",
 	key: "r04s7s"
@@ -22775,6 +22862,23 @@ var Trash2 = createLucideIcon("trash-2", [
 		key: "e791ji"
 	}]
 ]);
+/**
+* @license lucide-react v0.546.0 - ISC
+*
+* This source code is licensed under the ISC license.
+* See the LICENSE file in the root directory of this source tree.
+*/
+var Tv = createLucideIcon("tv", [["path", {
+	d: "m17 2-5 5-5-5",
+	key: "16satq"
+}], ["rect", {
+	width: "20",
+	height: "15",
+	x: "2",
+	y: "7",
+	rx: "2",
+	key: "1e6viu"
+}]]);
 /**
 * @license lucide-react v0.546.0 - ISC
 *
@@ -23277,6 +23381,20 @@ function decodeId3Text(encoding, payload) {
 		return raw.trim();
 	}
 }
+function decodeId3Uslt(frame) {
+	if (frame.length < 5) return "";
+	const enc = frame[0];
+	let idx = 4;
+	if (enc === 1 || enc === 2) {
+		while (idx + 1 < frame.length && !(frame[idx] === 0 && frame[idx + 1] === 0)) idx += 2;
+		idx = Math.min(frame.length, idx + 2);
+	} else {
+		while (idx < frame.length && frame[idx] !== 0) idx++;
+		idx = Math.min(frame.length, idx + 1);
+	}
+	if (idx >= frame.length) return "";
+	return decodeId3Text(enc, frame.subarray(idx)).trim();
+}
 function bytesToDataUrl(mime, data) {
 	if (data.length < 32 || data.length > 4194304) return void 0;
 	let binary = "";
@@ -23303,6 +23421,7 @@ function parseId3v2(buf) {
 		else if (id === "TAL") tags.album = decodeId3Text(frame[0], frame.subarray(1));
 		else if (id === "TCO") tags.genre = decodeId3Text(frame[0], frame.subarray(1));
 		else if (id === "TCM") tags.composer = decodeId3Text(frame[0], frame.subarray(1));
+		else if (id === "ULT" && !tags.lyrics) tags.lyrics = decodeId3Uslt(frame) || void 0;
 		pos += size;
 	} else {
 		const id = String.fromCharCode(buf[pos], buf[pos + 1], buf[pos + 2], buf[pos + 3]);
@@ -23317,6 +23436,7 @@ function parseId3v2(buf) {
 		else if (id === "TCON") tags.genre = decodeId3Text(frame[0], frame.subarray(1));
 		else if (id === "TCOM") tags.composer = decodeId3Text(frame[0], frame.subarray(1));
 		else if (id === "TYER" || id === "TDRC") tags.year = decodeId3Text(frame[0], frame.subarray(1)).slice(0, 4);
+		else if (id === "USLT" && !tags.lyrics) tags.lyrics = decodeId3Uslt(frame) || void 0;
 		else if (id === "APIC" && !tags.coverDataUrl && frame.length > 8) {
 			let idx = 1;
 			let mime = "";
@@ -23374,6 +23494,7 @@ function parseFlac(buf) {
 						else if (key === "GENRE") tags.genre = val;
 						else if (key === "COMPOSER") tags.composer = val;
 						else if (key === "DATE" || key === "YEAR") tags.year = val.slice(0, 4);
+						else if ((key === "LYRICS" || key === "UNSYNCEDLYRICS") && val) tags.lyrics = val;
 					}
 				}
 			}
@@ -23431,6 +23552,7 @@ function parseOggVorbisComments(buf) {
 			else if (key === "GENRE") tags.genre = val;
 			else if (key === "COMPOSER") tags.composer = val;
 			else if (key === "DATE" || key === "YEAR") tags.year = val.slice(0, 4);
+			else if ((key === "LYRICS" || key === "UNSYNCEDLYRICS") && val) tags.lyrics = val;
 		}
 	}
 	return tags;
@@ -23474,6 +23596,7 @@ function parseMp4Ilst(buf) {
 				else if (atomType === "©gen") tags.genre = textVal;
 				else if (atomType === "©wrt") tags.composer = textVal;
 				else if (atomType === "©day") tags.year = textVal.slice(0, 4);
+				else if (atomType === "©lyr" && textVal.trim()) tags.lyrics = textVal.trim();
 			}
 		}
 		pos += atomSize;
@@ -23630,6 +23753,7 @@ async function parseLocalAudioFile(file) {
 		genre,
 		year: parsed.year,
 		composer: parsed.composer ? repairMojibakeText(parsed.composer) : void 0,
+		lyrics: parsed.lyrics || void 0,
 		duration,
 		format,
 		sampleRate,
@@ -23842,6 +23966,15 @@ var DEFAULT_SETTINGS = {
 	sortBy: {
 		field: "title",
 		ascending: true
+	},
+	onlyScanSelectedFolders: false,
+	selectedScanFolders: [],
+	showLyrics: true,
+	karaokeOffsetMs: 0,
+	aiScanConfig: {
+		scanLimitInput: "15",
+		batchSize: 15,
+		autoApplyTags: true
 	}
 };
 var BUNDLED_COVERS = {
@@ -23879,6 +24012,16 @@ var SEED_TRACKS = [
 		rating: 5,
 		playCount: 18,
 		offlineCached: true,
+		lyrics: [
+			"[00:02.00]Velvet needle drops into the midnight groove",
+			"[00:08.50]Warm analog harmonics fill the quiet room",
+			"[00:15.20]Soft brass whispers over brush and snare",
+			"[00:22.40]Floating weightless through the evening air",
+			"[00:30.00]Every subtle overtone begins to glow",
+			"[00:38.20]Time slows down where the tape reels flow",
+			"[00:46.80]Hold that note in the amber light",
+			"[00:55.00]Spinning slow through the velvet night"
+		].join("\n"),
 		synthProfile: {
 			rootHz: 220,
 			chord: [
@@ -23910,6 +24053,14 @@ var SEED_TRACKS = [
 		rating: 5,
 		playCount: 24,
 		offlineCached: true,
+		lyrics: [
+			"[00:03.00]Rūkas kyla virš baltų kopų tyliai",
+			"[00:11.00]Bangos neša švelnų jūros aidą toli",
+			"[00:19.50]Pušų viršūnėse vėjas dainą pina",
+			"[00:28.00]Širdies aidas vakaro šviesoje gyvena",
+			"[00:37.50]Tarp marių ir dangaus sustoja laikas",
+			"[00:46.00]Gintaro krante skamba mūsų aidas"
+		].join("\n"),
 		synthProfile: {
 			rootHz: 196,
 			chord: [
@@ -24855,7 +25006,16 @@ async function writeNativeAudioTags(updates, onProgress) {
 		if (handle) handle.remove();
 	}
 }
-async function scanAndroidDeviceLibrary(onProgress) {
+async function listAndroidMusicFolders() {
+	if (!isNativeAndroidApp()) return [];
+	const res = await LocalMusicScanner.listDeviceMusicFolders();
+	return Array.isArray(res?.folders) ? res.folders : [];
+}
+async function pickAndroidMusicFolder() {
+	if (!isNativeAndroidApp()) return { cancelled: true };
+	return LocalMusicScanner.pickDeviceFolder();
+}
+async function scanAndroidDeviceLibrary(onProgress, allowedFolders) {
 	if (!isNativeAndroidApp()) return [];
 	let handle = null;
 	if (onProgress) try {
@@ -24871,7 +25031,8 @@ async function scanAndroidDeviceLibrary(onProgress) {
 	}
 	let res;
 	try {
-		res = await LocalMusicScanner.scanDeviceAudio();
+		const cleanAllowed = Array.isArray(allowedFolders) ? allowedFolders.map((f) => f.trim()).filter(Boolean) : void 0;
+		res = await LocalMusicScanner.scanDeviceAudio(cleanAllowed && cleanAllowed.length > 0 ? { allowedFolders: cleanAllowed } : void 0);
 	} finally {
 		if (handle) handle.remove();
 	}
@@ -24896,6 +25057,7 @@ async function scanAndroidDeviceLibrary(onProgress) {
 			genre,
 			year: yearMatch ? yearMatch[1] : void 0,
 			composer: item.composer ? repairMojibakeText(item.composer) : void 0,
+			lyrics: item.lyrics && item.lyrics.trim() ? item.lyrics.trim() : void 0,
 			duration: Math.max(1, item.durationSec || 180),
 			format: item.format || "MP3",
 			sampleRate: item.sampleRate || 44100,
@@ -25064,6 +25226,7 @@ var HiFiAudioEngine = class {
 		this.onPrevHandler = null;
 		this.onNextHandler = null;
 		this.virtualOffsetSec = 0;
+		this.pendingRestoreTimeSec = null;
 		this.lastTickTimestamp = 0;
 		this.deckA = new Audio();
 		this.deckB = new Audio();
@@ -25189,6 +25352,7 @@ var HiFiAudioEngine = class {
 		this.isCrossfading = false;
 		this.preloadedTrackId = null;
 		this.virtualOffsetSec = 0;
+		this.pendingRestoreTimeSec = null;
 		this.lastError = null;
 		const syncUrl = this.getSyncCachedUrl(track);
 		if (!syncUrl) {
@@ -25232,8 +25396,11 @@ var HiFiAudioEngine = class {
 		this.lastError = null;
 		const clampedPos = Math.max(0, Math.min(positionSeconds || 0, track.duration || 0));
 		this.virtualOffsetSec = clampedPos;
+		this.pendingRestoreTimeSec = clampedPos;
+		this.emitProgress(true);
 		try {
 			const url = await this.resolveTrackUrl(track);
+			if (this.currentTrack?.id !== track.id) return;
 			const active = this.getActiveElement();
 			const inactive = this.getInactiveElement();
 			inactive.pause();
@@ -25254,22 +25421,44 @@ var HiFiAudioEngine = class {
 					if (settled) return;
 					settled = true;
 					active.removeEventListener("loadedmetadata", finish);
+					active.removeEventListener("canplay", finish);
 					active.removeEventListener("error", finish);
 					resolve();
 				};
 				active.addEventListener("loadedmetadata", finish);
+				active.addEventListener("canplay", finish);
 				active.addEventListener("error", finish);
-				window.setTimeout(finish, 1500);
+				window.setTimeout(finish, 3500);
 			});
-			if (track.source === "builtin") active.currentTime = clampedPos % 8;
-			else if (Number.isFinite(active.duration) && active.duration > 0) active.currentTime = Math.min(clampedPos, active.duration);
-			else active.currentTime = clampedPos;
+			if (this.currentTrack?.id !== track.id) return;
+			const applySeek = () => {
+				try {
+					if (track.source === "builtin") {
+						active.currentTime = clampedPos % 8;
+						this.pendingRestoreTimeSec = null;
+					} else if (active.readyState >= 1) {
+						const target = Number.isFinite(active.duration) && active.duration > 0 ? Math.min(clampedPos, active.duration) : clampedPos;
+						active.currentTime = target;
+						this.pendingRestoreTimeSec = null;
+					}
+				} catch {}
+			};
+			applySeek();
+			if (track.source !== "builtin" && active.readyState < 1) {
+				const onLateMetadata = () => {
+					if (this.currentTrack?.id !== track.id) return;
+					applySeek();
+					this.emitProgress(true);
+				};
+				active.addEventListener("loadedmetadata", onLateMetadata, { once: true });
+			}
 			this.updateMediaSession(track);
 			this.emitProgress(true);
 			if (autoResume) try {
 				this.ensureAudioGraph();
 				if (this.ctx && this.ctx.state === "suspended") await this.ctx.resume();
 				await active.play();
+				applySeek();
 				this.isPlaying = true;
 				this.emitStatus();
 				this.startProgressLoop();
@@ -25302,6 +25491,16 @@ var HiFiAudioEngine = class {
 			this.emitStatus();
 			this.stopProgressLoop();
 		} else try {
+			if (this.pendingRestoreTimeSec !== null && this.currentTrack) {
+				const target = this.pendingRestoreTimeSec;
+				if (this.currentTrack.source === "builtin") {
+					active.currentTime = target % 8;
+					this.pendingRestoreTimeSec = null;
+				} else if (active.readyState >= 1) {
+					active.currentTime = Number.isFinite(active.duration) && active.duration > 0 ? Math.min(target, active.duration) : target;
+					this.pendingRestoreTimeSec = null;
+				}
+			}
 			await active.play();
 			this.isPlaying = true;
 			this.lastError = null;
@@ -25319,15 +25518,18 @@ var HiFiAudioEngine = class {
 		const active = this.getActiveElement();
 		const maxDur = this.currentTrack?.duration || active.duration || 0;
 		const clamped = Math.max(0, Math.min(seconds, maxDur));
+		this.pendingRestoreTimeSec = null;
 		if (this.currentTrack?.source === "builtin") {
 			this.virtualOffsetSec = clamped;
 			active.currentTime = clamped % 8;
 		} else if (Number.isFinite(active.duration) && active.duration > 0) active.currentTime = Math.min(clamped, active.duration);
+		else this.pendingRestoreTimeSec = clamped;
 		this.emitProgress(true);
 	}
 	getCurrentTrackTime() {
 		const active = this.getActiveElement();
 		if (this.currentTrack?.source === "builtin") return this.virtualOffsetSec;
+		if (this.pendingRestoreTimeSec !== null) return this.pendingRestoreTimeSec;
 		return Number.isFinite(active.currentTime) ? active.currentTime : 0;
 	}
 	getCurrentTrackDuration() {
@@ -52513,6 +52715,95 @@ async function fetchWithClientTimeout(url, init, timeoutMs = 4e4) {
 		window.clearTimeout(timer);
 	}
 }
+var AiQuotaExhaustedError = class extends Error {
+	constructor(quota) {
+		super(quota.message);
+		this.code = "AI_QUOTA_EXHAUSTED";
+		this.name = "AiQuotaExhaustedError";
+		this.quota = quota;
+	}
+};
+var activeAiQuotaState = null;
+var quotaListeners = /* @__PURE__ */ new Set();
+function notifyQuotaListeners() {
+	for (const listener of quotaListeners) listener(activeAiQuotaState);
+}
+function getActiveAiQuotaState() {
+	return activeAiQuotaState;
+}
+function setActiveAiQuotaState(state) {
+	activeAiQuotaState = state;
+	notifyQuotaListeners();
+}
+function clearActiveAiQuotaState() {
+	if (!activeAiQuotaState) return;
+	activeAiQuotaState = null;
+	notifyQuotaListeners();
+}
+function subscribeAiQuotaState(listener) {
+	quotaListeners.add(listener);
+	listener(activeAiQuotaState);
+	return () => {
+		quotaListeners.delete(listener);
+	};
+}
+function formatAiQuotaCountdown(resetAtMs, nowMs = Date.now()) {
+	const remainingMs = Math.max(0, resetAtMs - nowMs);
+	const remainingSec = Math.ceil(remainingMs / 1e3);
+	const isRestored = remainingSec <= 0;
+	let countdownText = "0s";
+	if (remainingSec > 0) {
+		if (remainingSec < 60) countdownText = `${remainingSec}s`;
+		else if (remainingSec < 3600) {
+			const m = Math.floor(remainingSec / 60);
+			const s = remainingSec % 60;
+			countdownText = `${m}m ${String(s).padStart(2, "0")}s`;
+		} else {
+			const h = Math.floor(remainingSec / 3600);
+			const m = Math.floor(remainingSec % 3600 / 60);
+			countdownText = m > 0 ? `${h}h ${m}m` : `${h}h`;
+		}
+	}
+	const targetDate = new Date(resetAtMs);
+	const sameDay = targetDate.toDateString() === new Date(nowMs).toDateString();
+	const readyTimeText = new Intl.DateTimeFormat(void 0, {
+		...sameDay ? {} : {
+			month: "short",
+			day: "numeric"
+		},
+		hour: "numeric",
+		minute: "2-digit"
+	}).format(targetDate);
+	return {
+		remainingSec,
+		countdownText,
+		readyTimeText,
+		isRestored
+	};
+}
+function buildAiQuotaStateFromPayload(payload, retryAfterHeader) {
+	const rawSeconds = Number(payload.retryAfterSeconds ?? retryAfterHeader ?? 60);
+	const retryAfterSeconds = Number.isFinite(rawSeconds) && rawSeconds > 0 ? Math.ceil(rawSeconds) : 60;
+	const parsedReset = typeof payload.resetAtIso === "string" ? Date.parse(payload.resetAtIso) : NaN;
+	const resetAtMs = Number.isFinite(parsedReset) && parsedReset > Date.now() ? parsedReset : Date.now() + retryAfterSeconds * 1e3;
+	const quotaScope = payload.quotaScope === "daily" || retryAfterSeconds >= 3600 ? "daily" : "minute";
+	const fallbackMsg = quotaScope === "daily" ? "Daily AI token allowance reached while scanning large track batches." : "AI temporarily ran out of tokens while scanning these tracks.";
+	return {
+		resetAtMs,
+		retryAfterSeconds,
+		quotaScope,
+		message: typeof payload.error === "string" && payload.error.trim() ? payload.error.trim() : fallbackMsg
+	};
+}
+function parseAiErrorResponse(resp, payload, fallbackMessage) {
+	const errorStr = typeof payload.error === "string" ? payload.error : "";
+	if (resp.status === 429 || payload.code === "AI_QUOTA_EXHAUSTED" || /RESOURCE_EXHAUSTED|quota\s*(exceeded|limit|exhausted)|rate[\s_-]*limit|too\s+many\s+requests|out\s+of\s+tokens/i.test(errorStr)) {
+		const quotaState = buildAiQuotaStateFromPayload(payload, resp.headers.get("Retry-After"));
+		setActiveAiQuotaState(quotaState);
+		return new AiQuotaExhaustedError(quotaState);
+	}
+	return new Error(errorStr || `${fallbackMessage} (HTTP ${resp.status}).`);
+}
 function qualityScore(t) {
 	return ({
 		FLAC: 5e3,
@@ -52606,7 +52897,12 @@ async function runDuplicateScan(tracks, onProgress) {
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ tracks: chunk })
 			});
+			if (resp.status === 429) {
+				parseAiErrorResponse(resp, await resp.json().catch(() => ({})), "AI duplicate check paused due to token limit");
+				break;
+			}
 			if (resp.ok) {
+				clearActiveAiQuotaState();
 				const data = await resp.json();
 				for (const g of data.groups || []) {
 					const valid = (g.trackIds || []).map((id) => trackMap.get(id)).filter((t) => Boolean(t));
@@ -52672,15 +52968,97 @@ function scoreTrackMetadataNeeds(t) {
 function prioritizeTracksForTagScan(tracks) {
 	return [...tracks].sort((a, b) => scoreTrackMetadataNeeds(b) - scoreTrackMetadataNeeds(a));
 }
+var LRC_TIMESTAMP_REGEX = /\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?\]/g;
+function parseLyricsForKaraoke(rawLyrics, trackDurationSec = 180) {
+	const raw = (rawLyrics || "").replace(/\r\n/g, "\n").trim();
+	if (!raw) return [];
+	const duration = Math.max(10, Number(trackDurationSec) || 180);
+	const rawLines = raw.split("\n");
+	const syncedLines = [];
+	for (const line of rawLines) {
+		const trimmed = line.trim();
+		if (!trimmed) continue;
+		if (/^\[(ar|ti|al|au|by|re|ve|length|offset):/i.test(trimmed)) continue;
+		LRC_TIMESTAMP_REGEX.lastIndex = 0;
+		const timestamps = [];
+		let match;
+		while ((match = LRC_TIMESTAMP_REGEX.exec(trimmed)) !== null) {
+			const mins = Number.parseInt(match[1], 10);
+			const secs = Number.parseInt(match[2], 10);
+			const fracRaw = match[3] || "0";
+			const frac = fracRaw.length === 3 ? Number.parseInt(fracRaw, 10) / 1e3 : fracRaw.length === 2 ? Number.parseInt(fracRaw, 10) / 100 : Number.parseInt(fracRaw, 10) / 10;
+			timestamps.push(mins * 60 + secs + frac);
+		}
+		if (timestamps.length > 0) {
+			const lyricText = trimmed.replace(LRC_TIMESTAMP_REGEX, "").trim();
+			if (!lyricText) continue;
+			for (const ts of timestamps) syncedLines.push({
+				timeSec: ts,
+				text: lyricText
+			});
+		}
+	}
+	if (syncedLines.length > 0) {
+		syncedLines.sort((a, b) => a.timeSec - b.timeSec);
+		return syncedLines.map((item, idx) => {
+			const nextTime = idx < syncedLines.length - 1 ? syncedLines[idx + 1].timeSec : Math.max(item.timeSec + 4.5, duration);
+			return {
+				timeSec: item.timeSec,
+				endSec: Math.max(item.timeSec + .8, nextTime),
+				text: item.text,
+				isSynced: true
+			};
+		});
+	}
+	const plainLines = rawLines.map((l) => l.trim()).filter(Boolean);
+	if (plainLines.length === 0) return [];
+	const introOffset = Math.min(8, duration * .04);
+	const outroBuffer = Math.min(8, duration * .05);
+	const step = Math.max(10, duration - introOffset - outroBuffer) / plainLines.length;
+	return plainLines.map((text, idx) => {
+		const start = introOffset + idx * step;
+		const end = idx < plainLines.length - 1 ? introOffset + (idx + 1) * step : duration;
+		return {
+			timeSec: start,
+			endSec: Math.max(start + 1, end),
+			text,
+			isSynced: false
+		};
+	});
+}
+async function fetchLyricsForTrack(track) {
+	const resp = await fetchWithClientTimeout(resolveApiUrl("/api/ai/lyrics"), {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			title: track.title,
+			artist: track.artist,
+			album: track.album,
+			duration: track.duration
+		})
+	});
+	const payload = await resp.json().catch(() => ({}));
+	if (!resp.ok) throw parseAiErrorResponse(resp, payload, "Lyrics lookup failed");
+	clearActiveAiQuotaState();
+	const lyrics = String(payload.lyrics || "").trim();
+	if (!lyrics) return null;
+	return {
+		lyrics,
+		synced: Boolean(payload.synced),
+		source: String(payload.source || "Lyrics Service")
+	};
+}
 function applyTagSuggestionToTrack(t, s) {
 	const nextYear = s.suggestedYear !== void 0 ? s.suggestedYear.trim() || void 0 : t.year;
+	const nextLyrics = s.suggestedLyrics !== void 0 ? s.suggestedLyrics.trim() || void 0 : t.lyrics;
 	return {
 		...t,
 		title: s.suggestedTitle || t.title,
 		artist: s.suggestedArtist || t.artist,
 		album: s.suggestedAlbum || t.album,
 		genre: s.suggestedGenre || t.genre,
-		year: nextYear
+		year: nextYear,
+		lyrics: nextLyrics
 	};
 }
 function applyTagSuggestionsToList(tracks, suggestions) {
@@ -52710,10 +53088,14 @@ async function runBatchedTagCleanupScan(tracks, onProgress, options) {
 		const resp = await fetchWithClientTimeout(resolveApiUrl("/api/ai/tag-cleanup"), {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ tracks: chunk })
+			body: JSON.stringify({ tracks: chunk.map((t) => ({
+				...t,
+				hasLyrics: Boolean(t.lyrics?.trim())
+			})) })
 		});
 		const payload = await resp.json().catch(() => ({}));
-		if (!resp.ok) throw new Error(payload.error || `AI metadata service returned HTTP ${resp.status}.`);
+		if (!resp.ok) throw parseAiErrorResponse(resp, payload, "AI metadata service failed");
+		clearActiveAiQuotaState();
 		const batchSuggestions = [];
 		for (let k = 0; k < chunk.length; k++) {
 			const orig = chunk[k];
@@ -52725,7 +53107,9 @@ async function runBatchedTagCleanupScan(tracks, onProgress, options) {
 				const nextGenre = (match.suggestedGenre || orig.genre).trim() || orig.genre;
 				const nextYear = (match.suggestedYear || orig.year || "").trim();
 				const origYear = (orig.year || "").trim();
-				if (nextTitle !== orig.title.trim() || nextArtist !== orig.artist.trim() || nextAlbum !== orig.album.trim() || nextGenre !== orig.genre.trim() || Boolean(nextYear) && nextYear !== origYear) {
+				const origLyrics = (orig.lyrics || "").trim();
+				const nextLyrics = (match.suggestedLyrics || origLyrics).trim();
+				if (nextTitle !== orig.title.trim() || nextArtist !== orig.artist.trim() || nextAlbum !== orig.album.trim() || nextGenre !== orig.genre.trim() || Boolean(nextYear) && nextYear !== origYear || Boolean(nextLyrics) && nextLyrics !== origLyrics) {
 					const item = {
 						trackId: orig.id,
 						currentTitle: orig.title,
@@ -52733,11 +53117,13 @@ async function runBatchedTagCleanupScan(tracks, onProgress, options) {
 						currentAlbum: orig.album,
 						currentGenre: orig.genre,
 						currentYear: origYear,
+						currentLyrics: origLyrics || void 0,
 						suggestedTitle: nextTitle,
 						suggestedArtist: nextArtist,
 						suggestedAlbum: nextAlbum,
 						suggestedGenre: nextGenre,
 						suggestedYear: nextYear,
+						suggestedLyrics: nextLyrics || void 0,
 						reason: (match.reason || "AI identified & corrected metadata").trim(),
 						selected: true
 					};
@@ -52754,6 +53140,55 @@ async function runBatchedTagCleanupScan(tracks, onProgress, options) {
 			});
 		}
 		if (batchSuggestions.length > 0) options?.onBatchComplete?.(batchSuggestions);
+	}
+	return Array.from(suggestionsById.values());
+}
+async function runSingleItemAiScan(targetTracks) {
+	if (targetTracks.length === 0) return [];
+	const batchSize = 25;
+	const suggestionsById = /* @__PURE__ */ new Map();
+	for (let i = 0; i < targetTracks.length; i += batchSize) {
+		const chunk = targetTracks.slice(i, i + batchSize);
+		const resp = await fetchWithClientTimeout(resolveApiUrl("/api/ai/tag-cleanup"), {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ tracks: chunk.map((t) => ({
+				...t,
+				hasLyrics: Boolean(t.lyrics?.trim())
+			})) })
+		});
+		const payload = await resp.json().catch(() => ({}));
+		if (!resp.ok) throw parseAiErrorResponse(resp, payload, "AI metadata service failed");
+		clearActiveAiQuotaState();
+		for (const orig of chunk) {
+			const match = (payload.suggestions || []).find((s) => s.trackId === orig.id);
+			if (!match) continue;
+			const nextTitle = (match.suggestedTitle || orig.title).trim() || orig.title;
+			const nextArtist = (match.suggestedArtist || orig.artist).trim() || orig.artist;
+			const nextAlbum = (match.suggestedAlbum || orig.album).trim() || orig.album;
+			const nextGenre = (match.suggestedGenre || orig.genre).trim() || orig.genre;
+			const nextYear = (match.suggestedYear || orig.year || "").trim();
+			const origYear = (orig.year || "").trim();
+			const origLyrics = (orig.lyrics || "").trim();
+			const nextLyrics = (match.suggestedLyrics || origLyrics).trim();
+			if (nextTitle !== orig.title.trim() || nextArtist !== orig.artist.trim() || nextAlbum !== orig.album.trim() || nextGenre !== orig.genre.trim() || Boolean(nextYear) && nextYear !== origYear || Boolean(nextLyrics) && nextLyrics !== origLyrics) suggestionsById.set(orig.id, {
+				trackId: orig.id,
+				currentTitle: orig.title,
+				currentArtist: orig.artist,
+				currentAlbum: orig.album,
+				currentGenre: orig.genre,
+				currentYear: origYear,
+				currentLyrics: origLyrics || void 0,
+				suggestedTitle: nextTitle,
+				suggestedArtist: nextArtist,
+				suggestedAlbum: nextAlbum,
+				suggestedGenre: nextGenre,
+				suggestedYear: nextYear,
+				suggestedLyrics: nextLyrics || void 0,
+				reason: (match.reason || "AI identified & corrected metadata").trim(),
+				selected: true
+			});
+		}
 	}
 	return Array.from(suggestionsById.values());
 }
@@ -52798,6 +53233,13 @@ async function runOriginalAlbumArtScan(tracks, onProgress) {
 			if (resp.ok) {
 				handledByServer = true;
 				const data = await resp.json();
+				if (data.aiQuota) setActiveAiQuotaState(buildAiQuotaStateFromPayload({
+					error: data.aiQuota.message,
+					retryAfterSeconds: data.aiQuota.retryAfterSeconds,
+					resetAtIso: data.aiQuota.resetAtIso,
+					quotaScope: data.aiQuota.quotaScope
+				}));
+				else clearActiveAiQuotaState();
 				for (let k = 0; k < chunk.length; k++) {
 					const orig = chunk[k];
 					const match = (data.results || []).find((r) => r.trackId === orig.id);
@@ -53194,6 +53636,14 @@ function loadSettings() {
 		sortBy: {
 			field: saved.sortBy?.field || DEFAULT_SETTINGS.sortBy?.field || "title",
 			ascending: saved.sortBy?.ascending !== void 0 ? saved.sortBy.ascending : true
+		},
+		onlyScanSelectedFolders: Boolean(saved.onlyScanSelectedFolders),
+		selectedScanFolders: Array.isArray(saved.selectedScanFolders) ? saved.selectedScanFolders : [],
+		showLyrics: saved.showLyrics !== false,
+		karaokeOffsetMs: typeof saved.karaokeOffsetMs === "number" && Number.isFinite(saved.karaokeOffsetMs) ? saved.karaokeOffsetMs : 0,
+		aiScanConfig: {
+			...DEFAULT_SETTINGS.aiScanConfig,
+			...saved.aiScanConfig || {}
 		}
 	};
 }
@@ -53203,10 +53653,18 @@ function saveSettings(settings) {
 function loadTracks() {
 	const saved = safeReadJson(KEYS.TRACKS, null);
 	if (!saved || !Array.isArray(saved) || saved.length === 0) return SEED_TRACKS;
-	return saved.map((t) => t.coverUrl && LEGACY_COVER_MAP[t.coverUrl] ? {
-		...t,
-		coverUrl: LEGACY_COVER_MAP[t.coverUrl]
-	} : t);
+	const seedLyricsById = new Map(SEED_TRACKS.filter((st) => Boolean(st.lyrics)).map((st) => [st.id, st.lyrics]));
+	return saved.map((t) => {
+		let next = t.coverUrl && LEGACY_COVER_MAP[t.coverUrl] ? {
+			...t,
+			coverUrl: LEGACY_COVER_MAP[t.coverUrl]
+		} : t;
+		if (next.source === "builtin" && !next.lyrics && seedLyricsById.has(next.id)) next = {
+			...next,
+			lyrics: seedLyricsById.get(next.id)
+		};
+		return next;
+	});
 }
 function saveTracks(tracks) {
 	const compact = tracks.map((t) => {
@@ -53262,6 +53720,8 @@ var DEFAULT_SESSION = {
 	selectedFolderFilter: null,
 	selectedPlaylistFilter: null,
 	nowPlayingOpen: true,
+	nowPlayingDeckPage: "player",
+	libraryStartIndices: {},
 	libraryScrollTop: 0,
 	mainScrollTop: 0,
 	updatedAt: 0
@@ -53271,12 +53731,255 @@ function loadSession() {
 	return {
 		...DEFAULT_SESSION,
 		...saved,
-		queueTrackIds: Array.isArray(saved.queueTrackIds) ? saved.queueTrackIds : []
+		queueTrackIds: Array.isArray(saved.queueTrackIds) ? saved.queueTrackIds : [],
+		libraryStartIndices: saved.libraryStartIndices && typeof saved.libraryStartIndices === "object" ? saved.libraryStartIndices : {}
 	};
 }
 function saveSession(session) {
 	safeWriteJson(KEYS.SESSION, session);
 }
+function normalizeFolderKey(raw) {
+	return String(raw || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "").replace(/\/{2,}/g, "/").trim().toLowerCase();
+}
+function folderMatchesAllowedList(trackFolderPath, allowedFolderPaths) {
+	if (allowedFolderPaths.length === 0) return true;
+	const candidate = normalizeFolderKey(trackFolderPath || "");
+	if (!candidate) return false;
+	return allowedFolderPaths.some((allowed) => {
+		const normAllowed = normalizeFolderKey(allowed);
+		if (!normAllowed) return false;
+		return candidate === normAllowed || candidate.startsWith(`${normAllowed}/`);
+	});
+}
+// src/services/karaokeCastChannel.ts
+var CHANNEL_NAME = "aurasound_karaoke_cast";
+var STORAGE_KEY = "aurasound_karaoke_cast_state";
+var activeConnections = /* @__PURE__ */ new Set();
+var sharedChannel = null;
+function getChannel() {
+	if (typeof BroadcastChannel === "undefined") return null;
+	if (!sharedChannel) try {
+		sharedChannel = new BroadcastChannel(CHANNEL_NAME);
+	} catch {
+		sharedChannel = null;
+	}
+	return sharedChannel;
+}
+function registerPresentationConnection(conn) {
+	activeConnections.add(conn);
+	const current = readKaraokeCastState();
+	if (current && conn.send && conn.readyState === "connected") try {
+		conn.send(JSON.stringify(current));
+	} catch {}
+	conn.addEventListener?.("close", () => {
+		activeConnections.delete(conn);
+	});
+	conn.addEventListener?.("terminate", () => {
+		activeConnections.delete(conn);
+	});
+}
+function getActiveCastConnectionCount() {
+	for (const conn of Array.from(activeConnections)) if (conn.readyState === "closed" || conn.readyState === "terminated") activeConnections.delete(conn);
+	return activeConnections.size;
+}
+var lastStorageWriteMs = 0;
+function broadcastKaraokeCastState(payload) {
+	const ch = getChannel();
+	if (ch) try {
+		ch.postMessage(payload);
+	} catch {}
+	if (activeConnections.size > 0) {
+		const serialized = JSON.stringify(payload);
+		for (const conn of Array.from(activeConnections)) {
+			if (conn.readyState === "closed" || conn.readyState === "terminated") {
+				activeConnections.delete(conn);
+				continue;
+			}
+			if (conn.readyState === "connected" && conn.send) try {
+				conn.send(serialized);
+			} catch {}
+		}
+	}
+	const now = Date.now();
+	if (now - lastStorageWriteMs >= 250 || !payload.isPlaying) {
+		lastStorageWriteMs = now;
+		try {
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+		} catch {}
+	}
+}
+function readKaraokeCastState() {
+	try {
+		const raw = localStorage.getItem(STORAGE_KEY);
+		if (!raw) return null;
+		const parsed = JSON.parse(raw);
+		if (!parsed || typeof parsed.trackId !== "string") return null;
+		return parsed;
+	} catch {
+		return null;
+	}
+}
+function subscribeKaraokeCastState(listener) {
+	const ch = getChannel();
+	const onChannelMsg = (ev) => {
+		if (ev.data && typeof ev.data.trackId === "string") listener(ev.data);
+	};
+	ch?.addEventListener("message", onChannelMsg);
+	const onStorage = (ev) => {
+		if (ev.key === STORAGE_KEY && ev.newValue) try {
+			const parsed = JSON.parse(ev.newValue);
+			if (parsed && typeof parsed.trackId === "string") listener(parsed);
+		} catch {}
+	};
+	window.addEventListener("storage", onStorage);
+	const nav = navigator;
+	let cancelled = false;
+	if (nav.presentation?.receiver?.connectionList) nav.presentation.receiver.connectionList.then((list) => {
+		if (cancelled) return;
+		const attach = (conn) => {
+			conn.addEventListener("message", (ev) => {
+				if (typeof ev.data === "string") try {
+					const parsed = JSON.parse(ev.data);
+					if (parsed && typeof parsed.trackId === "string") listener(parsed);
+				} catch {}
+			});
+		};
+		list.connections.forEach(attach);
+		list.addEventListener("connectionavailable", () => {
+			list.connections.forEach(attach);
+		});
+	});
+	return () => {
+		cancelled = true;
+		ch?.removeEventListener("message", onChannelMsg);
+		window.removeEventListener("storage", onStorage);
+	};
+}
+// node_modules/react/cjs/react-jsx-runtime.production.js
+/**
+* @license React
+* react-jsx-runtime.production.js
+*
+* Copyright (c) Meta Platforms, Inc. and affiliates.
+*
+* This source code is licensed under the MIT license found in the
+* LICENSE file in the root directory of this source tree.
+*/
+var require_react_jsx_runtime_production = /* @__PURE__ */ __commonJSMin(((exports) => {
+	var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element");
+	var REACT_FRAGMENT_TYPE = Symbol.for("react.fragment");
+	function jsxProd(type, config, maybeKey) {
+		var key = null;
+		void 0 !== maybeKey && (key = "" + maybeKey);
+		void 0 !== config.key && (key = "" + config.key);
+		if ("key" in config) {
+			maybeKey = {};
+			for (var propName in config) "key" !== propName && (maybeKey[propName] = config[propName]);
+		} else maybeKey = config;
+		config = maybeKey.ref;
+		return {
+			$$typeof: REACT_ELEMENT_TYPE,
+			type,
+			key,
+			ref: void 0 !== config ? config : null,
+			props: maybeKey
+		};
+	}
+	exports.Fragment = REACT_FRAGMENT_TYPE;
+	exports.jsx = jsxProd;
+	exports.jsxs = jsxProd;
+}));
+// src/components/AiQuotaNotice.tsx
+var import_jsx_runtime = (/* @__PURE__ */ __commonJSMin(((exports, module) => {
+	module.exports = require_react_jsx_runtime_production();
+})))();
+function useAiQuotaCountdown(overrideQuota) {
+	const [globalQuota, setGlobalQuota] = (0, import_react.useState)(null);
+	const [nowMs, setNowMs] = (0, import_react.useState)(() => Date.now());
+	(0, import_react.useEffect)(() => {
+		return subscribeAiQuotaState((next) => {
+			setGlobalQuota(next);
+			setNowMs(Date.now());
+		});
+	}, []);
+	const quota = overrideQuota !== void 0 ? overrideQuota : globalQuota;
+	(0, import_react.useEffect)(() => {
+		if (!quota) return;
+		setNowMs(Date.now());
+		const id = window.setInterval(() => {
+			setNowMs(Date.now());
+		}, 1e3);
+		return () => window.clearInterval(id);
+	}, [quota]);
+	if (!quota) return null;
+	return {
+		quota,
+		...formatAiQuotaCountdown(quota.resetAtMs, nowMs)
+	};
+}
+var AiQuotaNotice = ({ quota: explicitQuota, extraNote, onRetry, retryLabel = "Resume AI Scan", onDismiss, compact = false }) => {
+	const info = useAiQuotaCountdown(explicitQuota);
+	if (!info) return null;
+	const { quota, countdownText, readyTimeText, isRestored } = info;
+	const handleDismiss = () => {
+		clearActiveAiQuotaState();
+		onDismiss?.();
+	};
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		role: "status",
+		"aria-live": "polite",
+		className: `rounded-xl border transition-colors ${isRestored ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-900 dark:text-emerald-200" : "border-amber-500/45 bg-amber-500/10 text-amber-950 dark:text-amber-100"} ${compact ? "p-3 space-y-2" : "px-3.5 py-2.5 space-y-1.5"} text-xs`,
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "flex items-start justify-between gap-2.5",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex items-start gap-2.5 min-w-0",
+				children: [isRestored ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheck, { className: "w-4 h-4 text-emerald-500 shrink-0 mt-0.5" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Clock, { className: "w-4 h-4 text-amber-500 shrink-0 mt-0.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "min-w-0 space-y-0.5",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "font-semibold flex flex-wrap items-center gap-x-2 gap-y-0.5",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: isRestored ? "AI Tokens Restored — Ready to Continue" : quota.quotaScope === "daily" ? "AI Daily Token Limit Reached" : "AI Taking a Short Breather (Tokens Used Up)" }), !isRestored && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+								className: "font-mono-tabular text-[11px] px-1.5 py-0.5 rounded-md bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30",
+								children: [
+									"Back in ",
+									countdownText,
+									" · ~",
+									readyTimeText
+								]
+							})]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-[11px] leading-relaxed text-zinc-700 dark:text-zinc-300",
+							children: isRestored ? "Your AI token allowance has refilled. You can continue scanning right where you left off." : quota.quotaScope === "daily" ? `Large or heavily disordered track batches used today's AI token quota. AI will be back automatically around ${readyTimeText} when tokens reset.` : `Scanning large or heavily disordered batches temporarily used up AI tokens. Tokens automatically refill in ${countdownText} (around ${readyTimeText}).`
+						}),
+						extraNote && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "text-[11px] font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-1 pt-0.5",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sparkles, { className: "w-3 h-3 text-amber-500 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: extraNote })]
+						})
+					]
+				})]
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex items-center gap-1.5 shrink-0",
+				children: [onRetry && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+					type: "button",
+					disabled: !isRestored,
+					onClick: () => {
+						clearActiveAiQuotaState();
+						onRetry();
+					},
+					className: `min-h-[30px] px-2.5 rounded-lg text-[11px] font-medium inline-flex items-center gap-1.5 transition-transform active:scale-95 ${isRestored ? "accent-bg" : "border border-amber-500/35 bg-amber-500/15 text-amber-900 dark:text-amber-200 opacity-75 cursor-not-allowed"}`,
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RefreshCw, { className: `w-3 h-3 ${isRestored ? "" : "opacity-60"}` }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: isRestored ? retryLabel : `Wait ${countdownText}` })]
+				}), onDismiss && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+					type: "button",
+					onClick: handleDismiss,
+					"aria-label": "Dismiss AI token notice",
+					className: "w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:bg-black/5 dark:hover:bg-white/10",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-3.5 h-3.5" })
+				})]
+			})]
+		})
+	});
+};
 // src/services/tactileFeedback.ts
 /**
 * Precision acoustic micro-sounds & Web Vibration API haptics
@@ -53426,44 +54129,7 @@ var TactileFeedbackEngine = class {
 	}
 };
 var tactile = new TactileFeedbackEngine();
-// node_modules/react/cjs/react-jsx-runtime.production.js
-/**
-* @license React
-* react-jsx-runtime.production.js
-*
-* Copyright (c) Meta Platforms, Inc. and affiliates.
-*
-* This source code is licensed under the MIT license found in the
-* LICENSE file in the root directory of this source tree.
-*/
-var require_react_jsx_runtime_production = /* @__PURE__ */ __commonJSMin(((exports) => {
-	var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element");
-	var REACT_FRAGMENT_TYPE = Symbol.for("react.fragment");
-	function jsxProd(type, config, maybeKey) {
-		var key = null;
-		void 0 !== maybeKey && (key = "" + maybeKey);
-		void 0 !== config.key && (key = "" + config.key);
-		if ("key" in config) {
-			maybeKey = {};
-			for (var propName in config) "key" !== propName && (maybeKey[propName] = config[propName]);
-		} else maybeKey = config;
-		config = maybeKey.ref;
-		return {
-			$$typeof: REACT_ELEMENT_TYPE,
-			type,
-			key,
-			ref: void 0 !== config ? config : null,
-			props: maybeKey
-		};
-	}
-	exports.Fragment = REACT_FRAGMENT_TYPE;
-	exports.jsx = jsxProd;
-	exports.jsxs = jsxProd;
-}));
 // src/components/AlphabetIndexSlider.tsx
-var import_jsx_runtime = (/* @__PURE__ */ __commonJSMin(((exports, module) => {
-	module.exports = require_react_jsx_runtime_production();
-})))();
 function getScriptHint(letter) {
 	if (letter === "#") return "0–9";
 	if (/[А-ЯЁ]/i.test(letter)) return "А–Я";
@@ -53662,6 +54328,599 @@ var CoverArt = import_react.memo(({ src, alt, className = "w-11 h-11 rounded-md"
 		})]
 	});
 });
+// src/components/ItemAiCorrectionModal.tsx
+function summarizeLyricsChange(raw) {
+	const clean = (raw || "").trim();
+	if (!clean) return "";
+	const lines = clean.split(/\r?\n/).filter((l) => l.trim());
+	return `${/\[\d{1,3}:\d{2}(?:[.:]\d{1,3})?\]/.test(clean) ? "Synced LRC" : "Lyrics"} (${lines.length} lines)`;
+}
+function collectSuggestionFieldChanges(s) {
+	const out = [];
+	const pushIfChanged = (field, fromRaw, toRaw) => {
+		const fromVal = (fromRaw || "").trim();
+		const toVal = (toRaw || "").trim();
+		if (toVal !== fromVal && (toVal || fromVal)) out.push({
+			field,
+			from: fromVal || "—",
+			to: toVal || "—"
+		});
+	};
+	pushIfChanged("Title", s.currentTitle, s.suggestedTitle);
+	pushIfChanged("Artist", s.currentArtist, s.suggestedArtist);
+	pushIfChanged("Album", s.currentAlbum, s.suggestedAlbum);
+	pushIfChanged("Genre", s.currentGenre, s.suggestedGenre);
+	pushIfChanged("Year", s.currentYear, s.suggestedYear);
+	const prevLyrics = (s.currentLyrics || "").trim();
+	const nextLyrics = (s.suggestedLyrics || "").trim();
+	if (nextLyrics !== prevLyrics && (nextLyrics || prevLyrics)) out.push({
+		field: "Lyrics",
+		from: summarizeLyricsChange(prevLyrics) || "None",
+		to: summarizeLyricsChange(nextLyrics) || "Removed"
+	});
+	return out;
+}
+function renderDiffText(currentRaw, suggestedRaw) {
+	const prev = (currentRaw || "").trim();
+	const next = (suggestedRaw || "").trim();
+	if (!next) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+		className: "text-zinc-400",
+		children: "—"
+	});
+	if (prev === next) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: next });
+	if (!prev || /^(unknown album|unknown artist|local collection|local audio|unknown|audio|music)$/i.test(prev)) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+		className: "text-rose-600 dark:text-rose-400 font-semibold bg-rose-500/12 px-1 rounded",
+		children: next
+	});
+	const aTokens = prev.split(/(\s+)/);
+	const bTokens = next.split(/(\s+)/);
+	const m = aTokens.length;
+	const n = bTokens.length;
+	const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+	for (let i = m - 1; i >= 0; i--) for (let j = n - 1; j >= 0; j--) if (aTokens[i] === bTokens[j]) dp[i][j] = 1 + dp[i + 1][j + 1];
+	else dp[i][j] = Math.max(dp[i + 1][j], dp[i][j + 1]);
+	const parts = [];
+	let i = 0;
+	let j = 0;
+	while (j < n) if (i < m && aTokens[i] === bTokens[j]) {
+		parts.push({
+			text: bTokens[j],
+			changed: false
+		});
+		i++;
+		j++;
+	} else if (i < m && dp[i + 1][j] >= dp[i][j + 1]) i++;
+	else {
+		parts.push({
+			text: bTokens[j],
+			changed: true
+		});
+		j++;
+	}
+	if (!parts.some((p) => p.changed)) return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+		className: "text-rose-600 dark:text-rose-400 font-semibold bg-rose-500/12 px-1 rounded",
+		children: next
+	});
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: parts.map((part, idx) => part.changed && part.text.trim() ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+		className: "text-rose-600 dark:text-rose-400 font-semibold bg-rose-500/12 px-0.5 rounded",
+		children: part.text
+	}, idx) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(import_react.Fragment, { children: part.text }, idx)) });
+}
+var ItemAiCorrectionModal = ({ target, onClose, onApplySuggestions, onShowNoChangesToast }) => {
+	const [phase, setPhase] = (0, import_react.useState)("scanning");
+	const [suggestions, setSuggestions] = (0, import_react.useState)([]);
+	const [errorMsg, setErrorMsg] = (0, import_react.useState)("");
+	const [quotaInfo, setQuotaInfo] = (0, import_react.useState)(null);
+	const [selectedChoice, setSelectedChoice] = (0, import_react.useState)(null);
+	const [previewIdx, setPreviewIdx] = (0, import_react.useState)(0);
+	const [reportIdx, setReportIdx] = (0, import_react.useState)(0);
+	const [appliedReport, setAppliedReport] = (0, import_react.useState)([]);
+	const [scanAttempt, setScanAttempt] = (0, import_react.useState)(0);
+	const quotaCountdown = useAiQuotaCountdown(phase === "quota" ? quotaInfo : null);
+	const onCloseRef = (0, import_react.useRef)(onClose);
+	const onShowNoChangesToastRef = (0, import_react.useRef)(onShowNoChangesToast);
+	onCloseRef.current = onClose;
+	onShowNoChangesToastRef.current = onShowNoChangesToast;
+	(0, import_react.useEffect)(() => {
+		if (!target) return;
+		let cancelled = false;
+		const existingQuota = getActiveAiQuotaState();
+		if (existingQuota && existingQuota.resetAtMs > Date.now()) {
+			setQuotaInfo(existingQuota);
+			setPhase("quota");
+			return;
+		}
+		setPhase("scanning");
+		setSuggestions([]);
+		setErrorMsg("");
+		setQuotaInfo(null);
+		setSelectedChoice(null);
+		setPreviewIdx(0);
+		setReportIdx(0);
+		setAppliedReport([]);
+		(async () => {
+			try {
+				const res = await runSingleItemAiScan(target.tracks);
+				if (cancelled) return;
+				if (res.length === 0) {
+					tactile.tap();
+					onShowNoChangesToastRef.current("No changes were made");
+					onCloseRef.current();
+					return;
+				}
+				setSuggestions(res);
+				setPhase("compare");
+			} catch (err) {
+				if (cancelled) return;
+				if (err instanceof AiQuotaExhaustedError) {
+					setQuotaInfo(err.quota);
+					setPhase("quota");
+					return;
+				}
+				setErrorMsg(err instanceof Error ? err.message : "Unable to scan item with AI.");
+				setPhase("error");
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [target, scanAttempt]);
+	(0, import_react.useEffect)(() => {
+		if (!target) return;
+		const onKey = (e) => {
+			if (e.key === "Escape") {
+				if (phase === "confirm") setPhase("compare");
+				else onClose();
+			}
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [
+		target,
+		phase,
+		onClose
+	]);
+	const activeSuggestion = suggestions[Math.min(previewIdx, Math.max(0, suggestions.length - 1))];
+	const totalChangedFieldsCount = (0, import_react.useMemo)(() => suggestions.reduce((sum, s) => sum + collectSuggestionFieldChanges(s).length, 0), [suggestions]);
+	if (!target || typeof document === "undefined") return null;
+	const handleChooseVersion = (choice) => {
+		tactile.tap();
+		setSelectedChoice(choice);
+		setPhase("confirm");
+	};
+	const handleConfirmApply = () => {
+		if (selectedChoice === "current") {
+			tactile.tap();
+			onShowNoChangesToast("No changes were made");
+			onClose();
+			return;
+		}
+		const reportEntries = suggestions.map((s) => ({
+			trackTitle: s.suggestedTitle || s.currentTitle,
+			changes: collectSuggestionFieldChanges(s)
+		})).filter((entry) => entry.changes.length > 0);
+		if (reportEntries.length === 0) {
+			tactile.tap();
+			onShowNoChangesToast("No changes were made");
+			onClose();
+			return;
+		}
+		tactile.success();
+		onApplySuggestions(suggestions);
+		setAppliedReport(reportEntries);
+		setReportIdx(0);
+		setPhase("report");
+	};
+	const currentReportEntry = appliedReport[Math.min(reportIdx, Math.max(0, appliedReport.length - 1))];
+	return (0, import_react_dom.createPortal)(/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		role: "dialog",
+		"aria-modal": "true",
+		"aria-label": "AI Tag Correction",
+		onPointerDown: (e) => e.stopPropagation(),
+		onClick: () => {
+			if (phase === "confirm") setPhase("compare");
+			else if (phase !== "scanning") onClose();
+		},
+		className: "fixed inset-0 z-[75] bg-black/65 backdrop-blur-[2px] flex items-center justify-center p-2.5 sm:p-4",
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			onClick: (e) => e.stopPropagation(),
+			className: "w-full max-w-[540px] max-h-[calc(100dvh-1.25rem)] rounded-2xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden flex flex-col",
+			children: [
+				/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "shrink-0 px-4 py-2.5 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/70 flex items-center justify-between gap-2",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center gap-2 min-w-0",
+						children: [phase === "report" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleCheck, { className: "w-4 h-4 text-emerald-500 shrink-0" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(WandSparkles, { className: "w-4 h-4 accent-text shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "min-w-0",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+								className: "text-sm font-display font-semibold truncate",
+								children: phase === "scanning" ? "Scanning with AI..." : phase === "report" ? "Changes Applied" : phase === "confirm" ? "Confirm Selection" : phase === "quota" ? "AI Resting Briefly" : phase === "error" ? "AI Scan Error" : `AI Correction · ${target.label}`
+							})
+						})]
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						onClick: onClose,
+						"aria-label": "Close AI correction dialog",
+						className: "w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:bg-zinc-200/70 dark:hover:bg-zinc-800 shrink-0",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-4 h-4" })
+					})]
+				}),
+				phase === "scanning" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "p-6 flex flex-col items-center justify-center text-center gap-3",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "w-7 h-7 accent-text animate-spin" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "space-y-1",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "text-sm font-medium",
+							children: [
+								"Analyzing ",
+								target.kindLabel.toLowerCase(),
+								" \"",
+								target.label,
+								"\""
+							]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "text-xs text-zinc-500 dark:text-zinc-400",
+							children: [
+								"Checking ",
+								target.tracks.length,
+								" track(s) for missing albums, years, genres, typos, and synced lyrics..."
+							]
+						})]
+					})]
+				}),
+				phase === "quota" && quotaInfo && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "p-4 space-y-3 text-xs",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(AiQuotaNotice, {
+						quota: quotaInfo,
+						compact: true
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center justify-end gap-2",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							onClick: onClose,
+							className: "min-h-[34px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-700 font-medium",
+							children: "Close"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							disabled: !quotaCountdown?.isRestored,
+							onClick: () => {
+								clearActiveAiQuotaState();
+								setScanAttempt((n) => n + 1);
+							},
+							className: "min-h-[34px] px-4 rounded-lg accent-bg font-medium disabled:opacity-50",
+							children: quotaCountdown?.isRestored ? "Scan with AI Now" : `Ready in ${quotaCountdown?.countdownText || "..."}`
+						})]
+					})]
+				}),
+				phase === "error" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "p-4 space-y-3 text-xs",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-start gap-2.5 text-rose-600 dark:text-rose-400",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CircleAlert, { className: "w-4 h-4 shrink-0 mt-0.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: errorMsg })]
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center justify-end gap-2",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							onClick: onClose,
+							className: "min-h-[32px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-700 font-medium",
+							children: "Close"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							onClick: () => setScanAttempt((n) => n + 1),
+							className: "min-h-[32px] px-3.5 rounded-lg accent-bg font-medium",
+							children: "Retry"
+						})]
+					})]
+				}),
+				phase === "compare" && activeSuggestion && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "p-3 sm:p-4 space-y-2.5 text-xs",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center justify-between gap-2 text-[11px] text-zinc-500 dark:text-zinc-400",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+							className: "truncate",
+							children: [
+								"Tap the version you want to save (",
+								suggestions.length,
+								" track",
+								suggestions.length === 1 ? "" : "s",
+								" · ",
+								totalChangedFieldsCount,
+								" field update",
+								totalChangedFieldsCount === 1 ? "" : "s",
+								"). Differences in",
+								" ",
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "text-rose-600 dark:text-rose-400 font-semibold",
+									children: "red"
+								}),
+								"."
+							]
+						}), suggestions.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-1 shrink-0",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									disabled: previewIdx <= 0,
+									onClick: () => setPreviewIdx((i) => Math.max(0, i - 1)),
+									"aria-label": "Previous changed track",
+									className: "w-6 h-6 rounded border border-zinc-200 dark:border-zinc-700 flex items-center justify-center disabled:opacity-35",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronLeft, { className: "w-3.5 h-3.5" })
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+									className: "font-mono-tabular px-1",
+									children: [
+										previewIdx + 1,
+										"/",
+										suggestions.length
+									]
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									disabled: previewIdx >= suggestions.length - 1,
+									onClick: () => setPreviewIdx((i) => Math.min(suggestions.length - 1, i + 1)),
+									"aria-label": "Next changed track",
+									className: "w-6 h-6 rounded border border-zinc-200 dark:border-zinc-700 flex items-center justify-center disabled:opacity-35",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronRight, { className: "w-3.5 h-3.5" })
+								})
+							]
+						})]
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "grid grid-cols-1 sm:grid-cols-2 gap-2.5",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "button",
+							onClick: () => handleChooseVersion("current"),
+							className: "text-left rounded-xl border border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 bg-zinc-50/70 dark:bg-zinc-950/60 p-3 space-y-1.5 transition-colors active:scale-[0.99]",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center justify-between gap-2 pb-1 border-b border-zinc-200/80 dark:border-zinc-800",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "text-xs font-semibold text-zinc-700 dark:text-zinc-200",
+									children: "Current Version"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "text-[11px] text-zinc-400",
+									children: "Keep as-is"
+								})]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "space-y-1 text-[11px]",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "truncate",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "text-zinc-400",
+											children: "Title: "
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "font-medium text-zinc-800 dark:text-zinc-200",
+											children: activeSuggestion.currentTitle || "—"
+										})]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "truncate",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "text-zinc-400",
+											children: "Artist: "
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "text-zinc-700 dark:text-zinc-300",
+											children: activeSuggestion.currentArtist || "—"
+										})]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "truncate",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "text-zinc-400",
+											children: "Album: "
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "text-zinc-700 dark:text-zinc-300",
+											children: activeSuggestion.currentAlbum || "—"
+										})]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center justify-between gap-2",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: "truncate",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+												className: "text-zinc-400",
+												children: "Genre: "
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: activeSuggestion.currentGenre || "—" })]
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: "font-mono-tabular shrink-0",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+												className: "text-zinc-400",
+												children: "Year: "
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: activeSuggestion.currentYear || "—" })]
+										})]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "truncate",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "text-zinc-400",
+											children: "Lyrics: "
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "text-zinc-600 dark:text-zinc-400",
+											children: summarizeLyricsChange(activeSuggestion.currentLyrics) || "None"
+										})]
+									})
+								]
+							})]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "button",
+							onClick: () => handleChooseVersion("ai"),
+							className: "text-left rounded-xl border border-amber-500/60 hover:border-amber-500 bg-amber-500/5 p-3 space-y-1.5 transition-colors active:scale-[0.99]",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center justify-between gap-2 pb-1 border-b border-amber-500/20",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+									className: "text-xs font-semibold accent-text flex items-center gap-1",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(WandSparkles, { className: "w-3 h-3" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "AI Corrected" })]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "text-[11px] text-zinc-500 truncate max-w-[130px]",
+									children: activeSuggestion.reason
+								})]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "space-y-1 text-[11px]",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "truncate",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "text-zinc-400",
+											children: "Title: "
+										}), renderDiffText(activeSuggestion.currentTitle, activeSuggestion.suggestedTitle)]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "truncate",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "text-zinc-400",
+											children: "Artist: "
+										}), renderDiffText(activeSuggestion.currentArtist, activeSuggestion.suggestedArtist)]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "truncate",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "text-zinc-400",
+											children: "Album: "
+										}), renderDiffText(activeSuggestion.currentAlbum, activeSuggestion.suggestedAlbum)]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center justify-between gap-2",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: "truncate",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+												className: "text-zinc-400",
+												children: "Genre: "
+											}), renderDiffText(activeSuggestion.currentGenre, activeSuggestion.suggestedGenre)]
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: "font-mono-tabular shrink-0",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+												className: "text-zinc-400",
+												children: "Year: "
+											}), renderDiffText(activeSuggestion.currentYear, activeSuggestion.suggestedYear)]
+										})]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "truncate",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "text-zinc-400",
+											children: "Lyrics: "
+										}), (activeSuggestion.currentLyrics || "").trim() !== (activeSuggestion.suggestedLyrics || "").trim() ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "text-rose-600 dark:text-rose-400 font-semibold bg-rose-500/12 px-1 rounded",
+											children: summarizeLyricsChange(activeSuggestion.suggestedLyrics) || "None"
+										}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: summarizeLyricsChange(activeSuggestion.suggestedLyrics) || "None" })]
+									})
+								]
+							})]
+						})]
+					})]
+				}),
+				phase === "confirm" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "p-4 space-y-3 text-xs",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "text-sm font-medium text-zinc-900 dark:text-zinc-100",
+							children: selectedChoice === "ai" ? `Apply AI Corrected tags to "${target.label}"?` : `Keep Current version for "${target.label}"?`
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+							className: "text-zinc-500 dark:text-zinc-400 leading-relaxed",
+							children: selectedChoice === "ai" ? `This will update ${totalChangedFieldsCount} field(s) across ${suggestions.length} track(s) and embed updated tags directly into your source audio file(s).` : "No edits will be applied to your library or audio files."
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center justify-end gap-2 pt-1",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								type: "button",
+								onClick: () => {
+									tactile.tap();
+									setPhase("compare");
+								},
+								className: "min-h-[34px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-700 font-medium",
+								children: "Cancel"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								onClick: handleConfirmApply,
+								className: "min-h-[34px] px-4 rounded-lg accent-bg font-medium inline-flex items-center gap-1.5",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: selectedChoice === "ai" ? "Confirm & Apply" : "Confirm" })]
+							})]
+						})
+					]
+				}),
+				phase === "report" && currentReportEntry && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "p-4 space-y-3 text-xs",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center justify-between gap-2",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "font-semibold text-zinc-900 dark:text-zinc-100 truncate",
+								children: currentReportEntry.trackTitle
+							}), appliedReport.length > 1 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center gap-1 shrink-0",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										disabled: reportIdx <= 0,
+										onClick: () => setReportIdx((i) => Math.max(0, i - 1)),
+										"aria-label": "Previous updated track",
+										className: "w-6 h-6 rounded border border-zinc-200 dark:border-zinc-700 flex items-center justify-center disabled:opacity-35",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronLeft, { className: "w-3.5 h-3.5" })
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+										className: "font-mono-tabular px-1",
+										children: [
+											reportIdx + 1,
+											"/",
+											appliedReport.length
+										]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										disabled: reportIdx >= appliedReport.length - 1,
+										onClick: () => setReportIdx((i) => Math.min(appliedReport.length - 1, i + 1)),
+										"aria-label": "Next updated track",
+										className: "w-6 h-6 rounded border border-zinc-200 dark:border-zinc-700 flex items-center justify-center disabled:opacity-35",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronRight, { className: "w-3.5 h-3.5" })
+									})
+								]
+							})]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/60 divide-y divide-zinc-200/70 dark:divide-zinc-800",
+							children: currentReportEntry.changes.map((chg) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "px-3 py-1.5 flex items-center gap-2",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "w-12 text-[11px] font-medium text-zinc-400 shrink-0",
+										children: chg.field
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "truncate text-zinc-500 line-through",
+										children: chg.from
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ArrowRight, { className: "w-3 h-3 text-zinc-400 shrink-0" }),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "truncate font-semibold text-rose-600 dark:text-rose-400",
+										children: chg.to
+									})
+								]
+							}, chg.field))
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center justify-between gap-2 pt-0.5",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+								className: "text-[11px] text-zinc-500 dark:text-zinc-400",
+								children: [
+									"Updated ",
+									appliedReport.length,
+									" track",
+									appliedReport.length === 1 ? "" : "s",
+									" and saved embedded file tags."
+								]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+								type: "button",
+								onClick: onClose,
+								className: "min-h-[32px] px-4 rounded-lg accent-bg font-medium shrink-0",
+								children: "Done"
+							})]
+						})
+					]
+				})
+			]
+		})
+	}), document.body);
+};
 // src/components/PaginationBar.tsx
 var PaginationBar = ({ page, totalPages, totalItems, pageSize, onChangePage, itemLabel = "items", rangeStartIndex, onStepPrev, onStepNext, onJumpTop }) => {
 	if (totalItems === 0) return null;
@@ -54042,7 +55301,7 @@ var TAB_SINGULAR_LABEL = {
 	playlists: "Playlist",
 	folders: "Folder"
 };
-function computeAnchoredMenuPosition(anchorEl, estimatedHeight) {
+function computeAnchoredMenuPosition(anchorEl, menuWidth, menuHeight) {
 	if (!anchorEl) return {
 		top: 64,
 		right: 16
@@ -54050,18 +55309,22 @@ function computeAnchoredMenuPosition(anchorEl, estimatedHeight) {
 	const rect = anchorEl.getBoundingClientRect();
 	const vw = window.innerWidth;
 	const vh = window.innerHeight;
-	const right = Math.max(10, vw - rect.right);
-	const spaceBelow = vh - rect.bottom - 10;
-	const spaceAbove = rect.top - 10;
-	let top = rect.bottom + 4;
-	if (spaceBelow < estimatedHeight && spaceAbove >= spaceBelow) top = rect.top - estimatedHeight - 4;
-	top = Math.max(8, Math.min(top, Math.max(8, vh - estimatedHeight - 8)));
+	const safeW = Math.min(menuWidth, vw - 16);
+	const right = Math.max(8, Math.min(vw - safeW - 8, vw - rect.right));
+	const spaceBelow = vh - rect.bottom - 8;
+	const spaceAbove = rect.top - 8;
+	let top;
+	if (spaceBelow >= menuHeight) top = rect.bottom + 2;
+	else if (spaceAbove >= menuHeight) top = rect.top - menuHeight - 2;
+	else if (spaceBelow >= spaceAbove) top = Math.max(8, vh - menuHeight - 8);
+	else top = 8;
+	top = Math.max(8, Math.min(top, Math.max(8, vh - menuHeight - 8)));
 	return {
 		top,
 		right
 	};
 }
-var TrackActionMenu = ({ track, onAddToPlaylist, onPlayNext, onPlaySingleTrack, onSetEq, onShuffleFromTrack, onEditTags, onGetInfo, onDeleteTrack, onSetRingtone }) => {
+var TrackActionMenu = ({ track, onAddToPlaylist, onPlayNext, onPlaySingleTrack, onSetEq, onShuffleFromTrack, onEditTags, onAiCorrection, onGetInfo, onDeleteTrack, onSetRingtone }) => {
 	const [open, setOpen] = (0, import_react.useState)(false);
 	const [confirmDelete, setConfirmDelete] = (0, import_react.useState)(false);
 	const [menuPos, setMenuPos] = (0, import_react.useState)({
@@ -54069,6 +55332,7 @@ var TrackActionMenu = ({ track, onAddToPlaylist, onPlayNext, onPlaySingleTrack, 
 		right: 16
 	});
 	const btnRef = (0, import_react.useRef)(null);
+	const menuRef = (0, import_react.useRef)(null);
 	(0, import_react.useEffect)(() => {
 		if (!open) {
 			setConfirmDelete(false);
@@ -54082,34 +55346,45 @@ var TrackActionMenu = ({ track, onAddToPlaylist, onPlayNext, onPlaySingleTrack, 
 			window.removeEventListener("keydown", handleEsc);
 		};
 	}, [open]);
+	(0, import_react.useLayoutEffect)(() => {
+		if (!open || !menuRef.current) return;
+		const w = menuRef.current.offsetWidth || 192;
+		const h = menuRef.current.offsetHeight || 314;
+		setMenuPos(computeAnchoredMenuPosition(btnRef.current, w, h));
+	}, [open, confirmDelete]);
 	const handleToggle = (e) => {
 		e.stopPropagation();
 		tactile.tap();
 		if (!open) {
-			setMenuPos(computeAnchoredMenuPosition(btnRef.current, 322));
+			setMenuPos(computeAnchoredMenuPosition(btnRef.current, 192, 316));
 			setOpen(true);
 		} else setOpen(false);
 	};
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		"data-no-drag": "true",
+		"data-no-swipe": "true",
 		className: "relative shrink-0",
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 			ref: btnRef,
 			type: "button",
 			"data-no-drag": "true",
+			"data-no-swipe": "true",
 			"aria-label": `Actions for ${track.title}`,
 			"aria-expanded": open,
 			onClick: handleToggle,
 			className: "min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-200/70 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
 			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EllipsisVertical, { className: "w-4 h-4" })
-		}), open && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		}), open && typeof document !== "undefined" && (0, import_react_dom.createPortal)(/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 			"data-no-drag": "true",
+			"data-no-swipe": "true",
+			onPointerDown: (e) => e.stopPropagation(),
 			onClick: (e) => {
 				e.stopPropagation();
 				setOpen(false);
 			},
-			className: "fixed inset-0 z-50 bg-black/20",
+			className: "fixed inset-0 z-[70] bg-black/25",
 			children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				ref: menuRef,
 				role: "menu",
 				"aria-label": `Menu for ${track.title}`,
 				style: {
@@ -54117,12 +55392,12 @@ var TrackActionMenu = ({ track, onAddToPlaylist, onPlayNext, onPlaySingleTrack, 
 					right: `${menuPos.right}px`
 				},
 				onClick: (e) => e.stopPropagation(),
-				className: "fixed w-48 max-h-[calc(100dvh-16px)] rounded-xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden text-xs",
+				className: "fixed w-48 [@media(max-height:480px)]:w-72 rounded-xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden text-xs",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 					className: "px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/80 text-[12px] font-semibold text-zinc-600 dark:text-zinc-300 truncate",
 					children: track.title
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "py-0.5 divide-y divide-zinc-100/80 dark:divide-zinc-800/50",
+					className: "py-0.5 grid grid-cols-1 [@media(max-height:480px)]:grid-cols-2 divide-y divide-zinc-100/80 dark:divide-zinc-800/50",
 					children: [
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 							type: "button",
@@ -54196,6 +55471,17 @@ var TrackActionMenu = ({ track, onAddToPlaylist, onPlayNext, onPlaySingleTrack, 
 							onClick: () => {
 								tactile.tap();
 								setOpen(false);
+								onAiCorrection(track);
+							},
+							className: "w-full h-[31px] px-3 text-left flex items-center gap-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 font-medium",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(WandSparkles, { className: "w-3.5 h-3.5 accent-text shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "AI Correction" })]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "button",
+							role: "menuitem",
+							onClick: () => {
+								tactile.tap();
+								setOpen(false);
 								onGetInfo(track);
 							},
 							className: "w-full h-[31px] px-3 text-left flex items-center gap-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-800",
@@ -54242,10 +55528,10 @@ var TrackActionMenu = ({ track, onAddToPlaylist, onPlayNext, onPlaySingleTrack, 
 					]
 				})]
 			})
-		})]
+		}), document.body)]
 	});
 };
-var CollectionActionMenu = ({ item, singularLabel, onAddToPlaylist, onUpNext, onPlayAll, onSetEq, onEditTags, onGetInfo, onExportM3u, onDelete, onSetRingtone }) => {
+var CollectionActionMenu = ({ item, singularLabel, onAddToPlaylist, onUpNext, onPlayAll, onSetEq, onEditTags, onAiCorrection, onGetInfo, onExportM3u, onDelete, onSetRingtone }) => {
 	const [open, setOpen] = (0, import_react.useState)(false);
 	const [confirmDelete, setConfirmDelete] = (0, import_react.useState)(false);
 	const [menuPos, setMenuPos] = (0, import_react.useState)({
@@ -54253,6 +55539,7 @@ var CollectionActionMenu = ({ item, singularLabel, onAddToPlaylist, onUpNext, on
 		right: 16
 	});
 	const btnRef = (0, import_react.useRef)(null);
+	const menuRef = (0, import_react.useRef)(null);
 	(0, import_react.useEffect)(() => {
 		if (!open) {
 			setConfirmDelete(false);
@@ -54266,35 +55553,46 @@ var CollectionActionMenu = ({ item, singularLabel, onAddToPlaylist, onUpNext, on
 			window.removeEventListener("keydown", handleEsc);
 		};
 	}, [open]);
+	(0, import_react.useLayoutEffect)(() => {
+		if (!open || !menuRef.current) return;
+		const w = menuRef.current.offsetWidth || 192;
+		const h = menuRef.current.offsetHeight || 314;
+		setMenuPos(computeAnchoredMenuPosition(btnRef.current, w, h));
+	}, [open, confirmDelete]);
 	const handleToggle = (e) => {
 		e.stopPropagation();
 		tactile.tap();
 		if (!open) {
 			const rowCount = (item.tracks.length > 0 ? 9 : 2) + (onExportM3u ? 1 : 0);
-			setMenuPos(computeAnchoredMenuPosition(btnRef.current, 34 + rowCount * 31));
+			setMenuPos(computeAnchoredMenuPosition(btnRef.current, 192, 34 + rowCount * 31));
 			setOpen(true);
 		} else setOpen(false);
 	};
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		"data-no-drag": "true",
+		"data-no-swipe": "true",
 		className: "relative shrink-0",
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 			ref: btnRef,
 			type: "button",
 			"data-no-drag": "true",
+			"data-no-swipe": "true",
 			"aria-label": `Actions for ${item.label}`,
 			"aria-expanded": open,
 			onClick: handleToggle,
 			className: "min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-zinc-200/70 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
 			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(EllipsisVertical, { className: "w-4 h-4" })
-		}), open && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		}), open && typeof document !== "undefined" && (0, import_react_dom.createPortal)(/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 			"data-no-drag": "true",
+			"data-no-swipe": "true",
+			onPointerDown: (e) => e.stopPropagation(),
 			onClick: (e) => {
 				e.stopPropagation();
 				setOpen(false);
 			},
-			className: "fixed inset-0 z-50 bg-black/20",
+			className: "fixed inset-0 z-[70] bg-black/25",
 			children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				ref: menuRef,
 				role: "menu",
 				"aria-label": `Menu for ${item.label}`,
 				style: {
@@ -54302,12 +55600,12 @@ var CollectionActionMenu = ({ item, singularLabel, onAddToPlaylist, onUpNext, on
 					right: `${menuPos.right}px`
 				},
 				onClick: (e) => e.stopPropagation(),
-				className: "fixed w-48 max-h-[calc(100dvh-16px)] rounded-xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden text-xs",
+				className: "fixed w-48 [@media(max-height:480px)]:w-72 rounded-xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden text-xs",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 					className: "px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/80 text-[12px] font-semibold text-zinc-600 dark:text-zinc-300 truncate",
 					children: item.label
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "py-0.5 divide-y divide-zinc-100/80 dark:divide-zinc-800/50",
+					className: "py-0.5 grid grid-cols-1 [@media(max-height:480px)]:grid-cols-2 divide-y divide-zinc-100/80 dark:divide-zinc-800/50",
 					children: [
 						item.tracks.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
 							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
@@ -54375,6 +55673,17 @@ var CollectionActionMenu = ({ item, singularLabel, onAddToPlaylist, onUpNext, on
 								},
 								className: "w-full h-[31px] px-3 text-left flex items-center gap-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-800",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tag, { className: "w-3.5 h-3.5 text-zinc-500 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Edit Tag" })]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								role: "menuitem",
+								onClick: () => {
+									tactile.tap();
+									setOpen(false);
+									onAiCorrection(item);
+								},
+								className: "w-full h-[31px] px-3 text-left flex items-center gap-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 font-medium",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(WandSparkles, { className: "w-3.5 h-3.5 accent-text shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "AI Correction" })]
 							})
 						] }),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
@@ -54444,10 +55753,10 @@ var CollectionActionMenu = ({ item, singularLabel, onAddToPlaylist, onUpNext, on
 					]
 				})]
 			})
-		})]
+		}), document.body)]
 	});
 };
-var TrackRow = import_react.memo(({ track, isActive, isHighlighted, isPlaying, selectionMode, isSelected, onPlayTrackItem, onToggleSelect, onLongPressStart, onLongPressMove, onLongPressCancel, onAddToPlaylist, onPlayNext, onPlaySingleTrack, onSetEq, onShuffleFromTrack, onToggleFavorite, onEditTags, onGetInfo, onDeleteTrack, onSetRingtone }) => {
+var TrackRow = import_react.memo(({ track, isActive, isHighlighted, isPlaying, selectionMode, isSelected, onPlayTrackItem, onToggleSelect, onLongPressStart, onLongPressMove, onLongPressCancel, onAddToPlaylist, onPlayNext, onPlaySingleTrack, onSetEq, onShuffleFromTrack, onToggleFavorite, onEditTags, onAiCorrection, onGetInfo, onDeleteTrack, onSetRingtone }) => {
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		onPointerDown: (e) => {
 			if (e.target?.closest("[data-no-drag=\"true\"]")) return;
@@ -54486,9 +55795,17 @@ var TrackRow = import_react.memo(({ track, isActive, isHighlighted, isPlaying, s
 					className: "w-10 h-10 rounded-lg"
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 					className: "min-w-0 flex-1",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						className: `text-sm font-medium truncate ${isActive || isHighlighted ? "accent-text" : "text-zinc-900 dark:text-zinc-100"}`,
-						children: track.title
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: `text-sm font-medium truncate flex items-center gap-1.5 ${isActive || isHighlighted ? "accent-text" : "text-zinc-900 dark:text-zinc-100"}`,
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: "truncate",
+							children: track.title
+						}), Boolean(track.lyrics?.trim()) && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							title: "Has embedded lyrics",
+							"aria-label": "Has embedded lyrics",
+							className: "inline-flex shrink-0",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MicVocal, { className: "w-3.5 h-3.5 accent-text" })
+						})]
 					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 						className: "text-xs text-zinc-500 dark:text-zinc-400 truncate flex items-center gap-1.5",
 						children: [
@@ -54546,6 +55863,7 @@ var TrackRow = import_react.memo(({ track, isActive, isHighlighted, isPlaying, s
 					onSetEq,
 					onShuffleFromTrack,
 					onEditTags,
+					onAiCorrection,
 					onGetInfo,
 					onDeleteTrack,
 					onSetRingtone
@@ -54554,7 +55872,7 @@ var TrackRow = import_react.memo(({ track, isActive, isHighlighted, isPlaying, s
 		]
 	});
 });
-var LibraryBrowser = import_react.memo(({ tab, viewMode, themeMode, sortBy, tracks, playlists, eqPresets, searchQuery, currentTrackId, isPlaying, selectedAlbumFilter, selectedArtistFilter, selectedGenreFilter, selectedFolderFilter, selectedPlaylistFilter, onChangeSearchQuery, onChangeViewMode, onChangeSortBy, onPlayTrack, onPlaySingleTrack, onShuffleFromTrack, onPlayNext, onPlayNextMany, onAddToQueue, onAddTracksToQueue, onPlayAll, onToggleFavorite, onToggleOfflineCache, onAddTrackToPlaylist, onAddTracksToPlaylist, onCreatePlaylist, onEditTracksMetadata, onAssignEqPreset, onSetRingtone, onDeleteTracks, onDeletePlaylist, onExportPlaylistM3u, onImportM3uFiles, onSelectAlbum, onSelectArtist, onSelectGenre, onSelectFolder, onSelectPlaylist, onImportLocalFolder, onOpenSettings, onOpenEqualizer, onToggleTheme, onShareApp }) => {
+var LibraryBrowser = import_react.memo(({ tab, viewMode, themeMode, sortBy, tracks, playlists, eqPresets, searchQuery, currentTrackId, isPlaying, selectedAlbumFilter, selectedArtistFilter, selectedGenreFilter, selectedFolderFilter, selectedPlaylistFilter, initialStartIndex = 0, onChangeStartIndex, onChangeSearchQuery, onChangeViewMode, onChangeSortBy, onPlayTrack, onPlaySingleTrack, onShuffleFromTrack, onPlayNext, onPlayNextMany, onAddToQueue, onAddTracksToQueue, onPlayAll, onToggleFavorite, onToggleOfflineCache, onAddTrackToPlaylist, onAddTracksToPlaylist, onCreatePlaylist, onEditTracksMetadata, onApplyTagCleanups, onShowNoChangesToast, onAssignEqPreset, onSetRingtone, onDeleteTracks, onDeletePlaylist, onExportPlaylistM3u, onImportM3uFiles, onSelectAlbum, onSelectArtist, onSelectGenre, onSelectFolder, onSelectPlaylist, onImportLocalFolder, onOpenSettings, onOpenEqualizer, onToggleTheme, onShareApp }) => {
 	const viewportRef = (0, import_react.useRef)(null);
 	const searchInputRef = (0, import_react.useRef)(null);
 	const m3uInputRef = (0, import_react.useRef)(null);
@@ -54564,7 +55882,7 @@ var LibraryBrowser = import_react.memo(({ tab, viewMode, themeMode, sortBy, trac
 	const transientPopTimerRef = (0, import_react.useRef)(null);
 	const longPressTimerRef = (0, import_react.useRef)(null);
 	const longPressOriginRef = (0, import_react.useRef)(null);
-	const [startIndex, setStartIndex] = (0, import_react.useState)(0);
+	const [startIndex, setStartIndex] = (0, import_react.useState)(initialStartIndex);
 	const [highlightedId, setHighlightedId] = (0, import_react.useState)(null);
 	const [transientPopLetter, setTransientPopLetter] = (0, import_react.useState)(null);
 	const [newPlaylistName, setNewPlaylistName] = (0, import_react.useState)("");
@@ -54578,6 +55896,7 @@ var LibraryBrowser = import_react.memo(({ tab, viewMode, themeMode, sortBy, trac
 	const [pickerNewPlaylistName, setPickerNewPlaylistName] = (0, import_react.useState)("");
 	const [deleteConfirmOpen, setDeleteConfirmOpen] = (0, import_react.useState)(false);
 	const [eqModalTracks, setEqModalTracks] = (0, import_react.useState)(null);
+	const [aiCorrectionTarget, setAiCorrectionTarget] = (0, import_react.useState)(null);
 	const [infoTarget, setInfoTarget] = (0, import_react.useState)(null);
 	const [editingTrackIds, setEditingTrackIds] = (0, import_react.useState)(null);
 	const [editTitle, setEditTitle] = (0, import_react.useState)("");
@@ -54586,6 +55905,7 @@ var LibraryBrowser = import_react.memo(({ tab, viewMode, themeMode, sortBy, trac
 	const [editGenre, setEditGenre] = (0, import_react.useState)("");
 	const [editYear, setEditYear] = (0, import_react.useState)("");
 	const [editComposer, setEditComposer] = (0, import_react.useState)("");
+	const [editLyrics, setEditLyrics] = (0, import_react.useState)("");
 	const touchStartXRef = (0, import_react.useRef)(null);
 	const touchStartYRef = (0, import_react.useRef)(null);
 	const touchStartIndexRef = (0, import_react.useRef)(0);
@@ -54714,24 +56034,46 @@ var LibraryBrowser = import_react.memo(({ tab, viewMode, themeMode, sortBy, trac
 	const clampedStartIndex = totalItems === 0 ? 0 : Math.max(0, Math.min(totalItems - 1, startIndex));
 	const totalPages = Math.max(1, Math.ceil(totalItems / layout.pageSize));
 	const virtualPage = totalItems === 0 ? 0 : clampedStartIndex + layout.pageSize >= totalItems && totalPages > 1 ? totalPages - 1 : Math.min(totalPages - 1, Math.floor(clampedStartIndex / layout.pageSize));
+	const subFilterKey = [
+		searchQuery,
+		sortBy.field,
+		sortBy.ascending ? "1" : "0",
+		selectedAlbumFilter || "",
+		selectedArtistFilter || "",
+		selectedGenreFilter || "",
+		selectedFolderFilter || "",
+		selectedPlaylistFilter || ""
+	].join("|");
+	const prevTabRef = (0, import_react.useRef)(tab);
+	const prevSubFilterRef = (0, import_react.useRef)(subFilterKey);
 	(0, import_react.useEffect)(() => {
-		setStartIndex(0);
+		if (prevTabRef.current !== tab) {
+			prevTabRef.current = tab;
+			prevSubFilterRef.current = subFilterKey;
+			setStartIndex(initialStartIndex);
+			return;
+		}
+		if (prevSubFilterRef.current !== subFilterKey) {
+			prevSubFilterRef.current = subFilterKey;
+			setStartIndex(0);
+		}
 	}, [
 		tab,
-		searchQuery,
-		sortBy,
-		selectedAlbumFilter,
-		selectedArtistFilter,
-		selectedGenreFilter,
-		selectedFolderFilter,
-		selectedPlaylistFilter
+		subFilterKey,
+		initialStartIndex
 	]);
+	const onChangeStartIndexRef = (0, import_react.useRef)(onChangeStartIndex);
+	onChangeStartIndexRef.current = onChangeStartIndex;
+	(0, import_react.useEffect)(() => {
+		onChangeStartIndexRef.current?.(clampedStartIndex);
+	}, [clampedStartIndex]);
 	(0, import_react.useEffect)(() => {
 		setSelectionMode(false);
 		setSelectedIds(/* @__PURE__ */ new Set());
 		setQueueMenuOpen(false);
 		setPlaylistPickerTracks(null);
 		setEqModalTracks(null);
+		setAiCorrectionTarget(null);
 		setInfoTarget(null);
 		setDeleteConfirmOpen(false);
 		setOverflowOpen(false);
@@ -55069,6 +56411,7 @@ var LibraryBrowser = import_react.memo(({ tab, viewMode, themeMode, sortBy, trac
 			setEditGenre(first.genre || "");
 			setEditYear(first.year || "");
 			setEditComposer(first.composer || "");
+			setEditLyrics(first.lyrics || "");
 		} else {
 			const allSame = (pick) => {
 				const val = pick(first);
@@ -55080,6 +56423,7 @@ var LibraryBrowser = import_react.memo(({ tab, viewMode, themeMode, sortBy, trac
 			setEditGenre(allSame((t) => t.genre || ""));
 			setEditYear(allSame((t) => t.year || ""));
 			setEditComposer(allSame((t) => t.composer || ""));
+			setEditLyrics("");
 		}
 	}, []);
 	const handleConfirmDeleteSelected = (0, import_react.useCallback)(() => {
@@ -55614,6 +56958,11 @@ var LibraryBrowser = import_react.memo(({ tab, viewMode, themeMode, sortBy, trac
 							onShuffleFromTrack,
 							onToggleFavorite,
 							onEditTags: (target) => openTagEditorForTracks([target]),
+							onAiCorrection: (target) => setAiCorrectionTarget({
+								label: target.title,
+								kindLabel: "Track",
+								tracks: [target]
+							}),
 							onGetInfo: (target) => setInfoTarget({
 								kind: "track",
 								track: target
@@ -55670,9 +57019,17 @@ var LibraryBrowser = import_react.memo(({ tab, viewMode, themeMode, sortBy, trac
 											className: "flex items-start justify-between gap-1",
 											children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 												className: "min-w-0 flex-1",
-												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-													className: `text-xs font-medium truncate ${active || highlighted ? "accent-text" : "text-zinc-900 dark:text-zinc-100"}`,
-													children: track.title
+												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+													className: `text-xs font-medium truncate flex items-center gap-1 ${active || highlighted ? "accent-text" : "text-zinc-900 dark:text-zinc-100"}`,
+													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+														className: "truncate",
+														children: track.title
+													}), Boolean(track.lyrics?.trim()) && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+														title: "Has embedded lyrics",
+														"aria-label": "Has embedded lyrics",
+														className: "inline-flex shrink-0",
+														children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MicVocal, { className: "w-3 h-3 accent-text" })
+													})]
 												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 													className: "text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5",
 													children: [
@@ -55694,6 +57051,11 @@ var LibraryBrowser = import_react.memo(({ tab, viewMode, themeMode, sortBy, trac
 											onSetEq: (list) => setEqModalTracks(list),
 											onShuffleFromTrack,
 											onEditTags: (target) => openTagEditorForTracks([target]),
+											onAiCorrection: (target) => setAiCorrectionTarget({
+												label: target.title,
+												kindLabel: "Track",
+												tracks: [target]
+											}),
 											onGetInfo: (target) => setInfoTarget({
 												kind: "track",
 												track: target
@@ -55781,6 +57143,11 @@ var LibraryBrowser = import_react.memo(({ tab, viewMode, themeMode, sortBy, trac
 											onPlayAll,
 											onSetEq: (list) => setEqModalTracks(list),
 											onEditTags: (list) => openTagEditorForTracks(list),
+											onAiCorrection: (col) => setAiCorrectionTarget({
+												label: col.label,
+												kindLabel: singularLabel,
+												tracks: col.tracks
+											}),
 											onGetInfo: (col) => setInfoTarget({
 												kind: "collection",
 												item: col,
@@ -55872,6 +57239,11 @@ var LibraryBrowser = import_react.memo(({ tab, viewMode, themeMode, sortBy, trac
 											onPlayAll,
 											onSetEq: (list) => setEqModalTracks(list),
 											onEditTags: (list) => openTagEditorForTracks(list),
+											onAiCorrection: (col) => setAiCorrectionTarget({
+												label: col.label,
+												kindLabel: singularLabel,
+												tracks: col.tracks
+											}),
 											onGetInfo: (col) => setInfoTarget({
 												kind: "collection",
 												item: col,
@@ -55907,654 +57279,698 @@ var LibraryBrowser = import_react.memo(({ tab, viewMode, themeMode, sortBy, trac
 				onJumpTop: () => setStartIndex(0),
 				itemLabel: tab === "songs" ? "tracks" : tab
 			}),
-			sortModalOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				role: "dialog",
-				"aria-modal": "true",
-				"aria-label": "Sorted By",
-				onClick: () => setSortModalOpen(false),
-				className: "fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					onClick: (e) => e.stopPropagation(),
-					className: "w-full max-w-[340px] [@media(max-height:580px)]:max-w-[520px] max-h-[calc(100dvh-1.5rem)] rounded-2xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden flex flex-col",
-					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "shrink-0 px-4 py-2.5 border-b border-zinc-200 dark:border-zinc-700/80 bg-zinc-50 dark:bg-zinc-800/80 flex items-center justify-between",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-								className: "text-base font-display font-semibold",
-								children: "Sorted By"
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								onClick: () => setSortModalOpen(false),
-								"aria-label": "Close sort options",
-								className: "w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-4 h-4" })
-							})]
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							className: "grid grid-cols-1 [@media(max-height:580px)]:grid-cols-2 divide-y divide-zinc-100 dark:divide-zinc-800/70",
-							children: SORT_OPTIONS.map((opt) => {
-								const active = sortBy.field === opt.field;
-								return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+			typeof document !== "undefined" && (0, import_react_dom.createPortal)(/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+				sortModalOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					role: "dialog",
+					"aria-modal": "true",
+					"aria-label": "Sorted By",
+					onPointerDown: (e) => e.stopPropagation(),
+					onClick: () => setSortModalOpen(false),
+					className: "fixed inset-0 z-[70] bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						onClick: (e) => e.stopPropagation(),
+						className: "w-full max-w-[340px] [@media(max-height:580px)]:max-w-[520px] max-h-[calc(100dvh-1.5rem)] rounded-2xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden flex flex-col",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "shrink-0 px-4 py-2.5 border-b border-zinc-200 dark:border-zinc-700/80 bg-zinc-50 dark:bg-zinc-800/80 flex items-center justify-between",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+									className: "text-base font-display font-semibold",
+									children: "Sorted By"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 									type: "button",
-									onClick: () => {
-										tactile.tap();
-										onChangeSortBy({
-											...sortBy,
-											field: opt.field
-										});
-										setSortModalOpen(false);
-									},
-									className: `w-full h-[35px] px-4 text-left text-sm flex items-center justify-between transition-colors ${active ? "bg-amber-500/10 accent-text font-semibold" : "text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/80"}`,
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: opt.label }), active && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-4 h-4 accent-text shrink-0" })]
-								}, opt.field);
-							})
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
-							className: "shrink-0 px-4 py-2.5 border-t border-zinc-200 dark:border-zinc-700/80 bg-zinc-50 dark:bg-zinc-800/80 flex items-center gap-2.5 cursor-pointer select-none",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-								type: "checkbox",
-								checked: sortBy.ascending,
-								onChange: (e) => {
-									tactile.toggle(e.target.checked);
-									onChangeSortBy({
-										...sortBy,
-										ascending: e.target.checked
-									});
-								},
-								className: "w-4 h-4 accent-amber-500 rounded shrink-0 cursor-pointer"
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "text-sm font-medium text-zinc-900 dark:text-zinc-100",
-								children: "Ascending"
-							})]
-						})
-					]
-				})
-			}),
-			playlistPickerTracks && playlistPickerTracks.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				role: "dialog",
-				"aria-modal": "true",
-				"aria-label": "Add to Playlist",
-				onClick: () => setPlaylistPickerTracks(null),
-				className: "fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					onClick: (e) => e.stopPropagation(),
-					className: "w-full max-w-[340px] max-h-[calc(100dvh-1.5rem)] rounded-2xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden flex flex-col",
-					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "shrink-0 px-4 py-2.5 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
-								className: "text-sm font-display font-semibold",
-								children: [
-									"Add ",
-									playlistPickerTracks.length,
-									" Track(s) to Playlist"
-								]
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								onClick: () => setPlaylistPickerTracks(null),
-								"aria-label": "Close playlist picker",
-								className: "w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-4 h-4" })
-							})]
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
-							onSubmit: (e) => {
-								e.preventDefault();
-								const name = pickerNewPlaylistName.trim();
-								if (!name || playlistPickerTracks.length === 0) return;
-								tactile.success();
-								onCreatePlaylist(name, playlistPickerTracks.map((t) => t.id));
-								setPickerNewPlaylistName("");
-								setPlaylistPickerTracks(null);
-								if (selectionMode) exitSelectionMode();
-							},
-							className: "p-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-1.5 shrink-0",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-								type: "text",
-								value: pickerNewPlaylistName,
-								onChange: (e) => setPickerNewPlaylistName(e.target.value),
-								placeholder: "Create new playlist...",
-								className: "flex-1 h-8 px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs"
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "submit",
-								className: "h-8 px-3 rounded-lg accent-bg text-xs font-medium whitespace-nowrap",
-								children: "Create & Add"
-							})]
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							className: "divide-y divide-zinc-100 dark:divide-zinc-800",
-							children: playlists.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-								className: "px-4 py-4 text-xs text-zinc-500 text-center",
-								children: "No playlists yet. Create one above."
-							}) : playlists.slice(0, 7).map((pl) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-								type: "button",
-								onClick: () => {
-									tactile.success();
-									if (playlistPickerTracks.length === 1) onAddTrackToPlaylist(playlistPickerTracks[0].id, pl.id);
-									else onAddTracksToPlaylist(playlistPickerTracks.map((t) => t.id), pl.id);
-									setPlaylistPickerTracks(null);
-									if (selectionMode) exitSelectionMode();
-								},
-								className: "w-full px-4 py-2.5 text-left text-xs sm:text-sm flex items-center justify-between hover:bg-zinc-100 dark:hover:bg-zinc-800",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "truncate font-medium",
-									children: pl.name
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-									className: "text-[11px] font-mono-tabular text-zinc-500 shrink-0",
-									children: [pl.trackIds.length, " tracks"]
+									onClick: () => setSortModalOpen(false),
+									"aria-label": "Close sort options",
+									className: "w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-700/60",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-4 h-4" })
 								})]
-							}, pl.id))
-						})
-					]
-				})
-			}),
-			deleteConfirmOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				role: "dialog",
-				"aria-modal": "true",
-				"aria-label": "Confirm deletion",
-				onClick: () => setDeleteConfirmOpen(false),
-				className: "fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					onClick: (e) => e.stopPropagation(),
-					className: "w-full max-w-[320px] rounded-2xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 p-4 shadow-2xl space-y-3",
-					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "flex items-center gap-2 text-rose-600 dark:text-rose-400",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, { className: "w-4 h-4 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
-								className: "text-sm font-display font-semibold",
-								children: [
-									"Delete Selected ",
-									tab === "playlists" ? "Playlists" : "Tracks",
-									"?"
-								]
-							})]
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-							className: "text-xs text-zinc-600 dark:text-zinc-400",
-							children: tab === "playlists" ? `Remove ${selectedIds.size} selected playlist(s) from AuraSound.` : `Remove ${selectedResolvedTracks.length} selected track(s) from library & offline cache.`
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "flex items-center justify-end gap-2",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								onClick: () => setDeleteConfirmOpen(false),
-								className: "min-h-[34px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-medium",
-								children: "Cancel"
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								onClick: handleConfirmDeleteSelected,
-								className: "min-h-[34px] px-3.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium",
-								children: "Delete"
-							})]
-						})
-					]
-				})
-			}),
-			editingTrackIds && editingTrackIds.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				role: "dialog",
-				"aria-modal": "true",
-				"aria-label": "Edit Tags",
-				onClick: () => setEditingTrackIds(null),
-				className: "fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
-					onClick: (e) => e.stopPropagation(),
-					onSubmit: (e) => {
-						e.preventDefault();
-						const isSingle = editingTrackIds.length === 1;
-						const patch = {};
-						if (isSingle && editTitle.trim()) patch.title = editTitle.trim();
-						if (editArtist.trim() || isSingle) patch.artist = editArtist.trim() || "Unknown Artist";
-						if (editAlbum.trim() || isSingle) patch.album = editAlbum.trim() || "Local Collection";
-						if (editGenre.trim() || isSingle) patch.genre = editGenre.trim() || "Hi-Res Local";
-						if (editYear.trim() || isSingle) patch.year = editYear.trim();
-						if (editComposer.trim() || isSingle) patch.composer = editComposer.trim();
-						tactile.success();
-						onEditTracksMetadata(editingTrackIds, patch);
-						setEditingTrackIds(null);
-						if (selectionMode) exitSelectionMode();
-					},
-					className: "w-full max-w-[360px] max-h-[calc(100dvh-1.5rem)] rounded-2xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden flex flex-col",
-					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "shrink-0 px-4 py-2.5 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "flex items-center gap-2 min-w-0",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tag, { className: "w-4 h-4 accent-text shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-									className: "text-sm font-display font-semibold truncate",
-									children: editingTrackIds.length === 1 ? "Edit Track Tags" : `Batch Edit (${editingTrackIds.length} tracks)`
-								})]
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								onClick: () => setEditingTrackIds(null),
-								"aria-label": "Close tag editor",
-								className: "w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-4 h-4" })
-							})]
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "p-3.5 space-y-2.5 text-xs",
-							children: [
-								editingTrackIds.length === 1 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "flex items-center justify-between mb-1",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
-										className: "font-medium text-zinc-500 dark:text-zinc-400",
-										children: "Title"
-									}), editingSingleTrack?.fileName && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "grid grid-cols-1 [@media(max-height:580px)]:grid-cols-2 divide-y divide-zinc-100 dark:divide-zinc-800/70",
+								children: SORT_OPTIONS.map((opt) => {
+									const active = sortBy.field === opt.field;
+									return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 										type: "button",
 										onClick: () => {
 											tactile.tap();
-											const cleaned = cleanFileNameTitle(editingSingleTrack.fileName || "");
-											setEditTitle(cleaned.title);
-											if (cleaned.artist !== "Unknown Artist") setEditArtist(cleaned.artist);
+											onChangeSortBy({
+												...sortBy,
+												field: opt.field
+											});
+											setSortModalOpen(false);
 										},
-										className: "text-[11px] accent-text font-medium flex items-center gap-1 hover:underline",
-										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(WandSparkles, { className: "w-3 h-3" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Clean from filename" })]
-									})]
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-									type: "text",
-									value: editTitle,
-									onChange: (e) => setEditTitle(e.target.value),
-									className: "w-full h-8 px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs"
-								})] }),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "grid grid-cols-2 gap-2",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
-										className: "block font-medium text-zinc-500 dark:text-zinc-400 mb-1",
-										children: "Artist"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-										type: "text",
-										value: editArtist,
-										onChange: (e) => setEditArtist(e.target.value),
-										placeholder: editingTrackIds.length > 1 ? "(Keep unchanged)" : "Artist",
-										className: "w-full h-8 px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs"
-									})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
-										className: "block font-medium text-zinc-500 dark:text-zinc-400 mb-1",
-										children: "Album"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-										type: "text",
-										value: editAlbum,
-										onChange: (e) => setEditAlbum(e.target.value),
-										placeholder: editingTrackIds.length > 1 ? "(Keep unchanged)" : "Album",
-										className: "w-full h-8 px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs"
-									})] })]
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "grid grid-cols-2 gap-2",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
-										className: "block font-medium text-zinc-500 dark:text-zinc-400 mb-1",
-										children: "Genre"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-										type: "text",
-										value: editGenre,
-										onChange: (e) => setEditGenre(e.target.value),
-										placeholder: editingTrackIds.length > 1 ? "(Keep unchanged)" : "Genre",
-										className: "w-full h-8 px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs"
-									})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
-										className: "block font-medium text-zinc-500 dark:text-zinc-400 mb-1",
-										children: "Year"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-										type: "text",
-										maxLength: 4,
-										value: editYear,
-										onChange: (e) => setEditYear(e.target.value.replace(/[^\d]/g, "")),
-										placeholder: editingTrackIds.length > 1 ? "(Keep)" : "YYYY",
-										className: "w-full h-8 px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs font-mono-tabular"
-									})] })]
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
-									className: "block font-medium text-zinc-500 dark:text-zinc-400 mb-1",
-									children: "Composer"
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-									type: "text",
-									value: editComposer,
-									onChange: (e) => setEditComposer(e.target.value),
-									placeholder: editingTrackIds.length > 1 ? "(Keep unchanged)" : "Optional composer",
-									className: "w-full h-8 px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs"
-								})] })
-							]
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "shrink-0 px-4 py-2.5 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 flex items-center justify-end gap-2",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								onClick: () => setEditingTrackIds(null),
-								className: "min-h-[32px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-medium",
-								children: "Cancel"
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "submit",
-								className: "min-h-[32px] px-4 rounded-lg accent-bg text-xs font-medium",
-								children: "Save Tags"
-							})]
-						})
-					]
-				})
-			}),
-			eqModalTracks && eqModalTracks.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				role: "dialog",
-				"aria-modal": "true",
-				"aria-label": "Set Equalizer Preset",
-				onClick: () => setEqModalTracks(null),
-				className: "fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					onClick: (e) => e.stopPropagation(),
-					className: "w-full max-w-[340px] max-h-[calc(100dvh-1.5rem)] rounded-2xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden flex flex-col",
-					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "shrink-0 px-4 py-2.5 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "flex items-center gap-2 min-w-0",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SlidersVertical, { className: "w-4 h-4 accent-text shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
-									className: "text-sm font-display font-semibold truncate",
-									children: [
-										"Set EQ (",
-										eqModalTracks.length === 1 ? eqModalTracks[0].title : `${eqModalTracks.length} tracks`,
-										")"
-									]
+										className: `w-full h-[35px] px-4 text-left text-sm flex items-center justify-between transition-colors ${active ? "bg-amber-500/10 accent-text font-semibold" : "text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/80"}`,
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: opt.label }), active && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-4 h-4 accent-text shrink-0" })]
+									}, opt.field);
+								})
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("label", {
+								className: "shrink-0 px-4 py-2.5 border-t border-zinc-200 dark:border-zinc-700/80 bg-zinc-50 dark:bg-zinc-800/80 flex items-center gap-2.5 cursor-pointer select-none",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+									type: "checkbox",
+									checked: sortBy.ascending,
+									onChange: (e) => {
+										tactile.toggle(e.target.checked);
+										onChangeSortBy({
+											...sortBy,
+											ascending: e.target.checked
+										});
+									},
+									className: "w-4 h-4 accent-amber-500 rounded shrink-0 cursor-pointer"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "text-sm font-medium text-zinc-900 dark:text-zinc-100",
+									children: "Ascending"
 								})]
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								onClick: () => setEqModalTracks(null),
-								"aria-label": "Close EQ selector",
-								className: "w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-4 h-4" })
-							})]
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "divide-y divide-zinc-100 dark:divide-zinc-800",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-								type: "button",
-								onClick: () => {
-									tactile.tap();
-									onAssignEqPreset(eqModalTracks.map((t) => t.id), void 0);
-									setEqModalTracks(null);
+							})
+						]
+					})
+				}),
+				playlistPickerTracks && playlistPickerTracks.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					role: "dialog",
+					"aria-modal": "true",
+					"aria-label": "Add to Playlist",
+					onClick: () => setPlaylistPickerTracks(null),
+					onPointerDown: (e) => e.stopPropagation(),
+					className: "fixed inset-0 z-[70] bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						onClick: (e) => e.stopPropagation(),
+						className: "w-full max-w-[340px] max-h-[calc(100dvh-1.5rem)] rounded-2xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden flex flex-col",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "shrink-0 px-4 py-2.5 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
+									className: "text-sm font-display font-semibold",
+									children: [
+										"Add ",
+										playlistPickerTracks.length,
+										" Track(s) to Playlist"
+									]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: () => setPlaylistPickerTracks(null),
+									"aria-label": "Close playlist picker",
+									className: "w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-4 h-4" })
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+								onSubmit: (e) => {
+									e.preventDefault();
+									const name = pickerNewPlaylistName.trim();
+									if (!name || playlistPickerTracks.length === 0) return;
+									tactile.success();
+									onCreatePlaylist(name, playlistPickerTracks.map((t) => t.id));
+									setPickerNewPlaylistName("");
+									setPlaylistPickerTracks(null);
+									if (selectionMode) exitSelectionMode();
 								},
-								className: "w-full px-4 py-2 text-left text-xs flex items-center justify-between hover:bg-zinc-100 dark:hover:bg-zinc-800",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "font-medium text-zinc-600 dark:text-zinc-300",
-									children: "Use Global Equalizer Default"
-								}), eqModalTracks.every((t) => !t.eqPresetId) && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-3.5 h-3.5 accent-text shrink-0" })]
-							}), eqPresets.slice(0, 8).map((preset) => {
-								const active = eqModalTracks.every((t) => t.eqPresetId === preset.id);
-								return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								className: "p-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-1.5 shrink-0",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+									type: "text",
+									value: pickerNewPlaylistName,
+									onChange: (e) => setPickerNewPlaylistName(e.target.value),
+									placeholder: "Create new playlist...",
+									className: "flex-1 h-8 px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "submit",
+									className: "h-8 px-3 rounded-lg accent-bg text-xs font-medium whitespace-nowrap",
+									children: "Create & Add"
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "divide-y divide-zinc-100 dark:divide-zinc-800",
+								children: playlists.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+									className: "px-4 py-4 text-xs text-zinc-500 text-center",
+									children: "No playlists yet. Create one above."
+								}) : playlists.slice(0, 7).map((pl) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 									type: "button",
 									onClick: () => {
 										tactile.success();
-										onAssignEqPreset(eqModalTracks.map((t) => t.id), preset.id);
+										if (playlistPickerTracks.length === 1) onAddTrackToPlaylist(playlistPickerTracks[0].id, pl.id);
+										else onAddTracksToPlaylist(playlistPickerTracks.map((t) => t.id), pl.id);
+										setPlaylistPickerTracks(null);
+										if (selectionMode) exitSelectionMode();
+									},
+									className: "w-full px-4 py-2.5 text-left text-xs sm:text-sm flex items-center justify-between hover:bg-zinc-100 dark:hover:bg-zinc-800",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "truncate font-medium",
+										children: pl.name
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+										className: "text-[11px] font-mono-tabular text-zinc-500 shrink-0",
+										children: [pl.trackIds.length, " tracks"]
+									})]
+								}, pl.id))
+							})
+						]
+					})
+				}),
+				deleteConfirmOpen && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					role: "dialog",
+					"aria-modal": "true",
+					"aria-label": "Confirm deletion",
+					onClick: () => setDeleteConfirmOpen(false),
+					onPointerDown: (e) => e.stopPropagation(),
+					className: "fixed inset-0 z-[70] bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						onClick: (e) => e.stopPropagation(),
+						className: "w-full max-w-[320px] rounded-2xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 p-4 shadow-2xl space-y-3",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center gap-2 text-rose-600 dark:text-rose-400",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, { className: "w-4 h-4 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
+									className: "text-sm font-display font-semibold",
+									children: [
+										"Delete Selected ",
+										tab === "playlists" ? "Playlists" : "Tracks",
+										"?"
+									]
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+								className: "text-xs text-zinc-600 dark:text-zinc-400",
+								children: tab === "playlists" ? `Remove ${selectedIds.size} selected playlist(s) from AuraSound.` : `Remove ${selectedResolvedTracks.length} selected track(s) from library & offline cache.`
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center justify-end gap-2",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: () => setDeleteConfirmOpen(false),
+									className: "min-h-[34px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-medium",
+									children: "Cancel"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: handleConfirmDeleteSelected,
+									className: "min-h-[34px] px-3.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium",
+									children: "Delete"
+								})]
+							})
+						]
+					})
+				}),
+				editingTrackIds && editingTrackIds.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					role: "dialog",
+					"aria-modal": "true",
+					"aria-label": "Edit Tags",
+					onClick: () => setEditingTrackIds(null),
+					onPointerDown: (e) => e.stopPropagation(),
+					className: "fixed inset-0 z-[70] bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("form", {
+						onClick: (e) => e.stopPropagation(),
+						onSubmit: (e) => {
+							e.preventDefault();
+							const isSingle = editingTrackIds.length === 1;
+							const patch = {};
+							if (isSingle && editTitle.trim()) patch.title = editTitle.trim();
+							if (editArtist.trim() || isSingle) patch.artist = editArtist.trim() || "Unknown Artist";
+							if (editAlbum.trim() || isSingle) patch.album = editAlbum.trim() || "Local Collection";
+							if (editGenre.trim() || isSingle) patch.genre = editGenre.trim() || "Hi-Res Local";
+							if (editYear.trim() || isSingle) patch.year = editYear.trim();
+							if (editComposer.trim() || isSingle) patch.composer = editComposer.trim();
+							if (isSingle) patch.lyrics = editLyrics.trim();
+							tactile.success();
+							onEditTracksMetadata(editingTrackIds, patch);
+							setEditingTrackIds(null);
+							if (selectionMode) exitSelectionMode();
+						},
+						className: "w-full max-w-[360px] max-h-[calc(100dvh-1.5rem)] rounded-2xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden flex flex-col",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "shrink-0 px-4 py-2.5 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "flex items-center gap-2 min-w-0",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tag, { className: "w-4 h-4 accent-text shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+										className: "text-sm font-display font-semibold truncate",
+										children: editingTrackIds.length === 1 ? "Edit Track Tags" : `Batch Edit (${editingTrackIds.length} tracks)`
+									})]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: () => setEditingTrackIds(null),
+									"aria-label": "Close tag editor",
+									className: "w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-4 h-4" })
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "p-3.5 space-y-2.5 text-xs",
+								children: [
+									editingTrackIds.length === 1 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center justify-between mb-1",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+											className: "font-medium text-zinc-500 dark:text-zinc-400",
+											children: "Title"
+										}), editingSingleTrack?.fileName && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+											type: "button",
+											onClick: () => {
+												tactile.tap();
+												const cleaned = cleanFileNameTitle(editingSingleTrack.fileName || "");
+												setEditTitle(cleaned.title);
+												if (cleaned.artist !== "Unknown Artist") setEditArtist(cleaned.artist);
+											},
+											className: "text-[11px] accent-text font-medium flex items-center gap-1 hover:underline",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(WandSparkles, { className: "w-3 h-3" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Clean from filename" })]
+										})]
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+										type: "text",
+										value: editTitle,
+										onChange: (e) => setEditTitle(e.target.value),
+										className: "w-full h-8 px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs"
+									})] }),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "grid grid-cols-2 gap-2",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+											className: "block font-medium text-zinc-500 dark:text-zinc-400 mb-1",
+											children: "Artist"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+											type: "text",
+											value: editArtist,
+											onChange: (e) => setEditArtist(e.target.value),
+											placeholder: editingTrackIds.length > 1 ? "(Keep unchanged)" : "Artist",
+											className: "w-full h-8 px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs"
+										})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+											className: "block font-medium text-zinc-500 dark:text-zinc-400 mb-1",
+											children: "Album"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+											type: "text",
+											value: editAlbum,
+											onChange: (e) => setEditAlbum(e.target.value),
+											placeholder: editingTrackIds.length > 1 ? "(Keep unchanged)" : "Album",
+											className: "w-full h-8 px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs"
+										})] })]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "grid grid-cols-2 gap-2",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+											className: "block font-medium text-zinc-500 dark:text-zinc-400 mb-1",
+											children: "Genre"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+											type: "text",
+											value: editGenre,
+											onChange: (e) => setEditGenre(e.target.value),
+											placeholder: editingTrackIds.length > 1 ? "(Keep unchanged)" : "Genre",
+											className: "w-full h-8 px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs"
+										})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+											className: "block font-medium text-zinc-500 dark:text-zinc-400 mb-1",
+											children: "Year"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+											type: "text",
+											maxLength: 4,
+											value: editYear,
+											onChange: (e) => setEditYear(e.target.value.replace(/[^\d]/g, "")),
+											placeholder: editingTrackIds.length > 1 ? "(Keep)" : "YYYY",
+											className: "w-full h-8 px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs font-mono-tabular"
+										})] })]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+										className: "block font-medium text-zinc-500 dark:text-zinc-400 mb-1",
+										children: "Composer"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+										type: "text",
+										value: editComposer,
+										onChange: (e) => setEditComposer(e.target.value),
+										placeholder: editingTrackIds.length > 1 ? "(Keep unchanged)" : "Optional composer",
+										className: "w-full h-8 px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs"
+									})] }),
+									editingTrackIds.length === 1 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+										className: "block font-medium text-zinc-500 dark:text-zinc-400 mb-1",
+										children: "Lyrics (LRC timestamps or plain text)"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("textarea", {
+										rows: 2,
+										value: editLyrics,
+										onChange: (e) => setEditLyrics(e.target.value),
+										placeholder: "[00:12.50] Paste synced LRC or plain lyrics...",
+										className: "w-full px-2.5 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs font-mono-tabular resize-none"
+									})] })
+								]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "shrink-0 px-4 py-2.5 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 flex items-center justify-end gap-2",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: () => setEditingTrackIds(null),
+									className: "min-h-[32px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-medium",
+									children: "Cancel"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "submit",
+									className: "min-h-[32px] px-4 rounded-lg accent-bg text-xs font-medium",
+									children: "Save Tags"
+								})]
+							})
+						]
+					})
+				}),
+				eqModalTracks && eqModalTracks.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					role: "dialog",
+					"aria-modal": "true",
+					"aria-label": "Set Equalizer Preset",
+					onClick: () => setEqModalTracks(null),
+					onPointerDown: (e) => e.stopPropagation(),
+					className: "fixed inset-0 z-[70] bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						onClick: (e) => e.stopPropagation(),
+						className: "w-full max-w-[340px] max-h-[calc(100dvh-1.5rem)] rounded-2xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden flex flex-col",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "shrink-0 px-4 py-2.5 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "flex items-center gap-2 min-w-0",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SlidersVertical, { className: "w-4 h-4 accent-text shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("h3", {
+										className: "text-sm font-display font-semibold truncate",
+										children: [
+											"Set EQ (",
+											eqModalTracks.length === 1 ? eqModalTracks[0].title : `${eqModalTracks.length} tracks`,
+											")"
+										]
+									})]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: () => setEqModalTracks(null),
+									"aria-label": "Close EQ selector",
+									className: "w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-4 h-4" })
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "divide-y divide-zinc-100 dark:divide-zinc-800",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+									type: "button",
+									onClick: () => {
+										tactile.tap();
+										onAssignEqPreset(eqModalTracks.map((t) => t.id), void 0);
 										setEqModalTracks(null);
 									},
-									className: `w-full px-4 py-2 text-left text-xs flex items-center justify-between hover:bg-zinc-100 dark:hover:bg-zinc-800 ${active ? "bg-amber-500/10 accent-text font-semibold" : ""}`,
+									className: "w-full px-4 py-2 text-left text-xs flex items-center justify-between hover:bg-zinc-100 dark:hover:bg-zinc-800",
 									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										className: "truncate",
-										children: preset.name
-									}), active ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-3.5 h-3.5 accent-text shrink-0" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-										className: "text-[11px] font-mono-tabular text-zinc-400 shrink-0",
-										children: [preset.preampDb >= 0 ? `+${preset.preampDb}` : preset.preampDb, " dB"]
-									})]
-								}, preset.id);
-							})]
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "shrink-0 px-4 py-2.5 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 flex items-center justify-between gap-2",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-								type: "button",
-								onClick: () => {
-									setEqModalTracks(null);
-									onOpenEqualizer();
-								},
-								className: "text-xs font-medium accent-text hover:underline flex items-center gap-1.5",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SlidersVertical, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Open 10-Band EQ Rack" })]
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								onClick: () => setEqModalTracks(null),
-								className: "min-h-[30px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-medium",
-								children: "Close"
-							})]
-						})
-					]
-				})
-			}),
-			infoTarget && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				role: "dialog",
-				"aria-modal": "true",
-				"aria-label": "Audio Information",
-				onClick: () => setInfoTarget(null),
-				className: "fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					onClick: (e) => e.stopPropagation(),
-					className: "w-full max-w-[380px] max-h-[calc(100dvh-1.5rem)] rounded-2xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden flex flex-col",
-					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "shrink-0 px-4 py-2.5 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "flex items-center gap-2 min-w-0",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Info, { className: "w-4 h-4 accent-text shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
-									className: "text-sm font-display font-semibold truncate",
-									children: infoTarget.kind === "track" ? "Track Info" : `${infoTarget.label} Info`
+										className: "font-medium text-zinc-600 dark:text-zinc-300",
+										children: "Use Global Equalizer Default"
+									}), eqModalTracks.every((t) => !t.eqPresetId) && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-3.5 h-3.5 accent-text shrink-0" })]
+								}), eqPresets.slice(0, 8).map((preset) => {
+									const active = eqModalTracks.every((t) => t.eqPresetId === preset.id);
+									return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+										type: "button",
+										onClick: () => {
+											tactile.success();
+											onAssignEqPreset(eqModalTracks.map((t) => t.id), preset.id);
+											setEqModalTracks(null);
+										},
+										className: `w-full px-4 py-2 text-left text-xs flex items-center justify-between hover:bg-zinc-100 dark:hover:bg-zinc-800 ${active ? "bg-amber-500/10 accent-text font-semibold" : ""}`,
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "truncate",
+											children: preset.name
+										}), active ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Check, { className: "w-3.5 h-3.5 accent-text shrink-0" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+											className: "text-[11px] font-mono-tabular text-zinc-400 shrink-0",
+											children: [preset.preampDb >= 0 ? `+${preset.preampDb}` : preset.preampDb, " dB"]
+										})]
+									}, preset.id);
 								})]
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								onClick: () => setInfoTarget(null),
-								"aria-label": "Close info",
-								className: "w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-4 h-4" })
-							})]
-						}),
-						infoTarget.kind === "track" ? (() => {
-							const liveTrack = tracks.find((t) => t.id === infoTarget.track.id) || infoTarget.track;
-							return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "p-3.5 space-y-3 text-xs",
-								children: [
-									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "flex items-center gap-3",
-										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CoverArt, {
-											src: liveTrack.coverUrl,
-											alt: liveTrack.title,
-											className: "w-14 h-14 rounded-xl shrink-0"
-										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											className: "min-w-0 flex-1",
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "shrink-0 px-4 py-2.5 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 flex items-center justify-between gap-2",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+									type: "button",
+									onClick: () => {
+										setEqModalTracks(null);
+										onOpenEqualizer();
+									},
+									className: "text-xs font-medium accent-text hover:underline flex items-center gap-1.5",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SlidersVertical, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Open 10-Band EQ Rack" })]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: () => setEqModalTracks(null),
+									className: "min-h-[30px] px-3 rounded-lg border border-zinc-200 dark:border-zinc-700 text-xs font-medium",
+									children: "Close"
+								})]
+							})
+						]
+					})
+				}),
+				infoTarget && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					role: "dialog",
+					"aria-modal": "true",
+					"aria-label": "Audio Information",
+					onClick: () => setInfoTarget(null),
+					onPointerDown: (e) => e.stopPropagation(),
+					className: "fixed inset-0 z-[70] bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						onClick: (e) => e.stopPropagation(),
+						className: "w-full max-w-[380px] max-h-[calc(100dvh-1.5rem)] rounded-2xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden flex flex-col",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "shrink-0 px-4 py-2.5 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "flex items-center gap-2 min-w-0",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Info, { className: "w-4 h-4 accent-text shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
+										className: "text-sm font-display font-semibold truncate",
+										children: infoTarget.kind === "track" ? "Track Info" : `${infoTarget.label} Info`
+									})]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: () => setInfoTarget(null),
+									"aria-label": "Close info",
+									className: "w-7 h-7 rounded-lg flex items-center justify-center text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-4 h-4" })
+								})]
+							}),
+							infoTarget.kind === "track" ? (() => {
+								const liveTrack = tracks.find((t) => t.id === infoTarget.track.id) || infoTarget.track;
+								return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "p-3.5 space-y-3 text-xs",
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "flex items-center gap-3",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CoverArt, {
+												src: liveTrack.coverUrl,
+												alt: liveTrack.title,
+												className: "w-14 h-14 rounded-xl shrink-0"
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+												className: "min-w-0 flex-1",
+												children: [
+													/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+														className: "text-sm font-semibold truncate",
+														children: liveTrack.title
+													}),
+													/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+														className: "text-xs text-zinc-500 dark:text-zinc-400 truncate",
+														children: liveTrack.artist
+													}),
+													/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+														className: "text-[11px] text-zinc-500 truncate",
+														children: [liveTrack.album, liveTrack.year ? ` (${liveTrack.year})` : ""]
+													})
+												]
+											})]
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "grid grid-cols-2 gap-x-3 gap-y-1.5 bg-zinc-50 dark:bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-200/70 dark:border-zinc-800",
 											children: [
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-													className: "text-sm font-semibold truncate",
-													children: liveTrack.title
-												}),
-												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-													className: "text-xs text-zinc-500 dark:text-zinc-400 truncate",
-													children: liveTrack.artist
+												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+													className: "text-[10px] text-zinc-400",
+													children: "Genre"
+												}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+													className: "truncate font-medium",
+													children: liveTrack.genre || "—"
+												})] }),
+												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+													className: "text-[10px] text-zinc-400",
+													children: "Composer"
+												}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+													className: "truncate font-medium",
+													children: liveTrack.composer || "—"
+												})] }),
+												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+													className: "text-[10px] text-zinc-400",
+													children: "Duration & Size"
+												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+													className: "font-mono-tabular font-medium",
+													children: [formatDuration(liveTrack.duration), liveTrack.fileSize ? ` · ${(liveTrack.fileSize / 1048576).toFixed(2)} MB` : ""]
+												})] }),
+												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+													className: "text-[10px] text-zinc-400",
+													children: "Audio Stream"
+												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+													className: "font-mono-tabular font-medium",
+													children: [
+														liveTrack.format,
+														" · ",
+														liveTrack.bitDepth,
+														"b/",
+														(liveTrack.sampleRate / 1e3).toFixed(1),
+														"kHz ·",
+														" ",
+														liveTrack.bitrateKbps,
+														"kbps"
+													]
+												})] }),
+												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+													className: "text-[10px] text-zinc-400",
+													children: "Plays / Skips"
+												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+													className: "font-mono-tabular font-medium",
+													children: [
+														liveTrack.playCount,
+														" plays · ",
+														liveTrack.skipCount || 0,
+														" skips"
+													]
+												})] }),
+												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+													className: "text-[10px] text-zinc-400",
+													children: "Assigned EQ"
+												}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+													className: "truncate font-medium",
+													children: liveTrack.eqPresetId ? eqPresets.find((p) => p.id === liveTrack.eqPresetId)?.name || "Custom" : "Global Default"
+												})] }),
+												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+													className: "col-span-2",
+													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+														className: "text-[10px] text-zinc-400",
+														children: "Embedded Lyrics"
+													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+														className: "truncate font-medium flex items-center gap-1.5",
+														children: liveTrack.lyrics?.trim() ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MicVocal, { className: "w-3 h-3 accent-text shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
+															/\[\d{1,3}:\d{2}(?:[.:]\d{1,3})?\]/.test(liveTrack.lyrics) ? "LRC Synced" : "Embedded",
+															" ",
+															"(",
+															liveTrack.lyrics.split(/\r?\n/).filter((l) => l.trim()).length,
+															" lines)"
+														] })] }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+															className: "text-zinc-500",
+															children: "None — run AI Correction to fetch"
+														})
+													})]
 												}),
 												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-													className: "text-[11px] text-zinc-500 truncate",
-													children: [liveTrack.album, liveTrack.year ? ` (${liveTrack.year})` : ""]
+													className: "col-span-2",
+													children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+														className: "text-[10px] text-zinc-400",
+														children: "Source File & Folder"
+													}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+														className: "truncate font-mono-tabular text-[11px] text-zinc-600 dark:text-zinc-300",
+														children: liveTrack.nativePath || `${liveTrack.folderPath || "Local"}/${liveTrack.fileName || liveTrack.title}`
+													})]
 												})
 											]
-										})]
-									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "grid grid-cols-2 gap-x-3 gap-y-1.5 bg-zinc-50 dark:bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-200/70 dark:border-zinc-800",
-										children: [
-											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												className: "text-[10px] text-zinc-400",
-												children: "Genre"
-											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												className: "truncate font-medium",
-												children: liveTrack.genre || "—"
-											})] }),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												className: "text-[10px] text-zinc-400",
-												children: "Composer"
-											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												className: "truncate font-medium",
-												children: liveTrack.composer || "—"
-											})] }),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												className: "text-[10px] text-zinc-400",
-												children: "Duration & Size"
-											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												className: "font-mono-tabular font-medium",
-												children: [formatDuration(liveTrack.duration), liveTrack.fileSize ? ` · ${(liveTrack.fileSize / 1048576).toFixed(2)} MB` : ""]
-											})] }),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												className: "text-[10px] text-zinc-400",
-												children: "Audio Stream"
-											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												className: "font-mono-tabular font-medium",
-												children: [
-													liveTrack.format,
-													" · ",
-													liveTrack.bitDepth,
-													"b/",
-													(liveTrack.sampleRate / 1e3).toFixed(1),
-													"kHz ·",
-													" ",
-													liveTrack.bitrateKbps,
-													"kbps"
-												]
-											})] }),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												className: "text-[10px] text-zinc-400",
-												children: "Plays / Skips"
-											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												className: "font-mono-tabular font-medium",
-												children: [
-													liveTrack.playCount,
-													" plays · ",
-													liveTrack.skipCount || 0,
-													" skips"
-												]
-											})] }),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												className: "text-[10px] text-zinc-400",
-												children: "Assigned EQ"
-											}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												className: "truncate font-medium",
-												children: liveTrack.eqPresetId ? eqPresets.find((p) => p.id === liveTrack.eqPresetId)?.name || "Custom" : "Global Default"
-											})] }),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												className: "col-span-2",
-												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-													className: "text-[10px] text-zinc-400",
-													children: "Source File & Folder"
-												}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-													className: "truncate font-mono-tabular text-[11px] text-zinc-600 dark:text-zinc-300",
-													children: liveTrack.nativePath || `${liveTrack.folderPath || "Local"}/${liveTrack.fileName || liveTrack.title}`
-												})]
-											})
-										]
-									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "flex items-center gap-2",
-										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-											type: "button",
-											onClick: () => onToggleFavorite(liveTrack.id),
-											className: `flex-1 min-h-[32px] px-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${liveTrack.favorite ? "border-rose-500/50 bg-rose-500/10 text-rose-600 dark:text-rose-400" : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"}`,
-											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Heart, { className: `w-3.5 h-3.5 ${liveTrack.favorite ? "fill-current" : ""}` }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: liveTrack.favorite ? "Favorited" : "Favorite" })]
-										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-											type: "button",
-											onClick: () => onToggleOfflineCache(liveTrack.id),
-											className: `flex-1 min-h-[32px] px-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${liveTrack.offlineCached ? "border-amber-500/50 bg-amber-500/10 accent-text" : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"}`,
-											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: liveTrack.offlineCached ? "Saved Offline" : "Save Offline" })]
-										})]
-									})
-								]
-							});
-						})() : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "p-3.5 space-y-3 text-xs",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "flex items-center gap-3",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CoverArt, {
-									src: infoTarget.item.coverUrl,
-									alt: infoTarget.item.label,
-									className: "w-14 h-14 rounded-xl shrink-0"
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "min-w-0 flex-1",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "text-sm font-semibold truncate",
-										children: infoTarget.item.label
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "text-xs text-zinc-500 dark:text-zinc-400 truncate",
-										children: infoTarget.item.subtitle
-									})]
-								})]
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "grid grid-cols-2 gap-x-3 gap-y-1.5 bg-zinc-50 dark:bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-200/70 dark:border-zinc-800",
-								children: [
-									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "text-[10px] text-zinc-400",
-										children: "Tracks"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "font-mono-tabular font-medium",
-										children: infoTarget.item.trackCount
-									})] }),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "text-[10px] text-zinc-400",
-										children: "Total Duration"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "font-mono-tabular font-medium",
-										children: formatDuration(infoTarget.item.tracks.reduce((acc, t) => acc + (t.duration || 0), 0))
-									})] }),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "text-[10px] text-zinc-400",
-										children: "Total Size"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "flex items-center gap-2",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+												type: "button",
+												onClick: () => onToggleFavorite(liveTrack.id),
+												className: `flex-1 min-h-[32px] px-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${liveTrack.favorite ? "border-rose-500/50 bg-rose-500/10 text-rose-600 dark:text-rose-400" : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"}`,
+												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Heart, { className: `w-3.5 h-3.5 ${liveTrack.favorite ? "fill-current" : ""}` }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: liveTrack.favorite ? "Favorited" : "Favorite" })]
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+												type: "button",
+												onClick: () => onToggleOfflineCache(liveTrack.id),
+												className: `flex-1 min-h-[32px] px-2.5 rounded-lg border text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${liveTrack.offlineCached ? "border-amber-500/50 bg-amber-500/10 accent-text" : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"}`,
+												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Download, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: liveTrack.offlineCached ? "Saved Offline" : "Save Offline" })]
+											})]
+										})
+									]
+								});
+							})() : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "p-3.5 space-y-3 text-xs",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "flex items-center gap-3",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CoverArt, {
+										src: infoTarget.item.coverUrl,
+										alt: infoTarget.item.label,
+										className: "w-14 h-14 rounded-xl shrink-0"
 									}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "font-mono-tabular font-medium",
-										children: [
-											(infoTarget.item.tracks.reduce((acc, t) => acc + (t.fileSize || 0), 0) / 1048576).toFixed(2),
-											" ",
-											"MB"
-										]
-									})] }),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "text-[10px] text-zinc-400",
-										children: "Total Plays"
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-										className: "font-mono-tabular font-medium",
-										children: infoTarget.item.playCount
-									})] }),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "col-span-2",
+										className: "min-w-0 flex-1",
 										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-											className: "text-[10px] text-zinc-400",
-											children: "Primary Artist / Genre"
-										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											className: "truncate font-medium",
-											children: [
-												infoTarget.item.artist,
-												" · ",
-												infoTarget.item.genre
-											]
+											className: "text-sm font-semibold truncate",
+											children: infoTarget.item.label
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+											className: "text-xs text-zinc-500 dark:text-zinc-400 truncate",
+											children: infoTarget.item.subtitle
 										})]
-									})
-								]
-							})]
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "shrink-0 px-4 py-2.5 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 flex items-center justify-between gap-2",
-							children: [infoTarget.kind === "track" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-								type: "button",
-								onClick: () => {
-									const target = infoTarget.track;
-									setInfoTarget(null);
-									openTagEditorForTracks([target]);
-								},
-								className: "text-xs font-medium accent-text hover:underline flex items-center gap-1",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tag, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Edit Tag" })]
-							}) : infoTarget.item.tracks.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-								type: "button",
-								onClick: () => {
-									const list = infoTarget.item.tracks;
-									setInfoTarget(null);
-									openTagEditorForTracks(list);
-								},
-								className: "text-xs font-medium accent-text hover:underline flex items-center gap-1",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tag, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Batch Edit Tags" })]
-							}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								onClick: () => setInfoTarget(null),
-								className: "min-h-[30px] px-4 rounded-lg accent-bg text-xs font-medium",
-								children: "Close"
-							})]
-						})
-					]
+									})]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "grid grid-cols-2 gap-x-3 gap-y-1.5 bg-zinc-50 dark:bg-zinc-950/60 p-2.5 rounded-xl border border-zinc-200/70 dark:border-zinc-800",
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+											className: "text-[10px] text-zinc-400",
+											children: "Tracks"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+											className: "font-mono-tabular font-medium",
+											children: infoTarget.item.trackCount
+										})] }),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+											className: "text-[10px] text-zinc-400",
+											children: "Total Duration"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+											className: "font-mono-tabular font-medium",
+											children: formatDuration(infoTarget.item.tracks.reduce((acc, t) => acc + (t.duration || 0), 0))
+										})] }),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+											className: "text-[10px] text-zinc-400",
+											children: "Total Size"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "font-mono-tabular font-medium",
+											children: [
+												(infoTarget.item.tracks.reduce((acc, t) => acc + (t.fileSize || 0), 0) / 1048576).toFixed(2),
+												" ",
+												"MB"
+											]
+										})] }),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+											className: "text-[10px] text-zinc-400",
+											children: "Total Plays"
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+											className: "font-mono-tabular font-medium",
+											children: infoTarget.item.playCount
+										})] }),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "col-span-2",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+												className: "text-[10px] text-zinc-400",
+												children: "Primary Artist / Genre"
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+												className: "truncate font-medium",
+												children: [
+													infoTarget.item.artist,
+													" · ",
+													infoTarget.item.genre
+												]
+											})]
+										})
+									]
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "shrink-0 px-4 py-2.5 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 flex items-center justify-between gap-2",
+								children: [infoTarget.kind === "track" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+									type: "button",
+									onClick: () => {
+										const target = infoTarget.track;
+										setInfoTarget(null);
+										openTagEditorForTracks([target]);
+									},
+									className: "text-xs font-medium accent-text hover:underline flex items-center gap-1",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tag, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Edit Tag" })]
+								}) : infoTarget.item.tracks.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+									type: "button",
+									onClick: () => {
+										const list = infoTarget.item.tracks;
+										setInfoTarget(null);
+										openTagEditorForTracks(list);
+									},
+									className: "text-xs font-medium accent-text hover:underline flex items-center gap-1",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tag, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Batch Edit Tags" })]
+								}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: () => setInfoTarget(null),
+									className: "min-h-[30px] px-4 rounded-lg accent-bg text-xs font-medium",
+									children: "Close"
+								})]
+							})
+						]
+					})
 				})
+			] }), document.body),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ItemAiCorrectionModal, {
+				target: aiCorrectionTarget,
+				onClose: () => setAiCorrectionTarget(null),
+				onApplySuggestions: onApplyTagCleanups,
+				onShowNoChangesToast
 			})
 		]
 	});
@@ -56714,6 +58130,34 @@ function encodeId3v23TextFrame(frameId, text) {
 	}
 	return frame;
 }
+function encodeId3v23UsltFrame(lyrics) {
+	const strLen = lyrics.length;
+	const payloadLen = 10 + strLen * 2;
+	const frame = new Uint8Array(10 + payloadLen);
+	frame[0] = 85;
+	frame[1] = 83;
+	frame[2] = 76;
+	frame[3] = 84;
+	writeUint32BE(frame, 4, payloadLen);
+	frame[8] = 0;
+	frame[9] = 0;
+	frame[10] = 1;
+	frame[11] = 101;
+	frame[12] = 110;
+	frame[13] = 103;
+	frame[14] = 255;
+	frame[15] = 254;
+	frame[16] = 0;
+	frame[17] = 0;
+	frame[18] = 255;
+	frame[19] = 254;
+	for (let i = 0; i < strLen; i++) {
+		const code = lyrics.charCodeAt(i);
+		frame[20 + i * 2] = code & 255;
+		frame[21 + i * 2] = code >>> 8 & 255;
+	}
+	return frame;
+}
 function buildId3v1Bytes(base, tags) {
 	const out = /* @__PURE__ */ new Uint8Array(128);
 	out.set(base.subarray(0, 128));
@@ -56746,7 +58190,7 @@ function concatUint8Arrays(chunks) {
 	}
 	return out;
 }
-var REPLACED_ID3_FRAMES = /* @__PURE__ */ new Set([
+var REPLACED_ID3_BASE_FRAMES = /* @__PURE__ */ new Set([
 	"TIT2",
 	"TPE1",
 	"TALB",
@@ -56760,6 +58204,11 @@ var REPLACED_ID3_FRAMES = /* @__PURE__ */ new Set([
 	"TCO",
 	"TYE",
 	"TCM"
+]);
+var LYRICS_ID3_FRAMES = /* @__PURE__ */ new Set([
+	"USLT",
+	"SYLT",
+	"ULT"
 ]);
 function rewriteMp3Tags(source, tags) {
 	const hasId3v2 = source.length >= 10 && source[0] === 73 && source[1] === 68 && source[2] === 51;
@@ -56790,7 +58239,7 @@ function rewriteMp3Tags(source, tags) {
 			const frameFlags1 = source[pos + 9];
 			pos += 10;
 			if (size <= 0 || pos + size > oldEnd) break;
-			if (!REPLACED_ID3_FRAMES.has(frameId)) {
+			if (!(REPLACED_ID3_BASE_FRAMES.has(frameId) || tags.lyrics !== void 0 && LYRICS_ID3_FRAMES.has(frameId))) {
 				const rebuilt = new Uint8Array(10 + size);
 				rebuilt[0] = source[pos - 10];
 				rebuilt[1] = source[pos - 9];
@@ -56815,6 +58264,7 @@ function rewriteMp3Tags(source, tags) {
 		if (cleanYear) newFrames.push(encodeId3v23TextFrame("TYER", cleanYear));
 	}
 	if (tags.composer !== void 0 && tags.composer.trim()) newFrames.push(encodeId3v23TextFrame("TCOM", tags.composer.trim()));
+	if (tags.lyrics !== void 0 && tags.lyrics.trim()) newFrames.push(encodeId3v23UsltFrame(tags.lyrics.trim()));
 	const allFrames = [...newFrames, ...preservedFrames];
 	let framesSize = 0;
 	for (const f of allFrames) framesSize += f.length;
@@ -56844,7 +58294,7 @@ function rewriteMp3Tags(source, tags) {
 		formatWritten: "id3v2"
 	};
 }
-var REPLACED_VORBIS_KEYS = /* @__PURE__ */ new Set([
+var REPLACED_VORBIS_BASE_KEYS = /* @__PURE__ */ new Set([
 	"TITLE",
 	"ARTIST",
 	"ALBUM",
@@ -56853,6 +58303,7 @@ var REPLACED_VORBIS_KEYS = /* @__PURE__ */ new Set([
 	"YEAR",
 	"COMPOSER"
 ]);
+var LYRICS_VORBIS_KEYS = /* @__PURE__ */ new Set(["LYRICS", "UNSYNCEDLYRICS"]);
 function rewriteFlacTags(source, tags) {
 	if (source.length < 8 || source[0] !== 102 || source[1] !== 76 || source[2] !== 97 || source[3] !== 67) return {
 		bytes: source,
@@ -56896,7 +58347,7 @@ function rewriteFlacTags(source, tags) {
 					const eqIdx = entry.indexOf("=");
 					if (eqIdx > 0) {
 						const key = entry.slice(0, eqIdx).trim().toUpperCase();
-						if (!REPLACED_VORBIS_KEYS.has(key)) existingOtherComments.push(entry);
+						if (!(REPLACED_VORBIS_BASE_KEYS.has(key) || tags.lyrics !== void 0 && LYRICS_VORBIS_KEYS.has(key))) existingOtherComments.push(entry);
 					}
 				}
 			}
@@ -56917,6 +58368,7 @@ function rewriteFlacTags(source, tags) {
 		if (cleanYear) newComments.push(`DATE=${cleanYear}`);
 	}
 	if (tags.composer !== void 0 && tags.composer.trim()) newComments.push(`COMPOSER=${tags.composer.trim()}`);
+	if (tags.lyrics !== void 0 && tags.lyrics.trim()) newComments.push(`LYRICS=${tags.lyrics.trim()}`);
 	const allComments = [...newComments, ...existingOtherComments];
 	const vendorBytes = encoder.encode(vendorStr);
 	const encodedCommentEntries = allComments.map((c) => encoder.encode(c));
@@ -57022,8 +58474,9 @@ async function embedTagsIntoAudioBlob(blob, fileNameOrFormat, tags) {
 }
 // src/services/localFileHandleService.ts
 var HANDLES_DB_NAME = "aurasound_handles_db";
-var HANDLES_DB_VERSION = 1;
+var HANDLES_DB_VERSION = 2;
 var HANDLES_STORE = "file_handles";
+var FOLDER_HANDLES_STORE = "folder_handles";
 async function ensureReadWritePermission(handle) {
 	if (!handle) return false;
 	try {
@@ -57036,16 +58489,71 @@ async function ensureReadWritePermission(handle) {
 		return false;
 	}
 }
+async function ensureDirectoryReadPermission(handle) {
+	if (!handle) return false;
+	const perm = handle;
+	try {
+		if (typeof perm.queryPermission === "function") {
+			if (await perm.queryPermission({ mode: "read" }) === "granted") return true;
+		}
+		if (typeof perm.requestPermission === "function") return await perm.requestPermission({ mode: "read" }) === "granted";
+		return true;
+	} catch {
+		return false;
+	}
+}
 function openHandlesDb() {
 	return new Promise((resolve, reject) => {
 		const req = indexedDB.open(HANDLES_DB_NAME, HANDLES_DB_VERSION);
 		req.onupgradeneeded = () => {
 			const db = req.result;
 			if (!db.objectStoreNames.contains(HANDLES_STORE)) db.createObjectStore(HANDLES_STORE);
+			if (!db.objectStoreNames.contains(FOLDER_HANDLES_STORE)) db.createObjectStore(FOLDER_HANDLES_STORE);
 		};
 		req.onsuccess = () => resolve(req.result);
 		req.onerror = () => reject(req.error);
 	});
+}
+async function saveScanFolderHandle(id, path, label, dirHandle) {
+	try {
+		const db = await openHandlesDb();
+		const entry = {
+			id,
+			path,
+			label,
+			dirHandle,
+			savedAt: Date.now()
+		};
+		await new Promise((resolve, reject) => {
+			const tx = db.transaction(FOLDER_HANDLES_STORE, "readwrite");
+			tx.objectStore(FOLDER_HANDLES_STORE).put(entry, id);
+			tx.oncomplete = () => resolve();
+			tx.onerror = () => reject(tx.error);
+		});
+	} catch {}
+}
+async function getAllScanFolderHandles() {
+	try {
+		const db = await openHandlesDb();
+		return await new Promise((resolve, reject) => {
+			const req = db.transaction(FOLDER_HANDLES_STORE, "readonly").objectStore(FOLDER_HANDLES_STORE).getAll();
+			req.onsuccess = () => resolve(Array.isArray(req.result) ? req.result : []);
+			req.onerror = () => reject(req.error);
+		});
+	} catch {
+		return [];
+	}
+}
+async function deleteScanFolderHandle(id) {
+	try {
+		const db = await openHandlesDb();
+		await new Promise((resolve, reject) => {
+			const tx = db.transaction(FOLDER_HANDLES_STORE, "readwrite");
+			tx.objectStore(FOLDER_HANDLES_STORE).delete(id);
+			tx.oncomplete = () => resolve();
+			tx.onerror = () => reject(tx.error);
+		});
+	} catch {}
 }
 async function saveTrackFileHandle(trackId, fileName, fileHandle, dirHandle) {
 	try {
@@ -57889,10 +59397,12 @@ var PAGE_TITLES$1 = {
 		subtitle: "Match official original album covers via AI or upload your own images."
 	}
 };
-var SmartStudioView = ({ page, user, tracks, smartPlaylists, dailyRecommendations, onSignInGoogle, onPlayTracks, onAddSmartPlaylist, onDeleteSmartPlaylist, onUpdateDailyRecommendations, onApplyTagCleanups, onRemoveDuplicateTracks, onApplyArtworkUpdates, onTaskProgress }) => {
+var SmartStudioView = ({ page, user, tracks, smartPlaylists, dailyRecommendations, onSignInGoogle, onPlayTracks, onAddSmartPlaylist, onDeleteSmartPlaylist, onUpdateDailyRecommendations, onApplyTagCleanups, onRemoveDuplicateTracks, onApplyArtworkUpdates, onTaskProgress, initialScanConfig, onChangeScanConfig }) => {
 	const [aiPrompt, setAiPrompt] = (0, import_react.useState)("");
 	const [aiLoading, setAiLoading] = (0, import_react.useState)(false);
 	const [aiError, setAiError] = (0, import_react.useState)(null);
+	const [aiQuotaNote, setAiQuotaNote] = (0, import_react.useState)(null);
+	const activeQuotaCountdown = useAiQuotaCountdown();
 	const [playlistViewTab, setPlaylistViewTab] = (0, import_react.useState)("list");
 	const [creatorMode, setCreatorMode] = (0, import_react.useState)("ai");
 	const [dailyLoading, setDailyLoading] = (0, import_react.useState)(false);
@@ -57901,9 +59411,27 @@ var SmartStudioView = ({ page, user, tracks, smartPlaylists, dailyRecommendation
 	const [manualFormat, setManualFormat] = (0, import_react.useState)("");
 	const [manualMinRating, setManualMinRating] = (0, import_react.useState)(0);
 	const [manualFavOnly, setManualFavOnly] = (0, import_react.useState)(false);
-	const [scanLimitInput, setScanLimitInput] = (0, import_react.useState)("15");
-	const [batchSize, setBatchSize] = (0, import_react.useState)(15);
-	const [autoApplyTags, setAutoApplyTags] = (0, import_react.useState)(true);
+	const [scanLimitInput, setScanLimitInput] = (0, import_react.useState)(initialScanConfig?.scanLimitInput ?? "15");
+	const [batchSize, setBatchSize] = (0, import_react.useState)(initialScanConfig?.batchSize ?? 15);
+	const [autoApplyTags, setAutoApplyTags] = (0, import_react.useState)(initialScanConfig?.autoApplyTags ?? true);
+	const scanConfigMountRef = (0, import_react.useRef)(true);
+	const onChangeScanConfigRef = (0, import_react.useRef)(onChangeScanConfig);
+	onChangeScanConfigRef.current = onChangeScanConfig;
+	(0, import_react.useEffect)(() => {
+		if (scanConfigMountRef.current) {
+			scanConfigMountRef.current = false;
+			return;
+		}
+		onChangeScanConfigRef.current?.({
+			scanLimitInput,
+			batchSize,
+			autoApplyTags
+		});
+	}, [
+		scanLimitInput,
+		batchSize,
+		autoApplyTags
+	]);
 	const effectiveScanCount = (0, import_react.useMemo)(() => {
 		if (tracks.length === 0) return 0;
 		const parsed = Number.parseInt(scanLimitInput, 10);
@@ -58016,8 +59544,10 @@ var SmartStudioView = ({ page, user, tracks, smartPlaylists, dailyRecommendation
 					listeningHistory: recent
 				})
 			});
-			const data = await resp.json();
-			if (!resp.ok) throw new Error(data.error || "AI generation failed.");
+			const data = await resp.json().catch(() => ({}));
+			if (!resp.ok) throw parseAiErrorResponse(resp, data, "AI playlist generation failed");
+			clearActiveAiQuotaState();
+			setAiQuotaNote(null);
 			const rules = Array.isArray(data.rules) ? data.rules.map((r) => ({
 				field: r.field,
 				value: r.field === "minRating" || r.field === "minPlayCount" || r.field === "minSampleRate" ? Number(r.value) || 0 : r.field === "favorite" ? r.value === "true" : String(r.value)
@@ -58045,14 +59575,25 @@ var SmartStudioView = ({ page, user, tracks, smartPlaylists, dailyRecommendation
 				percent: 100
 			});
 		} catch (err) {
-			const msg = err instanceof Error ? err.message : "Unable to generate smart playlist.";
-			setAiError(msg);
-			report(taskId, "ai-playlist", "AI Playlist Error", msg, 3, 3, "error", {
-				label: msg,
-				current: 3,
-				total: 3,
-				percent: 100
-			});
+			if (err instanceof AiQuotaExhaustedError) {
+				setAiError(null);
+				setAiQuotaNote("Smart playlist generation paused until AI tokens refill.");
+				report(taskId, "ai-playlist", "AI Tokens Temporarily Used Up", err.message, 3, 3, "error", {
+					label: "Waiting for AI token refill",
+					current: 3,
+					total: 3,
+					percent: 100
+				});
+			} else {
+				const msg = err instanceof Error ? err.message : "Unable to generate smart playlist.";
+				setAiError(msg);
+				report(taskId, "ai-playlist", "AI Playlist Error", msg, 3, 3, "error", {
+					label: msg,
+					current: 3,
+					total: 3,
+					percent: 100
+				});
+			}
 		} finally {
 			setAiLoading(false);
 		}
@@ -58091,8 +59632,10 @@ var SmartStudioView = ({ page, user, tracks, smartPlaylists, dailyRecommendation
 					favoriteArtists
 				})
 			});
-			const data = await resp.json();
-			if (!resp.ok) throw new Error(data.error || "Failed to refresh daily mixes.");
+			const data = await resp.json().catch(() => ({}));
+			if (!resp.ok) throw parseAiErrorResponse(resp, data, "Failed to refresh daily mixes");
+			clearActiveAiQuotaState();
+			setAiQuotaNote(null);
 			const mixes = (data.mixes || []).map((m, idx) => ({
 				...m,
 				id: `daily_${Date.now()}_${idx}`,
@@ -58109,14 +59652,25 @@ var SmartStudioView = ({ page, user, tracks, smartPlaylists, dailyRecommendation
 				percent: 100
 			});
 		} catch (err) {
-			const msg = err instanceof Error ? err.message : "Daily mix refresh failed.";
-			setAiError(msg);
-			report(taskId, "ai-mixes", "Daily Mixes Error", msg, 3, 3, "error", {
-				label: msg,
-				current: 3,
-				total: 3,
-				percent: 100
-			});
+			if (err instanceof AiQuotaExhaustedError) {
+				setAiError(null);
+				setAiQuotaNote("Daily Mix refresh paused until AI tokens refill.");
+				report(taskId, "ai-mixes", "AI Tokens Temporarily Used Up", err.message, 3, 3, "error", {
+					label: "Waiting for AI token refill",
+					current: 3,
+					total: 3,
+					percent: 100
+				});
+			} else {
+				const msg = err instanceof Error ? err.message : "Daily mix refresh failed.";
+				setAiError(msg);
+				report(taskId, "ai-mixes", "Daily Mixes Error", msg, 3, 3, "error", {
+					label: msg,
+					current: 3,
+					total: 3,
+					percent: 100
+				});
+			}
 		} finally {
 			setDailyLoading(false);
 		}
@@ -58169,7 +59723,9 @@ var SmartStudioView = ({ page, user, tracks, smartPlaylists, dailyRecommendation
 		setTagStatus(null);
 		setTagSuggestions([]);
 		setAiError(null);
+		setAiQuotaNote(null);
 		setTagPage(0);
+		let savedBeforeQuota = 0;
 		report(taskId, "ai-tags", "AI Metadata & Spelling Scan", `Scanning ${scopedTracks.length} prioritized track(s) in batches of ${batchSize}...`, 0, scopedTracks.length, "running", {
 			label: scopedTracks[0]?.title || "Initializing AI scan",
 			current: 0,
@@ -58182,6 +59738,7 @@ var SmartStudioView = ({ page, user, tracks, smartPlaylists, dailyRecommendation
 			}, {
 				batchSize,
 				onBatchComplete: (batch) => {
+					savedBeforeQuota += batch.length;
 					const stamped = batch.map((item) => ({
 						...item,
 						applied: autoApplyTags
@@ -58205,14 +59762,27 @@ var SmartStudioView = ({ page, user, tracks, smartPlaylists, dailyRecommendation
 				percent: 100
 			});
 		} catch (err) {
-			const msg = err instanceof Error ? err.message : "Unable to scan library tags with AI.";
-			setAiError(msg);
-			report(taskId, "ai-tags", "AI Tag Scan Error", msg, 0, scopedTracks.length, "error", {
-				label: msg,
-				current: 1,
-				total: 1,
-				percent: 100
-			});
+			if (err instanceof AiQuotaExhaustedError) {
+				setAiError(null);
+				const partialMsg = savedBeforeQuota > 0 ? `${savedBeforeQuota} track(s) were already updated before AI tokens ran out — tap Resume once tokens restore.` : "Tap Resume once tokens restore to continue scanning your prioritized tracks.";
+				setAiQuotaNote(partialMsg);
+				if (savedBeforeQuota > 0) setTagStatus(`Saved ${savedBeforeQuota} fix(es) so far before AI token cooldown.`);
+				report(taskId, "ai-tags", "AI Tokens Temporarily Used Up", err.message, savedBeforeQuota, scopedTracks.length, "error", {
+					label: "Waiting for AI token refill",
+					current: 1,
+					total: 1,
+					percent: 100
+				});
+			} else {
+				const msg = err instanceof Error ? err.message : "Unable to scan library tags with AI.";
+				setAiError(msg);
+				report(taskId, "ai-tags", "AI Tag Scan Error", msg, 0, scopedTracks.length, "error", {
+					label: msg,
+					current: 1,
+					total: 1,
+					percent: 100
+				});
+			}
 		} finally {
 			setTagLoading(false);
 		}
@@ -58225,7 +59795,8 @@ var SmartStudioView = ({ page, user, tracks, smartPlaylists, dailyRecommendation
 			suggestedArtist: s.currentArtist,
 			suggestedAlbum: s.currentAlbum,
 			suggestedGenre: s.currentGenre,
-			suggestedYear: s.currentYear || ""
+			suggestedYear: s.currentYear || "",
+			suggestedLyrics: s.currentLyrics || ""
 		}]);
 		setTagSuggestions((prev) => prev.map((item) => item.trackId === s.trackId ? {
 			...item,
@@ -58240,6 +59811,7 @@ var SmartStudioView = ({ page, user, tracks, smartPlaylists, dailyRecommendation
 		setDupLoading(true);
 		setDupStatus(null);
 		setAiError(null);
+		setAiQuotaNote(null);
 		setDupPage(0);
 		report(taskId, "ai-duplicates", "Stage 1/2 · Auto-Fixing Tags Before Duplicate Check", `Analyzing ${scopedTracks.length} track(s) in batches of ${batchSize}...`, 0, 100, "running", {
 			label: scopedTracks[0]?.title || "Preparing AI tag verification",
@@ -58289,14 +59861,26 @@ var SmartStudioView = ({ page, user, tracks, smartPlaylists, dailyRecommendation
 				percent: 100
 			});
 		} catch (err) {
-			const msg = err instanceof Error ? err.message : "Tag correction or duplicate scan failed.";
-			setAiError(msg);
-			report(taskId, "ai-duplicates", "Duplicate Scan Error", msg, 0, 100, "error", {
-				label: msg,
-				current: 1,
-				total: 1,
-				percent: 100
-			});
+			if (err instanceof AiQuotaExhaustedError) {
+				setAiError(null);
+				const fixedSoFar = appliedFixes.size;
+				setAiQuotaNote(fixedSoFar > 0 ? `Auto-corrected ${fixedSoFar} track(s) before AI tokens paused. Remaining batches can resume once tokens restore.` : "Large/disordered batch used up AI tokens. Resume once tokens restore.");
+				report(taskId, "ai-duplicates", "AI Tokens Temporarily Used Up", err.message, 0, 100, "error", {
+					label: "Waiting for AI token refill",
+					current: 1,
+					total: 1,
+					percent: 100
+				});
+			} else {
+				const msg = err instanceof Error ? err.message : "Tag correction or duplicate scan failed.";
+				setAiError(msg);
+				report(taskId, "ai-duplicates", "Duplicate Scan Error", msg, 0, 100, "error", {
+					label: msg,
+					current: 1,
+					total: 1,
+					percent: 100
+				});
+			}
 		} finally {
 			setDupLoading(false);
 		}
@@ -58546,6 +60130,15 @@ var SmartStudioView = ({ page, user, tracks, smartPlaylists, dailyRecommendation
 						})
 					]
 				})]
+			}),
+			activeQuotaCountdown && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "shrink-0",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AiQuotaNotice, {
+					extraNote: aiQuotaNote,
+					onRetry: page === "tags" ? () => void handleScanTagsWithAi() : page === "duplicates" ? () => void handleScanDuplicatesWithAi() : page === "mixes" ? () => void handleRefreshDailyMixes() : page === "artwork" ? () => void handleFindOriginalAlbumArt() : void 0,
+					retryLabel: page === "tags" ? "Resume Tag Scan" : page === "duplicates" ? "Resume Duplicate Scan" : page === "mixes" ? "Retry Daily Mixes" : "Resume Art Search",
+					onDismiss: () => setAiQuotaNote(null)
+				})
 			}),
 			aiError && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 				className: "shrink-0 px-3.5 py-2 rounded-xl border border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 text-xs text-red-700 dark:text-red-300 flex items-center justify-between gap-2",
@@ -59230,9 +60823,15 @@ var SmartStudioView = ({ page, user, tracks, smartPlaylists, dailyRecommendation
 													")"
 												]
 											}),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												className: "text-[11px] text-zinc-500 truncate",
-												children: s.reason
+											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+												className: "text-[11px] text-zinc-500 truncate flex items-center gap-1.5",
+												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+													className: "truncate",
+													children: s.reason
+												}), s.suggestedLyrics && s.suggestedLyrics !== s.currentLyrics && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+													className: "accent-text font-medium shrink-0",
+													children: ["· ", /\[\d{1,3}:\d{2}/.test(s.suggestedLyrics) ? "+ Synced Lyrics" : "+ Lyrics"]
+												})]
 											})
 										]
 									}),
@@ -59472,8 +61071,8 @@ var PAGE_TITLES = {
 		subtitle: "Pin a floating mini-controller or choose Android home widget size."
 	},
 	storage: {
-		title: "Storage & Repair",
-		subtitle: "Offline audio cache & Cyrillic / Windows-1251 tag encoding repair."
+		title: "Folders & Cache",
+		subtitle: "Pick specific music folders to scan & manage offline cache."
 	},
 	cloud: {
 		title: "Cloud & Account",
@@ -59489,9 +61088,25 @@ var ToggleSwitch = ({ checked, label, onChange }) => /* @__PURE__ */ (0, import_
 	className: `relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-150 ${checked ? "accent-bg" : "bg-zinc-300 dark:bg-zinc-700"}`,
 	children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-150 ${checked ? "translate-x-6" : "translate-x-1"}` })
 });
-var SettingsCloudView = ({ page, user, settings, cacheStats, syncBusy, syncMessage, onUpdateSettings, onSignInGoogle, onSignOutGoogle, onBackupNow, onRestoreNow, onClearCache, onRepairCyrillicLibrary }) => {
+var SettingsCloudView = ({ page, user, settings, cacheStats, syncBusy, syncMessage, scanningFolders = false, onUpdateSettings, onSignInGoogle, onSignOutGoogle, onBackupNow, onRestoreNow, onClearCache, onRepairCyrillicLibrary, onAddScanFolder, onDiscoverScanFolders, onToggleScanFolder, onRemoveScanFolder, onApplyAndScanSelectedFolders }) => {
 	const formatMb = (bytes) => `${(bytes / 1048576).toFixed(1)} MB`;
 	const meta = PAGE_TITLES[page];
+	const foldersViewportRef = (0, import_react.useRef)(null);
+	const [folderPage, setFolderPage] = (0, import_react.useState)(0);
+	const folderLayout = useViewportPageSize(foldersViewportRef, {
+		mode: "list",
+		listRowHeight: 46,
+		verticalPadding: 2
+	});
+	const folderList = (0, import_react.useMemo)(() => Array.isArray(settings.selectedScanFolders) ? settings.selectedScanFolders : [], [settings.selectedScanFolders]);
+	const enabledFoldersCount = (0, import_react.useMemo)(() => folderList.filter((f) => f.enabled).length, [folderList]);
+	const folderTotalPages = Math.max(1, Math.ceil(folderList.length / folderLayout.pageSize));
+	const safeFolderPage = Math.max(0, Math.min(folderTotalPages - 1, folderPage));
+	const pagedFolders = (0, import_react.useMemo)(() => folderList.slice(safeFolderPage * folderLayout.pageSize, safeFolderPage * folderLayout.pageSize + folderLayout.pageSize), [
+		folderList,
+		safeFolderPage,
+		folderLayout.pageSize
+	]);
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "h-full min-h-0 flex flex-col gap-2.5 max-w-4xl overflow-hidden",
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
@@ -59514,69 +61129,96 @@ var SettingsCloudView = ({ page, user, settings, cacheStats, syncBusy, syncMessa
 			children: [
 				page === "audio" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
 					className: "rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-3 sm:p-4 space-y-3",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "grid grid-cols-1 md:grid-cols-2 gap-3",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
-							className: "block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1",
-							children: "Streaming & Output Quality"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
-							value: settings.streamingQuality,
-							onChange: (e) => onUpdateSettings({ streamingQuality: e.target.value }),
-							className: "w-full min-h-[38px] px-3 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs sm:text-sm",
-							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
-									value: "lossless-hires",
-									children: "Lossless Hi-Res (24-bit / 192 kHz)"
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
-									value: "cd-lossless",
-									children: "CD Lossless (16-bit / 44.1 kHz)"
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
-									value: "high-320",
-									children: "High Quality (320 kbps)"
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
-									value: "data-saver",
-									children: "Data Saver (128 kbps)"
-								})
-							]
-						})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "flex justify-between text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Crossfade Duration" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "font-mono-tabular",
-								children: settings.crossfadeSeconds === 0 ? "0s (Gapless)" : `${settings.crossfadeSeconds}s`
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "grid grid-cols-1 md:grid-cols-2 gap-3",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", {
+								className: "block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1",
+								children: "Streaming & Output Quality"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("select", {
+								value: settings.streamingQuality,
+								onChange: (e) => onUpdateSettings({ streamingQuality: e.target.value }),
+								className: "w-full min-h-[38px] px-3 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs sm:text-sm",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+										value: "lossless-hires",
+										children: "Lossless Hi-Res (24-bit / 192 kHz)"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+										value: "cd-lossless",
+										children: "CD Lossless (16-bit / 44.1 kHz)"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+										value: "high-320",
+										children: "High Quality (320 kbps)"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("option", {
+										value: "data-saver",
+										children: "Data Saver (128 kbps)"
+									})
+								]
+							})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex justify-between text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Crossfade Duration" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "font-mono-tabular",
+									children: settings.crossfadeSeconds === 0 ? "0s (Gapless)" : `${settings.crossfadeSeconds}s`
+								})]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+								type: "range",
+								min: 0,
+								max: 10,
+								step: 1,
+								value: settings.crossfadeSeconds,
+								onChange: (e) => {
+									const next = parseInt(e.target.value, 10);
+									tactile.sliderDetent(next / 10, next === 0);
+									onUpdateSettings({ crossfadeSeconds: next });
+								},
+								className: "w-full mt-2 accent-amber-500 cursor-pointer"
+							})] })]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center justify-between pt-2.5 border-t border-zinc-200/70 dark:border-zinc-800/70 gap-3",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "text-sm font-medium",
+								children: "Gapless Playback Preload"
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "text-xs text-zinc-500 dark:text-zinc-400",
+								children: "Pre-buffer next track to eliminate pauses between movements."
+							})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ToggleSwitch, {
+								checked: settings.gaplessPlayback,
+								label: "Gapless Playback Preload",
+								onChange: () => {
+									tactile.toggle(!settings.gaplessPlayback);
+									onUpdateSettings({ gaplessPlayback: !settings.gaplessPlayback });
+								}
 							})]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-							type: "range",
-							min: 0,
-							max: 10,
-							step: 1,
-							value: settings.crossfadeSeconds,
-							onChange: (e) => {
-								const next = parseInt(e.target.value, 10);
-								tactile.sliderDetent(next / 10, next === 0);
-								onUpdateSettings({ crossfadeSeconds: next });
-							},
-							className: "w-full mt-2 accent-amber-500 cursor-pointer"
-						})] })]
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex items-center justify-between pt-2.5 border-t border-zinc-200/70 dark:border-zinc-800/70 gap-3",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							className: "text-sm font-medium",
-							children: "Gapless Playback Preload"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							className: "text-xs text-zinc-500 dark:text-zinc-400",
-							children: "Pre-buffer next track to eliminate pauses between movements."
-						})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ToggleSwitch, {
-							checked: settings.gaplessPlayback,
-							label: "Gapless Playback Preload",
-							onChange: () => {
-								tactile.toggle(!settings.gaplessPlayback);
-								onUpdateSettings({ gaplessPlayback: !settings.gaplessPlayback });
-							}
-						})]
-					})]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center justify-between pt-2.5 border-t border-zinc-200/70 dark:border-zinc-800/70 gap-3",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-start gap-2.5 min-w-0",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MicVocal, { className: "w-4 h-4 accent-text shrink-0 mt-0.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "min-w-0",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+										className: "text-sm font-medium",
+										children: "Karaoke Lyrics Display"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+										className: "text-xs text-zinc-500 dark:text-zinc-400",
+										children: "Show live synchronized karaoke lyrics while playing. Turn off to display original album cover."
+									})]
+								})]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ToggleSwitch, {
+								checked: settings.showLyrics !== false,
+								label: "Karaoke Lyrics Display",
+								onChange: () => {
+									const next = settings.showLyrics === false;
+									tactile.toggle(next);
+									onUpdateSettings({ showLyrics: next });
+								}
+							})]
+						})
+					]
 				}),
 				page === "devices" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
 					className: "rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-3 sm:p-4 divide-y divide-zinc-200/70 dark:divide-zinc-800/70",
@@ -59805,39 +61447,151 @@ var SettingsCloudView = ({ page, user, settings, cacheStats, syncBusy, syncMessa
 						})]
 					})]
 				}),
-				page === "storage" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
-					className: "rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-3 sm:p-4 space-y-3",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex items-center justify-between gap-2 pb-2 border-b border-zinc-200/70 dark:border-zinc-800/70",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-							className: "text-xs font-medium text-zinc-500 dark:text-zinc-400",
-							children: "Offline Cache"
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
-							className: "text-xs font-mono-tabular text-zinc-700 dark:text-zinc-300",
+				page === "storage" && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "h-full min-h-0 flex flex-col gap-2.5 overflow-hidden",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+						className: "flex-1 min-h-0 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-3 sm:p-4 flex flex-col gap-2 overflow-hidden",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "shrink-0 flex items-center justify-between gap-2 pb-2 border-b border-zinc-200/70 dark:border-zinc-800/70",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "min-w-0",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+										className: "text-xs sm:text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate",
+										children: "Only scan selected folders"
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+										className: "text-[11px] text-zinc-500 dark:text-zinc-400 truncate",
+										children: settings.onlyScanSelectedFolders ? `${enabledFoldersCount} of ${folderList.length} selected folder(s) active` : "All device music folders included during scan"
+									})]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ToggleSwitch, {
+									checked: Boolean(settings.onlyScanSelectedFolders),
+									label: "Only scan selected folders",
+									onChange: () => {
+										tactile.toggle(!settings.onlyScanSelectedFolders);
+										onUpdateSettings({ onlyScanSelectedFolders: !settings.onlyScanSelectedFolders });
+									}
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "shrink-0 flex flex-wrap items-center gap-1.5",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+										type: "button",
+										disabled: scanningFolders,
+										onClick: () => {
+											tactile.tap();
+											onAddScanFolder();
+										},
+										className: "min-h-[36px] px-2.5 sm:px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-50",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FolderPlus, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Add Folder" })]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+										type: "button",
+										disabled: scanningFolders,
+										onClick: () => {
+											tactile.tap();
+											onDiscoverScanFolders();
+										},
+										className: "min-h-[36px] px-2.5 sm:px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-50",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(RefreshCw, { className: `w-3.5 h-3.5 ${scanningFolders ? "animate-spin" : ""}` }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Discover" })]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+										type: "button",
+										disabled: scanningFolders || Boolean(settings.onlyScanSelectedFolders) && enabledFoldersCount === 0,
+										onClick: () => {
+											tactile.tap();
+											onApplyAndScanSelectedFolders();
+										},
+										className: "min-h-[36px] px-3 rounded-lg accent-bg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap ml-auto active:scale-95 transition-transform duration-100 disabled:opacity-40",
+										children: [scanningFolders ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "w-3.5 h-3.5 animate-spin" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(FolderOpen, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: scanningFolders ? "Scanning..." : settings.onlyScanSelectedFolders ? "Scan Selected" : "Rescan All" })]
+									})
+								]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								ref: foldersViewportRef,
+								className: "flex-1 min-h-0 overflow-hidden divide-y divide-zinc-200/70 dark:divide-zinc-800/70",
+								children: folderList.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "h-full flex flex-col items-center justify-center text-center px-3",
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)(FolderOpen, { className: "w-7 h-7 text-zinc-400 mb-1.5" }),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+											className: "text-xs font-medium text-zinc-700 dark:text-zinc-300",
+											children: "No specific folders selected yet"
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											className: "text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 max-w-sm",
+											children: "Tap Add Folder to pick multiple music folders, or Discover to list folders already on your device. Unchecked folders will never be scanned."
+										})
+									]
+								}) : pagedFolders.map((folder) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "h-[46px] flex items-center justify-between gap-2 px-1",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+										type: "button",
+										onClick: () => {
+											tactile.toggle(!folder.enabled);
+											onToggleScanFolder(folder.id);
+										},
+										className: "flex-1 min-w-0 min-h-[40px] flex items-center gap-2.5 text-left",
+										children: [folder.enabled ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SquareCheckBig, { className: "w-4 h-4 accent-text shrink-0" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Square, { className: "w-4 h-4 text-zinc-400 shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "min-w-0 flex-1",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+												className: "text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate",
+												children: folder.label
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+												className: "text-[11px] text-zinc-500 dark:text-zinc-400 truncate",
+												children: [folder.path, typeof folder.trackCount === "number" ? ` · ${folder.trackCount} track${folder.trackCount === 1 ? "" : "s"}` : ""]
+											})]
+										})]
+									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										"aria-label": `Remove ${folder.label}`,
+										onClick: () => {
+											tactile.tap();
+											onRemoveScanFolder(folder.id);
+										},
+										className: "min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-zinc-400 hover:text-rose-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 shrink-0",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-3.5 h-3.5" })
+									})]
+								}, folder.id))
+							}),
+							folderList.length > 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(PaginationBar, {
+								page: safeFolderPage,
+								totalPages: folderTotalPages,
+								totalItems: folderList.length,
+								pageSize: folderLayout.pageSize,
+								onChangePage: setFolderPage,
+								itemLabel: "folders"
+							})
+						]
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+						className: "shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 px-3 py-2 flex flex-wrap items-center justify-between gap-2",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "text-[11px] text-zinc-500 dark:text-zinc-400 font-mono-tabular whitespace-nowrap",
 							children: [
+								"Cache · ",
 								cacheStats.count,
-								" cached · ",
+								" files · ",
 								formatMb(cacheStats.totalBytes)
 							]
-						})]
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "grid grid-cols-1 sm:grid-cols-2 gap-2.5",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-							type: "button",
-							onClick: () => {
-								tactile.tap();
-								onClearCache();
-							},
-							className: "min-h-[40px] px-3.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-medium flex items-center justify-center gap-2 active:scale-95 transition-transform duration-100",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Clear Offline Audio Cache" })]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-							type: "button",
-							onClick: () => {
-								tactile.success();
-								onRepairCyrillicLibrary();
-							},
-							className: "min-h-[40px] px-3.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-medium flex items-center justify-center gap-2 active:scale-95 transition-transform duration-100",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Wrench, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Repair Cyrillic / Mojibake Tags" })]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-1.5 ml-auto",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								onClick: () => {
+									tactile.tap();
+									onClearCache();
+								},
+								className: "min-h-[36px] px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[11px] font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Trash2, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Clear Cache" })]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								onClick: () => {
+									tactile.success();
+									onRepairCyrillicLibrary();
+								},
+								className: "min-h-[36px] px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[11px] font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Wrench, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Repair Cyrillic" })]
+							})]
 						})]
 					})]
 				}),
@@ -60101,19 +61855,26 @@ var SlidablePageViewport = ({ pageIds, activePageId, pageLabels, onChangePage, d
 			const incomingFromRight = newIdx > oldIdx;
 			setEnableSettleTransition(false);
 			setSettleOffset(incomingFromRight ? 42 : -42);
+			let clearTimer = null;
 			const raf = window.requestAnimationFrame(() => {
 				window.requestAnimationFrame(() => {
 					setEnableSettleTransition(true);
 					setSettleOffset(0);
+					clearTimer = window.setTimeout(() => {
+						setEnableSettleTransition(false);
+					}, 210);
 				});
 			});
-			return () => window.cancelAnimationFrame(raf);
+			return () => {
+				window.cancelAnimationFrame(raf);
+				if (clearTimer !== null) window.clearTimeout(clearTimer);
+			};
 		}
 	}, [activePageId, pageIds]);
 	const handlePointerDown = (e) => {
 		if (disabled || pageIds.length <= 1) return;
 		if (e.button !== 0 && e.pointerType === "mouse") return;
-		if (e.target?.closest("input, textarea, select, canvas, [data-no-swipe=\"true\"], [role=\"dialog\"]")) return;
+		if (e.target?.closest("input, textarea, select, canvas, [data-no-swipe=\"true\"], [role=\"dialog\"], [role=\"menu\"]")) return;
 		startXRef.current = e.clientX;
 		startYRef.current = e.clientY;
 		startTimeRef.current = Date.now();
@@ -60170,6 +61931,7 @@ var SlidablePageViewport = ({ pageIds, activePageId, pageLabels, onChangePage, d
 	const previewTargetId = dragDx > 18 ? prevId : dragDx < -18 ? nextId : null;
 	const previewLabel = previewTargetId ? pageLabels?.[previewTargetId] || previewTargetId : null;
 	const translateX = isDragging ? dragDx : settleOffset;
+	const hasActiveTransform = isDragging || enableSettleTransition || translateX !== 0;
 	const transition = isDragging ? "none" : enableSettleTransition ? "transform 190ms cubic-bezier(0.16, 1, 0.3, 1)" : "none";
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		ref: containerRef,
@@ -60186,10 +61948,10 @@ var SlidablePageViewport = ({ pageIds, activePageId, pageLabels, onChangePage, d
 		},
 		className: `relative overflow-hidden ${className}`,
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-			style: {
+			style: hasActiveTransform ? {
 				transform: `translate3d(${translateX}px, 0, 0)`,
 				transition
-			},
+			} : void 0,
 			className: "flex-1 min-h-0 flex flex-col overflow-hidden",
 			children
 		}), isDragging && previewLabel && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
@@ -60330,9 +62092,17 @@ var PlayerBar = import_react.memo(({ track, isPlaying, isLoading, shuffle, repea
 							className: "w-10 h-10 sm:w-12 sm:h-12 [@media(max-height:520px)]:w-9 [@media(max-height:520px)]:h-9 rounded-xl shadow-sm"
 						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 							className: "min-w-0 flex-1",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-								className: "text-xs sm:text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate group-hover:underline",
-								children: track.title
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "text-xs sm:text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate group-hover:underline flex items-center gap-1.5",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "truncate",
+									children: track.title
+								}), Boolean(track.lyrics?.trim()) && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									title: "Has embedded lyrics",
+									"aria-label": "Has embedded lyrics",
+									className: "inline-flex shrink-0",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MicVocal, { className: "w-3 h-3 sm:w-3.5 sm:h-3.5 accent-text" })
+								})]
 							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 								className: "text-[11px] text-zinc-500 dark:text-zinc-400 truncate flex items-center gap-1.5",
 								children: [
@@ -60523,10 +62293,473 @@ var PlayerBar = import_react.memo(({ track, isPlaying, isLoading, shuffle, repea
 		})
 	});
 });
+// src/components/KaraokeLyricsView.tsx
+var KaraokeLyricsView = ({ track, isPlaying, offsetMs, tvStage = false, fetchingLyrics = false, externalPositionSec, externalDurationSec, onChangeOffsetMs, onSeek, onFetchLyrics, onOpenCast, onToggleTvStage, onShowAlbumCover }) => {
+	const isExternalFeed = externalPositionSec !== void 0;
+	const [liveTime, setLiveTime] = (0, import_react.useState)(() => isExternalFeed ? externalPositionSec || 0 : audioEngine.getState().currentTime);
+	const [liveDuration, setLiveDuration] = (0, import_react.useState)(() => isExternalFeed ? externalDurationSec || track.duration || 180 : track.duration || 180);
+	const anchorRef = (0, import_react.useRef)({
+		posSec: isExternalFeed ? externalPositionSec || 0 : audioEngine.getState().currentTime,
+		stampMs: performance.now()
+	});
+	(0, import_react.useEffect)(() => {
+		if (isExternalFeed) {
+			const nextPos = externalPositionSec || 0;
+			const nextDur = externalDurationSec || track.duration || 180;
+			anchorRef.current = {
+				posSec: nextPos,
+				stampMs: performance.now()
+			};
+			setLiveTime(nextPos);
+			setLiveDuration(nextDur);
+			return;
+		}
+		const st = audioEngine.getState();
+		anchorRef.current = {
+			posSec: st.currentTime,
+			stampMs: performance.now()
+		};
+		setLiveTime(st.currentTime);
+		if (st.duration > 0) setLiveDuration(st.duration);
+		return audioEngine.subscribeProgress(({ currentTime, duration }) => {
+			anchorRef.current = {
+				posSec: currentTime,
+				stampMs: performance.now()
+			};
+			setLiveTime(currentTime);
+			if (duration > 0) setLiveDuration(duration);
+		});
+	}, [
+		isExternalFeed,
+		externalPositionSec,
+		externalDurationSec,
+		track.id,
+		track.duration
+	]);
+	(0, import_react.useEffect)(() => {
+		if (!isPlaying) return;
+		let rafId = 0;
+		const tick = () => {
+			if (!document.hidden) {
+				const elapsedSec = (performance.now() - anchorRef.current.stampMs) / 1e3;
+				const interpolated = Math.min(Math.max(1, liveDuration), Math.max(0, anchorRef.current.posSec + Math.max(0, elapsedSec)));
+				setLiveTime(interpolated);
+			}
+			rafId = requestAnimationFrame(tick);
+		};
+		rafId = requestAnimationFrame(tick);
+		return () => cancelAnimationFrame(rafId);
+	}, [isPlaying, liveDuration]);
+	const lines = (0, import_react.useMemo)(() => parseLyricsForKaraoke(track.lyrics, liveDuration || track.duration || 180), [
+		track.lyrics,
+		liveDuration,
+		track.duration
+	]);
+	const effectiveTime = Math.max(0, liveTime + offsetMs / 1e3);
+	const activeIdx = (0, import_react.useMemo)(() => {
+		if (lines.length === 0) return -1;
+		let found = -1;
+		for (let i = 0; i < lines.length; i++) if (effectiveTime >= lines[i].timeSec) found = i;
+		else break;
+		return found;
+	}, [lines, effectiveTime]);
+	const hasSyncedTimestamps = lines.some((l) => l.isSynced);
+	const windowSize = tvStage ? 7 : 5;
+	const beforeCount = tvStage ? 2 : 1;
+	const visibleSlice = (0, import_react.useMemo)(() => {
+		if (lines.length === 0) return {
+			items: [],
+			start: 0
+		};
+		const focusIdx = activeIdx >= 0 ? activeIdx : 0;
+		const maxStart = Math.max(0, lines.length - windowSize);
+		const start = Math.max(0, Math.min(maxStart, focusIdx - beforeCount));
+		const end = Math.min(lines.length, start + windowSize);
+		const items = [];
+		for (let i = start; i < end; i++) items.push({
+			line: lines[i],
+			idx: i
+		});
+		return {
+			items,
+			start
+		};
+	}, [
+		lines,
+		activeIdx,
+		windowSize,
+		beforeCount
+	]);
+	const firstLine = lines[0];
+	const waitingForIntro = Boolean(firstLine) && activeIdx === -1 && effectiveTime < firstLine.timeSec;
+	const introRemaining = waitingForIntro ? Math.max(0, firstLine.timeSec - effectiveTime) : 0;
+	const introProgressPct = waitingForIntro && firstLine.timeSec > 0 ? Math.min(100, Math.max(0, effectiveTime / firstLine.timeSec * 100)) : 0;
+	const activeSweepPct = (0, import_react.useMemo)(() => {
+		if (activeIdx < 0 || activeIdx >= lines.length) return 0;
+		const cur = lines[activeIdx];
+		const span = Math.max(.45, cur.endSec - cur.timeSec);
+		return Math.min(100, Math.max(0, (effectiveTime - cur.timeSec) / span * 100));
+	}, [
+		activeIdx,
+		lines,
+		effectiveTime
+	]);
+	if (lines.length === 0) return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: `w-full h-full min-h-0 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/75 p-4 flex flex-col items-center justify-center text-center gap-3 ${tvStage ? "max-w-3xl mx-auto" : ""}`,
+		children: [
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CoverArt, {
+				src: track.coverUrl,
+				alt: track.title,
+				className: "w-24 h-24 sm:w-28 sm:h-28 rounded-2xl shadow-lg border border-zinc-200/60 dark:border-zinc-800"
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "space-y-1 max-w-xs",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center justify-center gap-1.5",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MicVocal, { className: "w-4 h-4 accent-text" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "No Embedded Lyrics Yet" })]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+					className: "text-xs text-zinc-500 dark:text-zinc-400",
+					children: "Let AI find synced karaoke lyrics and save them right into this audio file."
+				})]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "flex flex-wrap items-center justify-center gap-2",
+				children: [onFetchLyrics && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+					type: "button",
+					disabled: fetchingLyrics,
+					onClick: () => {
+						tactile.tap();
+						onFetchLyrics(track);
+					},
+					className: "min-h-[36px] px-3.5 rounded-xl accent-bg text-xs font-medium inline-flex items-center gap-1.5 disabled:opacity-60",
+					children: [fetchingLyrics ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "w-3.5 h-3.5 animate-spin" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sparkles, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: fetchingLyrics ? "Finding Lyrics..." : "Add Lyrics with AI" })]
+				}), onShowAlbumCover && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+					type: "button",
+					onClick: () => {
+						tactile.tap();
+						onShowAlbumCover();
+					},
+					className: "min-h-[36px] px-3 rounded-xl border border-zinc-200 dark:border-zinc-700 text-xs font-medium inline-flex items-center gap-1.5 text-zinc-700 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Disc3, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Album Cover" })]
+				})]
+			})
+		]
+	});
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		className: `relative w-full h-full min-h-0 rounded-2xl overflow-hidden border flex flex-col justify-between ${tvStage ? "border-zinc-800 bg-zinc-950 text-white p-4 sm:p-8 shadow-2xl" : "border-zinc-200/80 dark:border-zinc-800 bg-zinc-950 text-white p-3 sm:p-4 shadow-xl"}`,
+		children: [
+			track.coverUrl && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				"aria-hidden": "true",
+				style: { backgroundImage: `url(${track.coverUrl})` },
+				className: "absolute inset-0 bg-cover bg-center opacity-22 blur-2xl scale-110 pointer-events-none"
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				"aria-hidden": "true",
+				className: "absolute inset-0 bg-gradient-to-b from-zinc-950/75 via-zinc-950/65 to-zinc-950/90 pointer-events-none"
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "relative z-10 shrink-0 flex items-center justify-between gap-2 pb-2 border-b border-white/10",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-center gap-2 min-w-0",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CoverArt, {
+						src: track.coverUrl,
+						alt: track.title,
+						isPlaying,
+						className: "w-8 h-8 rounded-lg shrink-0"
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "min-w-0",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "text-xs sm:text-sm font-semibold text-white truncate flex items-center gap-1.5",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MicVocal, { className: "w-3.5 h-3.5 accent-text shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								className: "truncate",
+								children: tvStage ? `${track.title} — ${track.artist}` : "Karaoke Lyrics"
+							})]
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "text-[10px] text-zinc-400 font-mono-tabular flex items-center gap-1.5",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: hasSyncedTimestamps ? "LRC Synced" : "Timed Flow" }),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "·" }),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: activeIdx >= 0 ? `${activeIdx + 1}/${lines.length}` : `0/${lines.length}` }),
+								offsetMs !== 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "·" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+									className: "accent-text",
+									children: ["Sync ", offsetMs > 0 ? `+${(offsetMs / 1e3).toFixed(1)}s` : `${(offsetMs / 1e3).toFixed(1)}s`]
+								})] })
+							]
+						})]
+					})]
+				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-center gap-1 shrink-0",
+					children: [
+						onChangeOffsetMs && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "hidden xs:flex sm:flex items-center rounded-lg border border-white/15 bg-white/5 overflow-hidden text-[10px] font-mono-tabular",
+							children: [
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									title: "Delay lyrics -0.5s",
+									onClick: (e) => {
+										e.stopPropagation();
+										tactile.tap();
+										onChangeOffsetMs(Math.max(-1e4, offsetMs - 500));
+									},
+									className: "px-1.5 py-1 text-zinc-300 hover:bg-white/10",
+									children: "-0.5s"
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									title: "Reset lyric sync offset",
+									onClick: (e) => {
+										e.stopPropagation();
+										tactile.tap();
+										onChangeOffsetMs(0);
+									},
+									className: "px-1 py-1 text-zinc-400 hover:text-white border-x border-white/10",
+									"aria-label": "Reset lyric timing offset",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(RotateCcw, { className: "w-2.5 h-2.5" })
+								}),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									title: "Advance lyrics +0.5s",
+									onClick: (e) => {
+										e.stopPropagation();
+										tactile.tap();
+										onChangeOffsetMs(Math.min(1e4, offsetMs + 500));
+									},
+									className: "px-1.5 py-1 text-zinc-300 hover:bg-white/10",
+									children: "+0.5s"
+								})
+							]
+						}),
+						onOpenCast && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							title: "Cast Karaoke TV & Audio",
+							onClick: (e) => {
+								e.stopPropagation();
+								tactile.tap();
+								onOpenCast();
+							},
+							className: "w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-white/15 bg-white/5 hover:bg-white/15 flex items-center justify-center text-zinc-200",
+							"aria-label": "Cast Karaoke Display",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Cast, { className: "w-3.5 h-3.5" })
+						}),
+						onToggleTvStage && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							title: tvStage ? "Exit Fullscreen Karaoke" : "Fullscreen Karaoke Stage",
+							onClick: (e) => {
+								e.stopPropagation();
+								tactile.tap();
+								onToggleTvStage();
+							},
+							className: "w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-white/15 bg-white/5 hover:bg-white/15 flex items-center justify-center text-zinc-200",
+							"aria-label": tvStage ? "Exit fullscreen karaoke" : "Open fullscreen karaoke",
+							children: tvStage ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Minimize2, { className: "w-3.5 h-3.5" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Maximize2, { className: "w-3.5 h-3.5" })
+						}),
+						onShowAlbumCover && !tvStage && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+							type: "button",
+							title: "Hide Lyrics & Show Album Cover",
+							onClick: (e) => {
+								e.stopPropagation();
+								tactile.tap();
+								onShowAlbumCover();
+							},
+							className: "w-7 h-7 sm:w-8 sm:h-8 rounded-lg border border-white/15 bg-white/5 hover:bg-white/15 flex items-center justify-center text-zinc-200",
+							"aria-label": "Switch to Album Cover",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Disc3, { className: "w-3.5 h-3.5" })
+						})
+					]
+				})]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "relative z-10 flex-1 min-h-0 flex flex-col justify-center gap-1.5 sm:gap-2.5 py-2 overflow-hidden",
+				children: [waitingForIntro && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "flex items-center justify-center gap-2 pb-1",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "flex items-center gap-1.5",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `w-2 h-2 rounded-full transition-colors ${introProgressPct > 25 ? "accent-bg" : "bg-white/30"}` }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `w-2 h-2 rounded-full transition-colors ${introProgressPct > 55 ? "accent-bg" : "bg-white/30"}` }),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: `w-2 h-2 rounded-full transition-colors ${introProgressPct > 82 ? "accent-bg" : "bg-white/30"}` })
+						]
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", {
+						className: "text-[11px] font-mono-tabular text-zinc-300",
+						children: [
+							"Vocals in ",
+							Math.ceil(introRemaining),
+							"s"
+						]
+					})]
+				}), visibleSlice.items.map(({ line, idx }) => {
+					const isCurrent = idx === activeIdx;
+					const isPast = activeIdx >= 0 && idx < activeIdx;
+					const isNext = idx === activeIdx + 1;
+					return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+						type: "button",
+						disabled: !onSeek,
+						onClick: (e) => {
+							e.stopPropagation();
+							if (!onSeek) return;
+							tactile.tap();
+							onSeek(line.timeSec);
+						},
+						className: `w-full text-center px-2 py-0.5 rounded-xl transition-all duration-300 ${onSeek ? "hover:bg-white/5 cursor-pointer" : "cursor-default"} ${isCurrent ? "scale-[1.03] opacity-100" : isNext ? "opacity-75 scale-[0.98]" : isPast ? "opacity-35 scale-[0.95]" : "opacity-45 scale-[0.96]"}`,
+						children: isCurrent ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "inline-flex flex-col items-center max-w-full",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+								style: {
+									backgroundImage: `linear-gradient(90deg, var(--accent, #f59e0b) 0%, #fde68a ${Math.min(100, activeSweepPct + 2)}%, rgba(255,255,255,0.45) ${Math.min(100, activeSweepPct + 8)}%, rgba(255,255,255,0.45) 100%)`,
+									WebkitBackgroundClip: "text",
+									backgroundClip: "text",
+									WebkitTextFillColor: "transparent",
+									color: "transparent",
+									WebkitBoxDecorationBreak: "clone",
+									boxDecorationBreak: "clone"
+								},
+								className: `font-display font-bold leading-snug tracking-tight ${tvStage ? "text-xl sm:text-3xl lg:text-4xl" : "text-base sm:text-xl lg:text-2xl"}`,
+								children: line.text
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "mt-1 w-28 sm:w-40 h-1 rounded-full bg-white/15 overflow-hidden",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+									style: { width: `${activeSweepPct}%` },
+									className: "h-full rounded-full accent-bg transition-[width] duration-75"
+								})
+							})]
+						}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							className: `font-display leading-snug block ${tvStage ? "text-base sm:text-xl lg:text-2xl font-medium text-zinc-200" : "text-xs sm:text-sm lg:text-base font-medium text-zinc-200"}`,
+							children: line.text
+						})
+					}, `${idx}_${line.timeSec}`);
+				})]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				className: "relative z-10 shrink-0 pt-1.5 border-t border-white/10 flex items-center justify-between gap-2 text-[10px] font-mono-tabular text-zinc-400",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: formatDuration(liveTime) }),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+						className: "truncate",
+						children: onSeek ? "Tap any line to jump · Karaoke Stage" : "AuraSound Live Karaoke"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: formatDuration(liveDuration) })
+				]
+			})
+		]
+	});
+};
+var KaraokeTvStageOverlay = ({ open, track, isPlaying, offsetMs, fetchingLyrics, onChangeOffsetMs, onSeek, onFetchLyrics, onOpenCast, onClose }) => {
+	if (!open) return null;
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+		role: "dialog",
+		"aria-modal": "true",
+		"aria-label": "Fullscreen Karaoke Stage",
+		onClick: (e) => e.stopPropagation(),
+		className: "fixed inset-0 z-[80] bg-zinc-950 p-3 sm:p-6 flex flex-col gap-3",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			className: "shrink-0 flex items-center justify-between gap-2 text-white",
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "text-xs font-medium text-zinc-400 uppercase tracking-wider",
+				children: "AuraSound Karaoke TV Stage"
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+				type: "button",
+				onClick: () => {
+					tactile.tap();
+					onClose();
+				},
+				"aria-label": "Exit Karaoke Stage",
+				className: "min-h-[34px] px-3 rounded-xl border border-white/15 bg-white/10 hover:bg-white/20 text-xs font-medium inline-flex items-center gap-1.5",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Exit Stage" })]
+			})]
+		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			className: "flex-1 min-h-0",
+			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(KaraokeLyricsView, {
+				track,
+				isPlaying,
+				offsetMs,
+				tvStage: true,
+				fetchingLyrics,
+				onChangeOffsetMs,
+				onSeek,
+				onFetchLyrics,
+				onOpenCast,
+				onToggleTvStage: onClose
+			})
+		})]
+	});
+};
+var KaraokeReceiverDisplayScreen = () => {
+	const [payload, setPayload] = (0, import_react.useState)(() => readKaraokeCastState());
+	(0, import_react.useEffect)(() => {
+		return subscribeKaraokeCastState((next) => {
+			setPayload(next);
+		});
+	}, []);
+	(0, import_react.useEffect)(() => {
+		if (!payload) return;
+		document.documentElement.classList.add("dark");
+		document.documentElement.setAttribute("data-accent", payload.themeAccent || "amber");
+	}, [payload]);
+	const synthTrack = (0, import_react.useMemo)(() => payload ? {
+		id: payload.trackId,
+		fingerprint: payload.trackId,
+		title: payload.title,
+		artist: payload.artist,
+		album: payload.album,
+		genre: "",
+		duration: payload.duration || 180,
+		format: "FLAC",
+		bitDepth: 24,
+		sampleRate: 96e3,
+		bitrateKbps: 1411,
+		coverUrl: payload.coverUrl,
+		audioUrl: "",
+		source: "local",
+		favorite: false,
+		rating: 0,
+		playCount: 0,
+		addedAt: 0,
+		offlineCached: false,
+		lyrics: payload.lyrics
+	} : {
+		id: "idle",
+		fingerprint: "idle",
+		title: "Waiting for AuraSound Playback",
+		artist: "Start playing a track on your controller",
+		album: "Karaoke TV Receiver",
+		genre: "",
+		duration: 180,
+		format: "FLAC",
+		bitDepth: 24,
+		sampleRate: 96e3,
+		bitrateKbps: 1411,
+		coverUrl: "",
+		audioUrl: "",
+		source: "local",
+		favorite: false,
+		rating: 0,
+		playCount: 0,
+		addedAt: 0,
+		offlineCached: false
+	}, [payload]);
+	const elapsedSinceUpdate = payload && payload.isPlaying ? Math.max(0, (Date.now() - payload.updatedAtMs) / 1e3) : 0;
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+		className: "fixed inset-0 bg-zinc-950 text-white p-4 sm:p-8 flex flex-col",
+		children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(KaraokeLyricsView, {
+			track: synthTrack,
+			isPlaying: Boolean(payload?.isPlaying),
+			offsetMs: payload?.karaokeOffsetMs || 0,
+			tvStage: true,
+			externalPositionSec: payload ? Math.min(payload.duration || 180, payload.currentTime + elapsedSinceUpdate) : 0,
+			externalDurationSec: payload?.duration || 180
+		})
+	});
+};
 // src/components/NowPlayingView.tsx
-var NowPlayingView = import_react.memo(import_react.forwardRef(({ open, track, nextTrack, queue = [], isPlaying, shuffle, repeatMode, volume, lowBatteryMode, streamingQuality, onClose, onTogglePlay, onPrev, onNext, onPlayQueueTrack, onToggleShuffle, onCycleRepeat, onChangeVolume, onToggleFavorite, onRateTrack, onOpenEqualizer, onOpenCast, onOpenShare, onGoToAlbum, onGoToArtist }, ref) => {
-	const [deckPage, setDeckPage] = (0, import_react.useState)("player");
+var NowPlayingView = import_react.memo(import_react.forwardRef(({ open, track, nextTrack, queue = [], isPlaying, shuffle, repeatMode, volume, lowBatteryMode, streamingQuality, showLyrics, karaokeOffsetMs, fetchingLyrics = false, tvStageOpen: controlledTvStageOpen, initialDeckPage = "player", onChangeDeckPage, onSetTvStageOpen, onToggleShowLyrics, onChangeKaraokeOffsetMs, onFetchTrackLyrics, onClose, onTogglePlay, onPrev, onNext, onPlayQueueTrack, onToggleShuffle, onCycleRepeat, onChangeVolume, onToggleFavorite, onRateTrack, onOpenEqualizer, onOpenCast, onOpenShare, onGoToAlbum, onGoToArtist }, ref) => {
+	const [deckPage, setDeckPage] = (0, import_react.useState)(initialDeckPage);
 	const [queuePage, setQueuePage] = (0, import_react.useState)(0);
+	const [localTvStageOpen, setLocalTvStageOpen] = (0, import_react.useState)(false);
+	const tvStageOpen = controlledTvStageOpen ?? localTvStageOpen;
+	const setTvStageOpen = (next) => {
+		setLocalTvStageOpen(next);
+		onSetTvStageOpen?.(next);
+	};
 	const [progress, setProgress] = (0, import_react.useState)({
 		currentTime: 0,
 		duration: track?.duration || 0
@@ -60597,6 +62830,9 @@ var NowPlayingView = import_react.memo(import_react.forwardRef(({ open, track, n
 		return audioEngine.subscribeProgress(setProgress);
 	}, [open]);
 	(0, import_react.useEffect)(() => {
+		onChangeDeckPage?.(deckPage);
+	}, [deckPage, onChangeDeckPage]);
+	(0, import_react.useEffect)(() => {
 		if (!open) return;
 		const onKey = (e) => {
 			if (e.key === "Escape") onClose();
@@ -60605,7 +62841,7 @@ var NowPlayingView = import_react.memo(import_react.forwardRef(({ open, track, n
 		return () => window.removeEventListener("keydown", onKey);
 	}, [open, onClose]);
 	(0, import_react.useEffect)(() => {
-		if (!open || deckPage !== "player" || !isPlaying || lowBatteryMode) return;
+		if (!open || deckPage !== "player" || showLyrics || !isPlaying || lowBatteryMode) return;
 		let rafId = 0;
 		const bins = /* @__PURE__ */ new Uint8Array(64);
 		const draw = () => {
@@ -60635,6 +62871,7 @@ var NowPlayingView = import_react.memo(import_react.forwardRef(({ open, track, n
 	}, [
 		open,
 		deckPage,
+		showLyrics,
 		isPlaying,
 		lowBatteryMode
 	]);
@@ -60741,402 +62978,448 @@ var NowPlayingView = import_react.memo(import_react.forwardRef(({ open, track, n
 		}
 		if (shouldClose) onClose();
 	};
-	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-		ref: backdropRef,
-		"aria-hidden": "true",
-		style: { opacity: open ? 1 : 0 },
-		className: "fixed inset-0 z-[45] bg-black/45 pointer-events-none transition-opacity duration-300"
-	}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-		ref: sheetRef,
-		"aria-hidden": !open,
-		onPointerDown: handlePointerDown,
-		onPointerMove: handlePointerMove,
-		onPointerUp: finishSheetDrag,
-		onPointerCancel: finishSheetDrag,
-		style: {
-			transform: open ? "translate3d(0, 0, 0)" : "translate3d(0, 100%, 0)",
-			paddingTop: "env(safe-area-inset-top, 0px)",
-			paddingBottom: "env(safe-area-inset-bottom, 0px)",
-			touchAction: "none"
-		},
-		className: `fixed inset-0 z-50 h-full overflow-hidden bg-zinc-50 dark:bg-zinc-950 flex flex-col shadow-[0_-16px_48px_rgba(0,0,0,0.4)] will-change-transform transition-[transform,border-radius] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] touch-none select-none ${open ? "pointer-events-auto" : "pointer-events-none"}`,
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-			"data-sheet-handle": "true",
-			className: "z-10 bg-zinc-50/95 dark:bg-zinc-950/95 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800/80 shrink-0",
-			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-				className: "pt-1.5 pb-0.5 flex justify-center",
-				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-12 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-600" })
-			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "flex items-center justify-between gap-2 px-3 sm:px-6 h-11",
-				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-						type: "button",
-						onClick: onClose,
-						"aria-label": "Slide down to Library",
-						className: "min-h-[36px] px-2 flex items-center gap-1 rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-95 transition-transform duration-100 text-xs font-medium text-zinc-700 dark:text-zinc-200 shrink-0",
-						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronDown, { className: "w-4 h-4" }),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Library, { className: "w-3.5 h-3.5 opacity-80" }),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-								className: "hidden xs:inline sm:inline",
-								children: "Library"
-							})
-						]
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "inline-flex items-center p-0.5 rounded-lg bg-zinc-200/75 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-							type: "button",
-							onClick: () => {
-								tactile.tap();
-								setDeckPage("player");
-							},
-							className: `min-h-[30px] px-2.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${deckPage === "player" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"}`,
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Disc3, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Deck" })]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-							type: "button",
-							onClick: () => {
-								tactile.tap();
-								setDeckPage("queue");
-							},
-							className: `min-h-[30px] px-2.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${deckPage === "queue" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"}`,
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ListMusic, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
-								"Queue (",
-								queue.length,
-								")"
-							] })]
-						})]
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "flex items-center gap-1 shrink-0",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-							className: "hidden sm:inline text-[11px] font-mono-tabular text-zinc-500 mr-1",
-							children: APP_VERSION
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-							type: "button",
-							onClick: onOpenShare,
-							"aria-label": "Share current track",
-							className: "min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
-							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Share2, { className: "w-4 h-4" })
-						})]
-					})
-				]
-			})]
-		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-			className: "flex-1 min-h-0 overflow-hidden px-4 sm:px-8 py-2.5 sm:py-4 flex flex-col",
-			children: deckPage === "player" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "max-w-5xl w-full h-full min-h-0 mx-auto flex flex-col lg:flex-row [@media(max-height:540px)]:flex-row items-center justify-evenly gap-2.5 sm:gap-4 lg:gap-10",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					"data-sheet-handle": "true",
-					className: "flex-1 min-h-0 w-full max-w-[320px] lg:max-w-[400px] [@media(max-height:540px)]:max-w-[200px] flex flex-col items-center justify-center gap-2",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						className: "h-[min(27dvh,220px)] sm:h-[min(36dvh,310px)] lg:h-[min(50dvh,380px)] [@media(max-height:540px)]:h-[min(56dvh,185px)] aspect-square max-w-full",
-						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CoverArt, {
-							src: track.coverUrl,
-							alt: track.title,
-							className: "w-full h-full rounded-2xl shadow-xl border border-zinc-200/50 dark:border-zinc-800"
-						})
-					}), !lowBatteryMode && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("canvas", {
-						ref: canvasRef,
-						width: 360,
-						height: 32,
-						className: "w-full max-w-[300px] h-6 sm:h-8 [@media(max-height:540px)]:hidden rounded-lg opacity-90 shrink-0"
-					})]
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [
+		/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+			ref: backdropRef,
+			"aria-hidden": "true",
+			style: { opacity: open ? 1 : 0 },
+			className: "fixed inset-0 z-[45] bg-black/45 pointer-events-none transition-opacity duration-300"
+		}),
+		/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+			ref: sheetRef,
+			"aria-hidden": !open,
+			onPointerDown: handlePointerDown,
+			onPointerMove: handlePointerMove,
+			onPointerUp: finishSheetDrag,
+			onPointerCancel: finishSheetDrag,
+			style: {
+				transform: open ? "translate3d(0, 0, 0)" : "translate3d(0, 100%, 0)",
+				paddingTop: "env(safe-area-inset-top, 0px)",
+				paddingBottom: "env(safe-area-inset-bottom, 0px)",
+				touchAction: "none"
+			},
+			className: `fixed inset-0 z-50 h-full overflow-hidden bg-zinc-50 dark:bg-zinc-950 flex flex-col shadow-[0_-16px_48px_rgba(0,0,0,0.4)] will-change-transform transition-[transform,border-radius] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] touch-none select-none ${open ? "pointer-events-auto" : "pointer-events-none"}`,
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				"data-sheet-handle": "true",
+				className: "z-10 bg-zinc-50/95 dark:bg-zinc-950/95 backdrop-blur-md border-b border-zinc-200/80 dark:border-zinc-800/80 shrink-0",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+					className: "pt-1.5 pb-0.5 flex justify-center",
+					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { className: "w-12 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-600" })
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "w-full max-w-md shrink-0 flex flex-col gap-2.5 sm:gap-3.5 [@media(max-height:540px)]:gap-1.5",
+					className: "flex items-center justify-between gap-2 px-3 sm:px-6 h-11",
 					children: [
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "flex items-start justify-between gap-2.5",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "min-w-0",
-								children: [
-									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
-										className: "text-base sm:text-2xl font-display font-bold text-zinc-900 dark:text-zinc-100 leading-tight truncate",
-										children: track.title
-									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "mt-0.5 flex items-center gap-1.5 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 truncate",
-										children: [
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-												type: "button",
-												onClick: () => {
-													onGoToArtist(track.artist);
-													onClose();
-												},
-												className: "hover:underline font-medium text-zinc-800 dark:text-zinc-200 truncate",
-												children: track.artist
-											}),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-												"aria-hidden": "true",
-												children: "·"
-											}),
-											/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-												type: "button",
-												onClick: () => {
-													onGoToAlbum(track.album);
-													onClose();
-												},
-												className: "hover:underline truncate",
-												children: [track.album, track.year ? ` (${track.year})` : ""]
-											})
-										]
-									}),
-									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400 font-mono-tabular truncate",
-										children: [
-											track.format,
-											" · ",
-											track.bitDepth,
-											"b/",
-											(track.sampleRate / 1e3).toFixed(1),
-											"kHz ·",
-											" ",
-											streamingQuality === "lossless-hires" ? "Bit-Perfect" : streamingQuality
-										]
-									})
-								]
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								"aria-label": track.favorite ? "Remove favorite" : "Favorite track",
-								onClick: () => onToggleFavorite(track.id),
-								className: "min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-90 transition-transform duration-100 shrink-0",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Heart, { className: `w-5 h-5 ${track.favorite ? "fill-rose-500 text-rose-500" : "text-zinc-400"}` })
-							})]
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "space-y-0.5",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-								type: "range",
-								"aria-label": "Seek timeline",
-								min: 0,
-								max: dur,
-								step: .5,
-								value: Math.min(displayTime, dur),
-								onChange: (e) => {
-									const val = parseFloat(e.target.value);
-									setDragTime(val);
-									audioEngine.seek(val);
-								},
-								onPointerUp: () => setDragTime(null),
-								onKeyUp: () => setDragTime(null),
-								className: "w-full accent-amber-500 cursor-pointer"
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "flex justify-between text-[11px] font-mono-tabular text-zinc-500 dark:text-zinc-400",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: formatDuration(displayTime) }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: formatDuration(dur) })]
-							})]
-						}),
-						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "flex items-center justify-between",
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							type: "button",
+							onClick: onClose,
+							"aria-label": "Slide down to Library",
+							className: "min-h-[36px] px-2 flex items-center gap-1 rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-95 transition-transform duration-100 text-xs font-medium text-zinc-700 dark:text-zinc-200 shrink-0",
 							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-									type: "button",
-									"aria-label": "Shuffle",
-									onClick: onToggleShuffle,
-									className: `min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl active:scale-90 transition-transform duration-100 ${shuffle ? "accent-text bg-zinc-200/60 dark:bg-zinc-800" : "text-zinc-500"}`,
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Shuffle, { className: "w-5 h-5" })
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-									type: "button",
-									"aria-label": "Previous",
-									onClick: onPrev,
-									className: "min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipBack, { className: "w-6 h-6" })
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-									type: "button",
-									"aria-label": isPlaying ? "Pause" : "Play",
-									onClick: onTogglePlay,
-									className: "w-12 h-12 sm:w-16 sm:h-16 rounded-full accent-bg flex items-center justify-center shadow-lg active:scale-90 transition-transform duration-100",
-									children: isPlaying ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pause, { className: "w-6 h-6 sm:w-7 sm:h-7 fill-current" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Play, { className: "w-6 h-6 sm:w-7 sm:h-7 fill-current ml-0.5" })
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-									type: "button",
-									"aria-label": "Next",
-									onClick: onNext,
-									className: "min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipForward, { className: "w-6 h-6" })
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-									type: "button",
-									"aria-label": "Repeat",
-									onClick: onCycleRepeat,
-									className: `min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl active:scale-90 transition-transform duration-100 ${repeatMode !== "off" ? "accent-text bg-zinc-200/60 dark:bg-zinc-800" : "text-zinc-500"}`,
-									children: repeatMode === "one" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Repeat1, { className: "w-5 h-5" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Repeat, { className: "w-5 h-5" })
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronDown, { className: "w-4 h-4" }),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Library, { className: "w-3.5 h-3.5 opacity-80" }),
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "hidden xs:inline sm:inline",
+									children: "Library"
 								})
 							]
 						}),
 						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "pt-2 border-t border-zinc-200 dark:border-zinc-800 flex items-center gap-2",
+							className: "inline-flex items-center p-0.5 rounded-lg bg-zinc-200/75 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								onClick: () => {
+									tactile.tap();
+									setDeckPage("player");
+								},
+								className: `min-h-[30px] px-2.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${deckPage === "player" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"}`,
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Disc3, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Deck" })]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								onClick: () => {
+									tactile.tap();
+									setDeckPage("queue");
+								},
+								className: `min-h-[30px] px-2.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${deckPage === "queue" ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-sm" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200"}`,
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ListMusic, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("span", { children: [
+									"Queue (",
+									queue.length,
+									")"
+								] })]
+							})]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "flex items-center gap-1 shrink-0",
 							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-									className: "flex items-center gap-1.5 flex-1 min-w-0",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-										type: "button",
-										"aria-label": volume === 0 ? "Unmute" : "Mute",
-										onClick: () => {
-											tactile.tap();
-											onChangeVolume(volume === 0 ? .8 : 0);
-										},
-										className: "min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 shrink-0",
-										children: volume === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(VolumeX, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Volume2, { className: "w-4 h-4" })
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
-										type: "range",
-										"aria-label": "Master Volume",
-										min: 0,
-										max: 1,
-										step: .01,
-										value: volume,
-										onChange: (e) => onChangeVolume(parseFloat(e.target.value)),
-										className: "w-full accent-amber-500 cursor-pointer"
-									})]
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									className: "hidden sm:inline text-[11px] font-mono-tabular text-zinc-500 mr-1",
+									children: APP_VERSION
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 									type: "button",
 									onClick: () => {
-										onClose();
-										onOpenEqualizer();
+										tactile.toggle(!showLyrics);
+										onToggleShowLyrics();
 									},
-									className: "min-h-[34px] px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium flex items-center gap-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-95 transition-transform duration-100 whitespace-nowrap",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SlidersVertical, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "EQ" })]
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-									type: "button",
-									onClick: onOpenCast,
-									className: "min-h-[34px] px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium flex items-center gap-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-95 transition-transform duration-100 whitespace-nowrap",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Cast, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+									title: showLyrics ? "Karaoke Lyrics ON — tap to show Album Cover" : "Album Cover ON — tap to show Karaoke Lyrics",
+									"aria-label": showLyrics ? "Show Album Cover" : "Show Karaoke Lyrics",
+									className: `min-h-[34px] px-2 flex items-center gap-1 rounded-xl border text-xs font-medium active:scale-95 transition-all duration-100 ${showLyrics ? "accent-soft-bg border-amber-500/40" : "border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200/60 dark:hover:bg-zinc-800"}`,
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MicVocal, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 										className: "hidden xs:inline sm:inline",
-										children: "Output"
+										children: "Lyrics"
 									})]
-								})
-							]
-						}),
-						nextTrack && nextTrack.id !== track.id && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-							type: "button",
-							onClick: () => setDeckPage("queue"),
-							className: "[@media(max-height:540px)]:hidden text-left text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 truncate transition-colors",
-							children: [
-								"Up Next: ",
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "font-medium text-zinc-700 dark:text-zinc-300",
-									children: nextTrack.title
 								}),
-								" · ",
-								nextTrack.artist
+								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									onClick: onOpenShare,
+									"aria-label": "Share current track",
+									className: "min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Share2, { className: "w-4 h-4" })
+								})
 							]
 						})
 					]
 				})]
-			}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "max-w-3xl w-full h-full min-h-0 mx-auto flex flex-col gap-2.5 overflow-hidden",
-				children: [
-					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-						className: "shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-2.5 sm:p-3.5 flex flex-wrap items-center justify-between gap-2.5",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "text-[11px] sm:text-xs font-medium text-zinc-500 dark:text-zinc-400",
-							children: [
-								"Rating · ",
-								track.genre,
-								" · ",
-								track.bitrateKbps,
-								" kbps"
-							]
-						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							className: "flex items-center gap-0.5 mt-0.5",
-							children: [
-								1,
-								2,
-								3,
-								4,
-								5
-							].map((star) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-								type: "button",
-								"aria-label": `Rate ${star} stars`,
-								onClick: () => onRateTrack(track.id, track.rating === star ? 0 : star),
-								className: "min-w-[34px] min-h-[34px] flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
-								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Star, { className: `w-4 h-4 ${star <= track.rating ? "fill-amber-400 text-amber-400" : "text-zinc-300 dark:text-zinc-700"}` })
-							}, star))
-						})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-							className: "flex items-center gap-1.5",
-							children: [
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-									type: "button",
-									onClick: onPrev,
-									className: "min-w-[36px] min-h-[36px] rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-center",
-									"aria-label": "Previous",
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipBack, { className: "w-4 h-4" })
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-									type: "button",
-									onClick: onTogglePlay,
-									className: "w-10 h-10 rounded-full accent-bg flex items-center justify-center shadow",
-									"aria-label": isPlaying ? "Pause" : "Play",
-									children: isPlaying ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pause, { className: "w-4 h-4 fill-current" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Play, { className: "w-4 h-4 fill-current ml-0.5" })
-								}),
-								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-									type: "button",
-									onClick: onNext,
-									className: "min-w-[36px] min-h-[36px] rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-center",
-									"aria-label": "Next",
-									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipForward, { className: "w-4 h-4" })
-								})
-							]
-						})]
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-						ref: queueViewportRef,
-						className: "flex-1 min-h-0 overflow-hidden flex flex-col",
-						children: pagedQueue.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							className: "h-full flex items-center justify-center text-sm text-zinc-500",
-							children: "Queue is empty."
-						}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-							className: "divide-y divide-zinc-200/70 dark:divide-zinc-800/70",
-							children: pagedQueue.map((qt) => {
-								const active = qt.id === track.id;
-								return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
-									type: "button",
-									onClick: () => onPlayQueueTrack?.(qt),
-									className: `w-full h-[52px] px-2.5 rounded-xl flex items-center justify-between gap-3 text-left transition-colors ${active ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "hover:bg-zinc-100 dark:hover:bg-zinc-900"}`,
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-										className: "flex items-center gap-2.5 min-w-0",
-										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CoverArt, {
-											src: qt.coverUrl,
-											alt: qt.title,
-											isPlaying: active && isPlaying,
-											className: "w-9 h-9 rounded-lg"
-										}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-											className: "min-w-0",
-											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-												className: "text-sm font-medium truncate",
-												children: qt.title
-											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-												className: "text-xs text-zinc-500 dark:text-zinc-400 truncate",
-												children: [
-													qt.artist,
-													" · ",
-													qt.format
-												]
-											})]
-										})]
-									}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-										className: "text-xs font-mono-tabular text-zinc-500 shrink-0",
-										children: formatDuration(qt.duration)
-									})]
-								}, qt.id);
-							})
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "flex-1 min-h-0 overflow-hidden px-4 sm:px-8 py-2.5 sm:py-4 flex flex-col",
+				children: deckPage === "player" ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "max-w-5xl w-full h-full min-h-0 mx-auto flex flex-col lg:flex-row [@media(max-height:540px)]:flex-row items-center justify-evenly gap-2.5 sm:gap-4 lg:gap-10",
+					children: [showLyrics ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "flex-1 min-h-0 w-full max-w-[480px] lg:max-w-[520px] h-[min(34dvh,300px)] sm:h-[min(42dvh,380px)] lg:h-[min(60dvh,460px)] [@media(max-height:540px)]:h-full [@media(max-height:540px)]:max-w-[340px]",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(KaraokeLyricsView, {
+							track,
+							isPlaying,
+							offsetMs: karaokeOffsetMs,
+							fetchingLyrics,
+							onChangeOffsetMs: onChangeKaraokeOffsetMs,
+							onSeek: (sec) => audioEngine.seek(sec),
+							onFetchLyrics: onFetchTrackLyrics,
+							onOpenCast,
+							onToggleTvStage: () => setTvStageOpen(true),
+							onShowAlbumCover: onToggleShowLyrics
 						})
-					}),
-					/* @__PURE__ */ (0, import_jsx_runtime.jsx)(PaginationBar, {
-						page: safeQueuePage,
-						totalPages: queueTotalPages,
-						totalItems: queue.length,
-						pageSize: queueLayout.pageSize,
-						onChangePage: setQueuePage,
-						itemLabel: "in queue"
-					})
-				]
-			})
-		})]
-	})] });
+					}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						"data-sheet-handle": "true",
+						className: "flex-1 min-h-0 w-full max-w-[320px] lg:max-w-[400px] [@media(max-height:540px)]:max-w-[200px] flex flex-col items-center justify-center gap-2",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							className: "h-[min(27dvh,220px)] sm:h-[min(36dvh,310px)] lg:h-[min(50dvh,380px)] [@media(max-height:540px)]:h-[min(56dvh,185px)] aspect-square max-w-full",
+							children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(CoverArt, {
+								src: track.coverUrl,
+								alt: track.title,
+								className: "w-full h-full rounded-2xl shadow-xl border border-zinc-200/50 dark:border-zinc-800"
+							})
+						}), !lowBatteryMode && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("canvas", {
+							ref: canvasRef,
+							width: 360,
+							height: 32,
+							className: "w-full max-w-[300px] h-6 sm:h-8 [@media(max-height:540px)]:hidden rounded-lg opacity-90 shrink-0"
+						})]
+					}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "w-full max-w-md shrink-0 flex flex-col gap-2.5 sm:gap-3.5 [@media(max-height:540px)]:gap-1.5",
+						children: [
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-start justify-between gap-2.5",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "min-w-0",
+									children: [
+										/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+											className: "text-base sm:text-2xl font-display font-bold text-zinc-900 dark:text-zinc-100 leading-tight truncate",
+											children: track.title
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "mt-0.5 flex items-center gap-1.5 text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 truncate",
+											children: [
+												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+													type: "button",
+													onClick: () => {
+														onGoToArtist(track.artist);
+														onClose();
+													},
+													className: "hover:underline font-medium text-zinc-800 dark:text-zinc-200 truncate",
+													children: track.artist
+												}),
+												/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+													"aria-hidden": "true",
+													children: "·"
+												}),
+												/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+													type: "button",
+													onClick: () => {
+														onGoToAlbum(track.album);
+														onClose();
+													},
+													className: "hover:underline truncate",
+													children: [track.album, track.year ? ` (${track.year})` : ""]
+												})
+											]
+										}),
+										/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400 font-mono-tabular truncate",
+											children: [
+												track.format,
+												" · ",
+												track.bitDepth,
+												"b/",
+												(track.sampleRate / 1e3).toFixed(1),
+												"kHz ·",
+												" ",
+												streamingQuality === "lossless-hires" ? "Bit-Perfect" : streamingQuality
+											]
+										})
+									]
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									"aria-label": track.favorite ? "Remove favorite" : "Favorite track",
+									onClick: () => onToggleFavorite(track.id),
+									className: "min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-90 transition-transform duration-100 shrink-0",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Heart, { className: `w-5 h-5 ${track.favorite ? "fill-rose-500 text-rose-500" : "text-zinc-400"}` })
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "space-y-0.5",
+								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+									type: "range",
+									"aria-label": "Seek timeline",
+									min: 0,
+									max: dur,
+									step: .5,
+									value: Math.min(displayTime, dur),
+									onChange: (e) => {
+										const val = parseFloat(e.target.value);
+										setDragTime(val);
+										audioEngine.seek(val);
+									},
+									onPointerUp: () => setDragTime(null),
+									onKeyUp: () => setDragTime(null),
+									className: "w-full accent-amber-500 cursor-pointer"
+								}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+									className: "flex justify-between text-[11px] font-mono-tabular text-zinc-500 dark:text-zinc-400",
+									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: formatDuration(displayTime) }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: formatDuration(dur) })]
+								})]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center justify-between",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										"aria-label": "Shuffle",
+										onClick: onToggleShuffle,
+										className: `min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl active:scale-90 transition-transform duration-100 ${shuffle ? "accent-text bg-zinc-200/60 dark:bg-zinc-800" : "text-zinc-500"}`,
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Shuffle, { className: "w-5 h-5" })
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										"aria-label": "Previous",
+										onClick: onPrev,
+										className: "min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipBack, { className: "w-6 h-6" })
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										"aria-label": isPlaying ? "Pause" : "Play",
+										onClick: onTogglePlay,
+										className: "w-12 h-12 sm:w-16 sm:h-16 rounded-full accent-bg flex items-center justify-center shadow-lg active:scale-90 transition-transform duration-100",
+										children: isPlaying ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pause, { className: "w-6 h-6 sm:w-7 sm:h-7 fill-current" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Play, { className: "w-6 h-6 sm:w-7 sm:h-7 fill-current ml-0.5" })
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										"aria-label": "Next",
+										onClick: onNext,
+										className: "min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipForward, { className: "w-6 h-6" })
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										"aria-label": "Repeat",
+										onClick: onCycleRepeat,
+										className: `min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl active:scale-90 transition-transform duration-100 ${repeatMode !== "off" ? "accent-text bg-zinc-200/60 dark:bg-zinc-800" : "text-zinc-500"}`,
+										children: repeatMode === "one" ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Repeat1, { className: "w-5 h-5" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Repeat, { className: "w-5 h-5" })
+									})
+								]
+							}),
+							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "pt-2 border-t border-zinc-200 dark:border-zinc-800 flex items-center gap-2",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-center gap-1.5 flex-1 min-w-0",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+											type: "button",
+											"aria-label": volume === 0 ? "Unmute" : "Mute",
+											onClick: () => {
+												tactile.tap();
+												onChangeVolume(volume === 0 ? .8 : 0);
+											},
+											className: "min-w-[32px] min-h-[32px] flex items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 shrink-0",
+											children: volume === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(VolumeX, { className: "w-4 h-4" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Volume2, { className: "w-4 h-4" })
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("input", {
+											type: "range",
+											"aria-label": "Master Volume",
+											min: 0,
+											max: 1,
+											step: .01,
+											value: volume,
+											onChange: (e) => onChangeVolume(parseFloat(e.target.value)),
+											className: "w-full accent-amber-500 cursor-pointer"
+										})]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+										type: "button",
+										onClick: () => {
+											onClose();
+											onOpenEqualizer();
+										},
+										className: "min-h-[34px] px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium flex items-center gap-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-95 transition-transform duration-100 whitespace-nowrap",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SlidersVertical, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "EQ" })]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+										type: "button",
+										onClick: onOpenCast,
+										className: "min-h-[34px] px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 text-xs font-medium flex items-center gap-1 hover:bg-zinc-100 dark:hover:bg-zinc-900 active:scale-95 transition-transform duration-100 whitespace-nowrap",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Cast, { className: "w-3.5 h-3.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "hidden xs:inline sm:inline",
+											children: "Output"
+										})]
+									})
+								]
+							}),
+							nextTrack && nextTrack.id !== track.id && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+								type: "button",
+								onClick: () => setDeckPage("queue"),
+								className: "[@media(max-height:540px)]:hidden text-left text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 truncate transition-colors",
+								children: [
+									"Up Next: ",
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+										className: "font-medium text-zinc-700 dark:text-zinc-300",
+										children: nextTrack.title
+									}),
+									" · ",
+									nextTrack.artist
+								]
+							})
+						]
+					})]
+				}) : /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+					className: "max-w-3xl w-full h-full min-h-0 mx-auto flex flex-col gap-2.5 overflow-hidden",
+					children: [
+						/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/70 p-2.5 sm:p-3.5 flex flex-wrap items-center justify-between gap-2.5",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "text-[11px] sm:text-xs font-medium text-zinc-500 dark:text-zinc-400",
+								children: [
+									"Rating · ",
+									track.genre,
+									" · ",
+									track.bitrateKbps,
+									" kbps"
+								]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "flex items-center gap-0.5 mt-0.5",
+								children: [
+									1,
+									2,
+									3,
+									4,
+									5
+								].map((star) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+									type: "button",
+									"aria-label": `Rate ${star} stars`,
+									onClick: () => onRateTrack(track.id, track.rating === star ? 0 : star),
+									className: "min-w-[34px] min-h-[34px] flex items-center justify-center rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100",
+									children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Star, { className: `w-4 h-4 ${star <= track.rating ? "fill-amber-400 text-amber-400" : "text-zinc-300 dark:text-zinc-700"}` })
+								}, star))
+							})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "flex items-center gap-1.5",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										onClick: onPrev,
+										className: "min-w-[36px] min-h-[36px] rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-center",
+										"aria-label": "Previous",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipBack, { className: "w-4 h-4" })
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										onClick: onTogglePlay,
+										className: "w-10 h-10 rounded-full accent-bg flex items-center justify-center shadow",
+										"aria-label": isPlaying ? "Pause" : "Play",
+										children: isPlaying ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Pause, { className: "w-4 h-4 fill-current" }) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Play, { className: "w-4 h-4 fill-current ml-0.5" })
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
+										type: "button",
+										onClick: onNext,
+										className: "min-w-[36px] min-h-[36px] rounded-xl border border-zinc-200 dark:border-zinc-800 flex items-center justify-center",
+										"aria-label": "Next",
+										children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SkipForward, { className: "w-4 h-4" })
+									})
+								]
+							})]
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+							ref: queueViewportRef,
+							className: "flex-1 min-h-0 overflow-hidden flex flex-col",
+							children: pagedQueue.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "h-full flex items-center justify-center text-sm text-zinc-500",
+								children: "Queue is empty."
+							}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+								className: "divide-y divide-zinc-200/70 dark:divide-zinc-800/70",
+								children: pagedQueue.map((qt) => {
+									const active = qt.id === track.id;
+									return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+										type: "button",
+										onClick: () => onPlayQueueTrack?.(qt),
+										className: `w-full h-[52px] px-2.5 rounded-xl flex items-center justify-between gap-3 text-left transition-colors ${active ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "hover:bg-zinc-100 dark:hover:bg-zinc-900"}`,
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+											className: "flex items-center gap-2.5 min-w-0",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CoverArt, {
+												src: qt.coverUrl,
+												alt: qt.title,
+												isPlaying: active && isPlaying,
+												className: "w-9 h-9 rounded-lg"
+											}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+												className: "min-w-0",
+												children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+													className: "text-sm font-medium truncate",
+													children: qt.title
+												}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+													className: "text-xs text-zinc-500 dark:text-zinc-400 truncate",
+													children: [
+														qt.artist,
+														" · ",
+														qt.format
+													]
+												})]
+											})]
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+											className: "text-xs font-mono-tabular text-zinc-500 shrink-0",
+											children: formatDuration(qt.duration)
+										})]
+									}, qt.id);
+								})
+							})
+						}),
+						/* @__PURE__ */ (0, import_jsx_runtime.jsx)(PaginationBar, {
+							page: safeQueuePage,
+							totalPages: queueTotalPages,
+							totalItems: queue.length,
+							pageSize: queueLayout.pageSize,
+							onChangePage: setQueuePage,
+							itemLabel: "in queue"
+						})
+					]
+				})
+			})]
+		}),
+		/* @__PURE__ */ (0, import_jsx_runtime.jsx)(KaraokeTvStageOverlay, {
+			open: tvStageOpen,
+			track,
+			isPlaying,
+			offsetMs: karaokeOffsetMs,
+			fetchingLyrics,
+			onChangeOffsetMs: onChangeKaraokeOffsetMs,
+			onSeek: (sec) => audioEngine.seek(sec),
+			onFetchLyrics: onFetchTrackLyrics,
+			onOpenCast,
+			onClose: () => setTvStageOpen(false)
+		})
+	] });
 }));
 // src/components/HomescreenWidget.tsx
 var HomescreenWidget = import_react.memo(({ visible, variant = "top-bar", track, isPlaying, onTogglePlay, onPrev, onNext, onToggleFavorite, onChangeVariant, onExpand, onClose }) => {
@@ -61327,11 +63610,12 @@ var HomescreenWidget = import_react.memo(({ visible, variant = "top-bar", track,
 });
 // src/components/CastModal.tsx
 var DEVICES_PER_PAGE = 3;
-var CastModal = ({ open, onClose }) => {
+var CastModal = ({ open, track, karaokeOffsetMs = 0, onLaunchTvStage, onClose }) => {
 	const [devices, setDevices] = (0, import_react.useState)([]);
 	const [selectedId, setSelectedId] = (0, import_react.useState)("default");
 	const [statusMsg, setStatusMsg] = (0, import_react.useState)(null);
 	const [page, setPage] = (0, import_react.useState)(0);
+	const [connectedDisplays, setConnectedDisplays] = (0, import_react.useState)(0);
 	const loadDevices = async () => {
 		try {
 			if (!navigator.mediaDevices?.enumerateDevices) {
@@ -61348,6 +63632,7 @@ var CastModal = ({ open, onClose }) => {
 	(0, import_react.useEffect)(() => {
 		if (open) {
 			setStatusMsg(null);
+			setConnectedDisplays(getActiveCastConnectionCount());
 			loadDevices();
 		}
 	}, [open]);
@@ -61375,6 +63660,25 @@ var CastModal = ({ open, onClose }) => {
 			setStatusMsg(err instanceof Error ? err.message : "Cast prompt unavailable here.");
 		}
 	};
+	const handleLaunchKaraokeDisplay = async () => {
+		tactile.tap();
+		const PresentationCtor = window.PresentationRequest;
+		if (PresentationCtor) try {
+			registerPresentationConnection(await new PresentationCtor([`${window.location.origin}/?karaoke-display=1`]).start());
+			setConnectedDisplays(getActiveCastConnectionCount());
+			tactile.success();
+			setStatusMsg("Karaoke TV Display connected & synchronized live!");
+			return;
+		} catch (err) {
+			const name = err instanceof DOMException ? err.name : "";
+			if (name === "AbortError" || name === "NotAllowedError") setStatusMsg("Display picker dismissed. Launching in-app Karaoke Stage instead.");
+		}
+		if (onLaunchTvStage) {
+			tactile.success();
+			onClose();
+			onLaunchTvStage();
+		} else setStatusMsg("Open Fullscreen Stage on Now Playing for TV-ready karaoke projection.");
+	};
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 		className: "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-hidden",
 		children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
@@ -61385,7 +63689,7 @@ var CastModal = ({ open, onClose }) => {
 					className: "flex items-center gap-2.5",
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Cast, { className: "w-5 h-5 accent-text" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h3", {
 						className: "text-base font-display font-semibold",
-						children: "Cast & Audio Output"
+						children: "Cast, Karaoke TV & Output"
 					})]
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 					type: "button",
@@ -61395,13 +63699,41 @@ var CastModal = ({ open, onClose }) => {
 					children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(X$1, { className: "w-4 h-4" })
 				})]
 			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "p-4 sm:p-5 space-y-3.5",
+				className: "p-4 sm:p-5 space-y-3",
 				children: [
 					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
 						type: "button",
-						onClick: handleCastPrompt,
+						onClick: handleLaunchKaraokeDisplay,
 						className: "w-full min-h-[44px] px-4 rounded-xl accent-bg text-sm font-medium flex items-center justify-center gap-2",
-						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Cast, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Cast to Smart Speaker / Chromecast" })]
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Tv, { className: "w-4 h-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: connectedDisplays > 0 ? `Karaoke TV Connected (${connectedDisplays}) · Launch Stage` : "Cast / Launch Karaoke TV Display" })]
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+						type: "button",
+						onClick: handleCastPrompt,
+						className: "w-full min-h-[40px] px-4 rounded-xl border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-xs sm:text-sm font-medium flex items-center justify-center gap-2",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Cast, { className: "w-4 h-4 accent-text" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: "Cast Audio to Smart Speaker / Chromecast" })]
+					}),
+					track && /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/60 p-2.5 text-[11px] text-zinc-600 dark:text-zinc-300 flex items-start gap-2",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(MicVocal, { className: "w-4 h-4 accent-text shrink-0 mt-0.5" }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							className: "min-w-0",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "font-medium truncate",
+								children: [
+									track.title,
+									" · ",
+									track.lyrics?.trim() ? "Lyrics Ready" : "No Embedded Lyrics"
+								]
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+								className: "text-zinc-500 dark:text-zinc-400",
+								children: [
+									"Casting or using Bluetooth speakers? Use -0.5s / +0.5s sync in Karaoke Stage (offset:",
+									" ",
+									karaokeOffsetMs > 0 ? `+${(karaokeOffsetMs / 1e3).toFixed(1)}s` : `${(karaokeOffsetMs / 1e3).toFixed(1)}s`,
+									")."
+								]
+							})]
+						})]
 					}),
 					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 						className: "flex items-center justify-between pt-1",
@@ -62015,8 +64347,8 @@ var WORKSPACES = [
 			},
 			{
 				id: "settings-storage",
-				label: "Storage",
-				shortLabel: "Cache",
+				label: "Folders & Cache",
+				shortLabel: "Folders",
 				icon: HardDrive
 			},
 			{
@@ -62042,7 +64374,7 @@ function getWorkspaceForTab(tab) {
 	if (clean.startsWith("settings-")) return "settings";
 	return "library";
 }
-function App() {
+function MainApp() {
 	const initialSessionRef = (0, import_react.useRef)(null);
 	if (!initialSessionRef.current) initialSessionRef.current = loadSession();
 	const [settings, setSettings] = (0, import_react.useState)(() => loadSettings());
@@ -62075,7 +64407,12 @@ function App() {
 	const [isPlaying, setIsPlaying] = (0, import_react.useState)(false);
 	const [isLoadingAudio, setIsLoadingAudio] = (0, import_react.useState)(false);
 	const [audioError, setAudioError] = (0, import_react.useState)(null);
-	const [nowPlayingOpen, setNowPlayingOpen] = (0, import_react.useState)(true);
+	const [nowPlayingOpen, setNowPlayingOpen] = (0, import_react.useState)(() => initialSessionRef.current?.nowPlayingOpen ?? true);
+	const [nowPlayingDeckPage, setNowPlayingDeckPage] = (0, import_react.useState)(() => initialSessionRef.current?.nowPlayingDeckPage ?? "player");
+	const [libraryStartIndices, setLibraryStartIndices] = (0, import_react.useState)(() => initialSessionRef.current?.libraryStartIndices || {});
+	const [scanningFolders, setScanningFolders] = (0, import_react.useState)(false);
+	const [fetchingLyrics, setFetchingLyrics] = (0, import_react.useState)(false);
+	const [tvStageOpen, setTvStageOpen] = (0, import_react.useState)(false);
 	const [castOpen, setCastOpen] = (0, import_react.useState)(false);
 	const [shareOpen, setShareOpen] = (0, import_react.useState)(false);
 	const [shareMode, setShareMode] = (0, import_react.useState)("track");
@@ -62087,8 +64424,58 @@ function App() {
 	const [syncBusy, setSyncBusy] = (0, import_react.useState)(false);
 	const [syncMessage, setSyncMessage] = (0, import_react.useState)(null);
 	const [activeTasks, setActiveTasks] = (0, import_react.useState)([]);
+	const [noChangesToast, setNoChangesToast] = (0, import_react.useState)(null);
 	const taskCleanupTimersRef = (0, import_react.useRef)(/* @__PURE__ */ new Map());
 	const nowPlayingSheetRef = (0, import_react.useRef)(null);
+	const showNoChangesToast = (0, import_react.useCallback)((message = "No changes were made") => {
+		setNoChangesToast({
+			id: Date.now(),
+			message
+		});
+	}, []);
+	(0, import_react.useEffect)(() => {
+		if (!noChangesToast) return;
+		const dismissTimer = window.setTimeout(() => {
+			setNoChangesToast(null);
+		}, 3e3);
+		const dismissOnInteraction = () => {
+			setNoChangesToast(null);
+		};
+		let listenersAttached = false;
+		const attachTimer = window.setTimeout(() => {
+			listenersAttached = true;
+			document.addEventListener("pointerdown", dismissOnInteraction, true);
+			document.addEventListener("keydown", dismissOnInteraction, true);
+		}, 120);
+		return () => {
+			window.clearTimeout(dismissTimer);
+			window.clearTimeout(attachTimer);
+			if (listenersAttached) {
+				document.removeEventListener("pointerdown", dismissOnInteraction, true);
+				document.removeEventListener("keydown", dismissOnInteraction, true);
+			}
+		};
+	}, [noChangesToast]);
+	const globalAiQuotaCountdown = useAiQuotaCountdown();
+	(0, import_react.useEffect)(() => {
+		let cancelled = false;
+		(async () => {
+			try {
+				const resp = await fetch(resolveApiUrl("/api/ai/status"));
+				if (!resp.ok || cancelled) return;
+				const data = await resp.json().catch(() => ({}));
+				if (!cancelled && data.available === false && data.quota) setActiveAiQuotaState(buildAiQuotaStateFromPayload({
+					error: data.quota.message,
+					retryAfterSeconds: data.quota.retryAfterSeconds,
+					resetAtIso: data.quota.resetAtIso,
+					quotaScope: data.quota.quotaScope
+				}));
+			} catch {}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, []);
 	const dismissTask = (0, import_react.useCallback)((taskId) => {
 		const existingTimer = taskCleanupTimersRef.current.get(taskId);
 		if (existingTimer) {
@@ -62152,7 +64539,7 @@ function App() {
 		if (settingsSaveTimerRef.current) window.clearTimeout(settingsSaveTimerRef.current);
 		settingsSaveTimerRef.current = window.setTimeout(() => {
 			saveSettings(settings);
-		}, 180);
+		}, 60);
 		return () => {
 			if (settingsSaveTimerRef.current) window.clearTimeout(settingsSaveTimerRef.current);
 		};
@@ -62243,7 +64630,9 @@ function App() {
 		selectedGenreFilter,
 		selectedFolderFilter,
 		selectedPlaylistFilter,
-		nowPlayingOpen
+		nowPlayingOpen,
+		nowPlayingDeckPage,
+		libraryStartIndices
 	});
 	latestSnapshotRef.current = {
 		settings,
@@ -62257,7 +64646,9 @@ function App() {
 		selectedGenreFilter,
 		selectedFolderFilter,
 		selectedPlaylistFilter,
-		nowPlayingOpen
+		nowPlayingOpen,
+		nowPlayingDeckPage,
+		libraryStartIndices
 	};
 	const persistSessionSnapshot = (0, import_react.useCallback)((alsoSaveSettingsFingerprint = false) => {
 		const snap = latestSnapshotRef.current;
@@ -62276,6 +64667,8 @@ function App() {
 			selectedFolderFilter: snap.selectedFolderFilter,
 			selectedPlaylistFilter: snap.selectedPlaylistFilter,
 			nowPlayingOpen: snap.nowPlayingOpen,
+			nowPlayingDeckPage: snap.nowPlayingDeckPage,
+			libraryStartIndices: snap.libraryStartIndices,
 			libraryScrollTop: libraryScrollTopRef.current,
 			mainScrollTop: mainScrollTopRef.current,
 			updatedAt: Date.now()
@@ -62298,16 +64691,51 @@ function App() {
 		const upcoming = idx >= 0 && idx + 1 < queue.length ? queue[idx + 1] : queue[0] || null;
 		audioEngine.restoreTrackPosition(trackToRestore, restoredSec, upcoming, Boolean(sess?.wasPlaying));
 	}, []);
+	const emitKaraokeCastSnapshot = (0, import_react.useCallback)((timeOverrideSec) => {
+		const snap = latestSnapshotRef.current;
+		const track = snap.currentTrack;
+		if (!track) return;
+		broadcastKaraokeCastState({
+			trackId: track.id,
+			title: track.title,
+			artist: track.artist,
+			album: track.album,
+			coverUrl: track.coverUrl,
+			lyrics: track.lyrics,
+			currentTime: timeOverrideSec ?? currentTimeRef.current,
+			duration: track.duration || 180,
+			isPlaying: snap.isPlaying,
+			updatedAtMs: Date.now(),
+			karaokeOffsetMs: snap.settings.karaokeOffsetMs || 0,
+			themeAccent: snap.settings.themeAccent,
+			themeMode: snap.settings.themeMode
+		});
+	}, []);
+	(0, import_react.useEffect)(() => {
+		emitKaraokeCastSnapshot();
+	}, [
+		currentTrack,
+		isPlaying,
+		settings.karaokeOffsetMs,
+		settings.themeAccent,
+		settings.themeMode,
+		emitKaraokeCastSnapshot
+	]);
 	(0, import_react.useEffect)(() => {
 		const unsubProgress = audioEngine.subscribeProgress(({ currentTime }) => {
 			currentTimeRef.current = currentTime;
+			emitKaraokeCastSnapshot(currentTime);
 			const now = Date.now();
-			if (now - lastSessionSaveMsRef.current >= 1e3) {
+			if (now - lastSessionSaveMsRef.current >= 500) {
 				lastSessionSaveMsRef.current = now;
 				persistSessionSnapshot(false);
 			}
 		});
 		const handleLifecycleFlush = () => {
+			if (settingsSaveTimerRef.current) {
+				window.clearTimeout(settingsSaveTimerRef.current);
+				settingsSaveTimerRef.current = null;
+			}
 			if (tracksSaveTimerRef.current) {
 				window.clearTimeout(tracksSaveTimerRef.current);
 				tracksSaveTimerRef.current = null;
@@ -62320,14 +64748,16 @@ function App() {
 		};
 		window.addEventListener("beforeunload", handleLifecycleFlush);
 		window.addEventListener("pagehide", handleLifecycleFlush);
+		window.addEventListener("blur", handleLifecycleFlush);
 		document.addEventListener("visibilitychange", handleVisibilityChange);
 		return () => {
 			unsubProgress();
 			window.removeEventListener("beforeunload", handleLifecycleFlush);
 			window.removeEventListener("pagehide", handleLifecycleFlush);
+			window.removeEventListener("blur", handleLifecycleFlush);
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
 		};
-	}, [persistSessionSnapshot]);
+	}, [persistSessionSnapshot, emitKaraokeCastSnapshot]);
 	(0, import_react.useEffect)(() => {
 		if (!hasRestoredSessionRef.current) return;
 		persistSessionSnapshot(false);
@@ -62342,12 +64772,24 @@ function App() {
 		selectedFolderFilter,
 		selectedPlaylistFilter,
 		nowPlayingOpen,
+		nowPlayingDeckPage,
+		libraryStartIndices,
 		persistSessionSnapshot
 	]);
 	const visibleTracks = (0, import_react.useMemo)(() => {
-		if (!settings.offlineMode) return tracks;
-		return tracks.filter((t) => t.offlineCached || t.source === "local");
-	}, [tracks, settings.offlineMode]);
+		let list = tracks;
+		if (settings.offlineMode) list = list.filter((t) => t.offlineCached || t.source === "local");
+		if (settings.onlyScanSelectedFolders && (settings.selectedScanFolders?.length || 0) > 0) {
+			const enabledPaths = (settings.selectedScanFolders || []).filter((f) => f.enabled).map((f) => f.path);
+			list = list.filter((t) => t.source !== "local" || folderMatchesAllowedList(t.folderPath, enabledPaths));
+		}
+		return list;
+	}, [
+		tracks,
+		settings.offlineMode,
+		settings.onlyScanSelectedFolders,
+		settings.selectedScanFolders
+	]);
 	const updateSettings = (0, import_react.useCallback)((patch) => {
 		setSettings((prev) => ({
 			...prev,
@@ -62672,7 +65114,8 @@ function App() {
 					album: t.album,
 					genre: t.genre,
 					year: t.year || "",
-					composer: t.composer || ""
+					composer: t.composer || "",
+					lyrics: t.lyrics || ""
 				})), (prog) => {
 					reportTaskProgress(taskId, "library-maintenance", "Writing Tags to Source Files", `Saving ${prog.current} of ${prog.total} file(s)`, prog.current, Math.max(1, prog.total), "running", {
 						label: prog.fileName,
@@ -62706,7 +65149,8 @@ function App() {
 					album: t.album,
 					genre: t.genre,
 					year: t.year,
-					composer: t.composer
+					composer: t.composer,
+					lyrics: t.lyrics || ""
 				}
 			})), (curr, tot, label) => {
 				reportTaskProgress(taskId, "library-maintenance", "Writing Tags to Source Files", `Embedding tags (${curr}/${tot})`, curr, tot, "running", {
@@ -62746,7 +65190,8 @@ function App() {
 				album: patch.album !== void 0 && patch.album.trim() ? patch.album.trim() : t.album,
 				genre: patch.genre !== void 0 && patch.genre.trim() ? patch.genre.trim() : t.genre,
 				year: patch.year !== void 0 ? patch.year.trim() || void 0 : t.year,
-				composer: patch.composer !== void 0 ? patch.composer.trim() || void 0 : t.composer
+				composer: patch.composer !== void 0 ? patch.composer.trim() || void 0 : t.composer,
+				lyrics: patch.lyrics !== void 0 ? patch.lyrics.trim() || void 0 : t.lyrics
 			};
 			changedTracks.push(next);
 			return next;
@@ -62759,6 +65204,64 @@ function App() {
 		tactile.success();
 		if (changedTracks.length > 0) persistTracksTagsToSource(changedTracks);
 	}, [persistTracksTagsToSource]);
+	const handleApplyTagCleanups = (0, import_react.useCallback)((suggestions) => {
+		if (suggestions.length === 0) return;
+		const sugIds = new Set(suggestions.map((s) => s.trackId));
+		const nextTracks = applyTagSuggestionsToList(tracksRef.current, suggestions);
+		setTracks(nextTracks);
+		setQueue((prev) => applyTagSuggestionsToList(prev, suggestions));
+		const updatedSubset = nextTracks.filter((t) => sugIds.has(t.id));
+		if (updatedSubset.length > 0) persistTracksTagsToSource(updatedSubset);
+	}, [persistTracksTagsToSource]);
+	const handleFetchTrackLyrics = (0, import_react.useCallback)(async (targetTrack) => {
+		if (fetchingLyrics) return;
+		setFetchingLyrics(true);
+		const taskId = `lyrics_fetch_${targetTrack.id}`;
+		reportTaskProgress(taskId, "ai-tags", "Finding Karaoke Lyrics", `Searching synced lyrics for "${targetTrack.title}"...`, 1, 3, "running", {
+			label: `${targetTrack.artist} — ${targetTrack.title}`,
+			current: 1,
+			total: 3,
+			percent: 33
+		});
+		try {
+			const result = await fetchLyricsForTrack(targetTrack);
+			if (!result || !result.lyrics) {
+				showNoChangesToast("No lyrics found for this song yet");
+				dismissTask(taskId);
+				return;
+			}
+			const updatedTrack = {
+				...targetTrack,
+				lyrics: result.lyrics
+			};
+			setTracks((prev) => prev.map((t) => t.id === targetTrack.id ? updatedTrack : t));
+			setQueue((prev) => prev.map((t) => t.id === targetTrack.id ? updatedTrack : t));
+			persistTracksTagsToSource([updatedTrack]);
+			tactile.success();
+			reportTaskProgress(taskId, "ai-tags", result.synced ? "Synced Karaoke Lyrics Added" : "Lyrics Added to File", `Embedded from ${result.source}`, 3, 3, "done", {
+				label: `${targetTrack.title}`,
+				current: 3,
+				total: 3,
+				percent: 100
+			});
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : "Unable to fetch lyrics right now.";
+			reportTaskProgress(taskId, "ai-tags", "Lyrics Lookup Paused", msg, 3, 3, "error", {
+				label: msg,
+				current: 3,
+				total: 3,
+				percent: 100
+			});
+		} finally {
+			setFetchingLyrics(false);
+		}
+	}, [
+		fetchingLyrics,
+		reportTaskProgress,
+		dismissTask,
+		persistTracksTagsToSource,
+		showNoChangesToast
+	]);
 	const handleDeleteTracks = (0, import_react.useCallback)((trackIds) => {
 		if (trackIds.length === 0) return;
 		(async () => {
@@ -62995,31 +65498,62 @@ function App() {
 		refreshCacheStats,
 		reportTaskProgress
 	]);
-	const handleScanNativeAndroid = (0, import_react.useCallback)(async (silentIfEmpty = false) => {
+	const pruneTracksToAllowedFolders = (0, import_react.useCallback)((allowedPaths) => {
+		const removedIds = /* @__PURE__ */ new Set();
+		const remaining = tracksRef.current.filter((t) => {
+			if (t.source !== "local") return true;
+			const ok = folderMatchesAllowedList(t.folderPath, allowedPaths);
+			if (!ok) removedIds.add(t.id);
+			return ok;
+		});
+		if (removedIds.size === 0) return 0;
+		setTracks(remaining);
+		setQueue((prev) => {
+			const filtered = prev.filter((t) => !removedIds.has(t.id));
+			return filtered.length > 0 ? filtered : remaining;
+		});
+		if (currentTrackId && removedIds.has(currentTrackId)) {
+			const nextTrack = remaining[0] || null;
+			setCurrentTrackId(nextTrack?.id || null);
+			if (!nextTrack && audioEngine.getState().isPlaying) audioEngine.togglePlayPause();
+		}
+		if (selectedFolderFilter && !folderMatchesAllowedList(selectedFolderFilter, allowedPaths)) setSelectedFolderFilter(null);
+		return removedIds.size;
+	}, [currentTrackId, selectedFolderFilter]);
+	const handleScanNativeAndroid = (0, import_react.useCallback)(async (silentIfEmpty = false, overrideAllowedFolders) => {
 		if (!isNativeAndroidApp()) return 0;
+		const latestSettings = latestSnapshotRef.current.settings;
+		const useWhitelist = Array.isArray(overrideAllowedFolders) || Boolean(latestSettings.onlyScanSelectedFolders);
+		const allowedFolders = Array.isArray(overrideAllowedFolders) ? overrideAllowedFolders : latestSettings.onlyScanSelectedFolders ? (latestSettings.selectedScanFolders || []).filter((f) => f.enabled).map((f) => f.path) : [];
+		if (useWhitelist && allowedFolders.length === 0) {
+			setAudioError("Select at least one music folder in Settings -> Folders & Cache (or turn off \"Only scan selected folders\").");
+			return 0;
+		}
 		const taskId = `native_scan_${Date.now()}`;
 		setImportingFiles(true);
 		setAudioError(null);
-		reportTaskProgress(taskId, "device-scan", "Scanning Device Music Folders", "Reading Android MediaStore index...", 0, 100, "running", {
+		reportTaskProgress(taskId, "device-scan", useWhitelist ? "Scanning Selected Folders" : "Scanning Device Music Folders", useWhitelist ? `Scanning ${allowedFolders.length} selected folder(s)...` : "Reading Android MediaStore index...", 0, 100, "running", {
 			label: "Preparing Android MediaStore...",
 			current: 0,
 			total: 1,
 			percent: 15
 		});
 		try {
+			if (useWhitelist && !overrideAllowedFolders) pruneTracksToAllowedFolders(allowedFolders);
 			const scannedTracks = await scanAndroidDeviceLibrary((prog) => {
 				const itemTotal = Math.max(1, prog.total);
-				reportTaskProgress(taskId, "device-scan", "Scanning Device Music Folders", `${prog.current} / ${itemTotal} audio files`, prog.current, itemTotal, "running", {
+				reportTaskProgress(taskId, "device-scan", useWhitelist ? "Scanning Selected Folders" : "Scanning Device Music Folders", `${prog.current} / ${itemTotal} audio files`, prog.current, itemTotal, "running", {
 					label: prog.fileName || "Scanning audio files...",
 					current: 1,
 					total: 1,
 					percent: 100
 				});
-			});
+			}, useWhitelist ? allowedFolders : void 0);
 			if (scannedTracks.length > 0) {
 				setTracks((prev) => {
+					const basePrev = useWhitelist && !overrideAllowedFolders ? prev.filter((t) => t.source !== "local" || folderMatchesAllowedList(t.folderPath, allowedFolders)) : prev;
 					const scannedByFp = new Map(scannedTracks.map((t) => [t.fingerprint, t]));
-					const updatedPrev = prev.map((existing) => {
+					const updatedPrev = basePrev.map((existing) => {
 						const matched = scannedByFp.get(existing.fingerprint);
 						if (!matched) return existing;
 						return {
@@ -63036,14 +65570,14 @@ function App() {
 					return brandNew.length > 0 ? [...brandNew, ...updatedPrev] : updatedPrev;
 				});
 				tactile.success();
-				reportTaskProgress(taskId, "device-scan", "Device Folder Scan Complete", `Loaded ${scannedTracks.length} track(s) from device storage`, scannedTracks.length, scannedTracks.length, "done", {
+				reportTaskProgress(taskId, "device-scan", "Device Folder Scan Complete", `Loaded ${scannedTracks.length} track(s) from ${useWhitelist ? `${allowedFolders.length} selected folder(s)` : "device storage"}`, scannedTracks.length, scannedTracks.length, "done", {
 					label: `${scannedTracks.length} track(s) indexed`,
 					current: 1,
 					total: 1,
 					percent: 100
 				});
 			} else {
-				if (!silentIfEmpty) setAudioError("No audio files were found in device storage yet.");
+				if (!silentIfEmpty) setAudioError(useWhitelist ? "No audio files were found in the selected folders." : "No audio files were found in device storage yet.");
 				reportTaskProgress(taskId, "device-scan", "Device Scan Finished", "No music tracks found (clips shorter than 10s skipped)", 1, 1, "done", {
 					label: "Scan finished",
 					current: 1,
@@ -63065,7 +65599,7 @@ function App() {
 		} finally {
 			setImportingFiles(false);
 		}
-	}, [reportTaskProgress]);
+	}, [pruneTracksToAllowedFolders, reportTaskProgress]);
 	const handleSignInGoogle = async () => {
 		const taskId = `auth_${Date.now()}`;
 		try {
@@ -63418,6 +65952,67 @@ function App() {
 		setSelectedPlaylistFilter(plId);
 		if (plId) updateSettings({ activeTab: "songs" });
 	}, [updateSettings]);
+	const collectWebDirectoryFiles = (0, import_react.useCallback)(async (dirHandle, baseLabel, taskId) => {
+		const audioExts = /\.(flac|alac|wav|wave|mp3|m4a|aac|ogg|oga|opus)$/i;
+		const m3uExts = /\.(m3u8?|pls)$/i;
+		const collected = [];
+		const collectedM3u = [];
+		const webHandlesMap = /* @__PURE__ */ new Map();
+		const walk = async (handle, prefix) => {
+			for await (const entry of handle.values()) if (entry.kind === "file" && typeof entry.getFile === "function") {
+				if (audioExts.test(entry.name)) {
+					const f = await entry.getFile();
+					Object.defineProperty(f, "webkitRelativePath", {
+						value: `${prefix}/${entry.name}`,
+						configurable: true
+					});
+					collected.push(f);
+					webHandlesMap.set(f, {
+						fileHandle: entry,
+						dirHandle: handle,
+						fileName: entry.name
+					});
+					if (collected.length % 5 === 1) reportTaskProgress(taskId, "device-scan", "Scanning Music Folder", `Found ${collected.length} track(s)`, collected.length, collected.length + 5, "running", {
+						label: entry.name,
+						current: 1,
+						total: 1,
+						percent: 100
+					});
+				} else if (m3uExts.test(entry.name)) {
+					const mf = await entry.getFile();
+					collectedM3u.push(mf);
+				}
+			} else if (entry.kind === "directory" && typeof entry.values === "function") await walk(entry, `${prefix}/${entry.name}`);
+		};
+		await walk(dirHandle, baseLabel);
+		return {
+			collected,
+			collectedM3u,
+			webHandlesMap
+		};
+	}, [reportTaskProgress]);
+	const registerScanFolderEntries = (0, import_react.useCallback)((incoming, forceEnableNew = true) => {
+		setSettings((prev) => {
+			const existing = Array.isArray(prev.selectedScanFolders) ? prev.selectedScanFolders : [];
+			const byNorm = new Map(existing.map((e) => [normalizeFolderKey(e.path), e]));
+			for (const item of incoming) {
+				const key = normalizeFolderKey(item.path);
+				if (!key) continue;
+				const cur = byNorm.get(key);
+				if (cur) byNorm.set(key, {
+					...cur,
+					trackCount: item.trackCount ?? cur.trackCount,
+					enabled: forceEnableNew ? true : cur.enabled,
+					source: item.source || cur.source
+				});
+				else byNorm.set(key, item);
+			}
+			return {
+				...prev,
+				selectedScanFolders: Array.from(byNorm.values())
+			};
+		});
+	}, []);
 	const handleOpenFolderImport = (0, import_react.useCallback)(async () => {
 		if (isNativeAndroidApp()) {
 			await handleScanNativeAndroid(false);
@@ -63432,11 +66027,6 @@ function App() {
 				if (permErr instanceof DOMException && permErr.name === "AbortError") return;
 				dirHandle = await picker({ mode: "read" });
 			}
-			const audioExts = /\.(flac|alac|wav|wave|mp3|m4a|aac|ogg|oga|opus)$/i;
-			const m3uExts = /\.(m3u8?|pls)$/i;
-			const collected = [];
-			const collectedM3u = [];
-			const webHandlesMap = /* @__PURE__ */ new Map();
 			const walkTaskId = `folder_walk_${Date.now()}`;
 			reportTaskProgress(walkTaskId, "device-scan", "Scanning Music Folder", `Opening "${dirHandle.name}"...`, 0, 0, "running", {
 				label: dirHandle.name,
@@ -63444,33 +66034,17 @@ function App() {
 				total: 1,
 				percent: 10
 			});
-			const walk = async (handle, prefix) => {
-				for await (const entry of handle.values()) if (entry.kind === "file" && typeof entry.getFile === "function") {
-					if (audioExts.test(entry.name)) {
-						const f = await entry.getFile();
-						Object.defineProperty(f, "webkitRelativePath", {
-							value: `${prefix}/${entry.name}`,
-							configurable: true
-						});
-						collected.push(f);
-						webHandlesMap.set(f, {
-							fileHandle: entry,
-							dirHandle: handle,
-							fileName: entry.name
-						});
-						if (collected.length % 5 === 1) reportTaskProgress(walkTaskId, "device-scan", "Scanning Music Folder", `Found ${collected.length} track(s)`, collected.length, collected.length + 5, "running", {
-							label: entry.name,
-							current: 1,
-							total: 1,
-							percent: 100
-						});
-					} else if (m3uExts.test(entry.name)) {
-						const mf = await entry.getFile();
-						collectedM3u.push(mf);
-					}
-				} else if (entry.kind === "directory" && typeof entry.values === "function") await walk(entry, `${prefix}/${entry.name}`);
-			};
-			await walk(dirHandle, dirHandle.name);
+			const { collected, collectedM3u, webHandlesMap } = await collectWebDirectoryFiles(dirHandle, dirHandle.name, walkTaskId);
+			const folderId = `web_${normalizeFolderKey(dirHandle.name) || Date.now().toString(36)}`;
+			await saveScanFolderHandle(folderId, dirHandle.name, dirHandle.name, dirHandle);
+			registerScanFolderEntries([{
+				id: folderId,
+				path: dirHandle.name,
+				label: dirHandle.name,
+				enabled: true,
+				trackCount: collected.length,
+				source: "web"
+			}], true);
 			if (collected.length > 0 || collectedM3u.length > 0) await handleImportFiles(collected, walkTaskId, webHandlesMap, collectedM3u);
 			else reportTaskProgress(walkTaskId, "device-scan", "Folder Scan Complete", "No audio files found in folder", 1, 1, "done", {
 				label: dirHandle.name,
@@ -63484,10 +66058,162 @@ function App() {
 		}
 		folderInputRef.current?.click();
 	}, [
+		collectWebDirectoryFiles,
 		handleImportFiles,
 		handleScanNativeAndroid,
+		registerScanFolderEntries,
 		reportTaskProgress
 	]);
+	const handleAddScanFolder = (0, import_react.useCallback)(async () => {
+		setScanningFolders(true);
+		try {
+			if (isNativeAndroidApp()) {
+				const picked = await pickAndroidMusicFolder();
+				if (!picked.cancelled && picked.path) {
+					const entry = {
+						id: `android_${normalizeFolderKey(picked.path)}`,
+						path: picked.path,
+						label: picked.label || picked.path.split("/").pop() || picked.path,
+						enabled: true,
+						source: "android"
+					};
+					registerScanFolderEntries([entry], true);
+					updateSettings({ onlyScanSelectedFolders: true });
+					await handleScanNativeAndroid(true, [picked.path]);
+				}
+				return;
+			}
+			await handleOpenFolderImport();
+			updateSettings({ onlyScanSelectedFolders: true });
+		} catch (err) {
+			setAudioError(err instanceof Error ? err.message : "Unable to add music folder.");
+		} finally {
+			setScanningFolders(false);
+		}
+	}, [
+		handleOpenFolderImport,
+		handleScanNativeAndroid,
+		registerScanFolderEntries,
+		updateSettings
+	]);
+	const handleDiscoverScanFolders = (0, import_react.useCallback)(async () => {
+		setScanningFolders(true);
+		try {
+			const discovered = [];
+			const hadExisting = (latestSnapshotRef.current.settings.selectedScanFolders || []).length > 0;
+			if (isNativeAndroidApp()) {
+				const androidFolders = await listAndroidMusicFolders();
+				for (const f of androidFolders) discovered.push({
+					id: `android_${normalizeFolderKey(f.path)}`,
+					path: f.path,
+					label: f.label || f.path,
+					enabled: !hadExisting,
+					trackCount: f.trackCount,
+					source: "android"
+				});
+			} else {
+				const webHandles = await getAllScanFolderHandles();
+				for (const wh of webHandles) discovered.push({
+					id: wh.id,
+					path: wh.path,
+					label: wh.label,
+					enabled: true,
+					source: "web"
+				});
+			}
+			const folderCounts = /* @__PURE__ */ new Map();
+			for (const t of tracksRef.current) {
+				if (t.source !== "local") continue;
+				const fp = (t.folderPath || "").trim();
+				if (!fp || fp === "Reference Studio") continue;
+				folderCounts.set(fp, (folderCounts.get(fp) || 0) + 1);
+			}
+			for (const [fp, count] of folderCounts.entries()) discovered.push({
+				id: `lib_${normalizeFolderKey(fp)}`,
+				path: fp,
+				label: fp.split("/").pop() || fp,
+				enabled: !hadExisting,
+				trackCount: count,
+				source: isNativeAndroidApp() ? "android" : "library"
+			});
+			if (discovered.length > 0) {
+				registerScanFolderEntries(discovered, false);
+				setSyncMessage(`Found ${discovered.length} music folder(s). Check the ones you want scanned.`);
+				tactile.success();
+			} else setSyncMessage("No existing folders discovered yet — tap Add Folder to pick a directory.");
+		} catch (err) {
+			setAudioError(err instanceof Error ? err.message : "Unable to discover music folders.");
+		} finally {
+			setScanningFolders(false);
+		}
+	}, [registerScanFolderEntries]);
+	const handleToggleScanFolder = (0, import_react.useCallback)((folderId) => {
+		setSettings((prev) => ({
+			...prev,
+			selectedScanFolders: (prev.selectedScanFolders || []).map((f) => f.id === folderId ? {
+				...f,
+				enabled: !f.enabled
+			} : f)
+		}));
+	}, []);
+	const handleRemoveScanFolder = (0, import_react.useCallback)((folderId) => {
+		setSettings((prev) => ({
+			...prev,
+			selectedScanFolders: (prev.selectedScanFolders || []).filter((f) => f.id !== folderId)
+		}));
+		deleteScanFolderHandle(folderId);
+	}, []);
+	const handleApplyAndScanSelectedFolders = (0, import_react.useCallback)(async () => {
+		const latest = latestSnapshotRef.current.settings;
+		const onlySelected = Boolean(latest.onlyScanSelectedFolders);
+		const allowedPaths = (latest.selectedScanFolders || []).filter((f) => f.enabled).map((f) => f.path);
+		if (onlySelected && allowedPaths.length === 0) {
+			setAudioError("Please check at least one folder to scan.");
+			return;
+		}
+		setScanningFolders(true);
+		try {
+			if (onlySelected) pruneTracksToAllowedFolders(allowedPaths);
+			if (isNativeAndroidApp()) {
+				await handleScanNativeAndroid(false, onlySelected ? allowedPaths : void 0);
+				return;
+			}
+			const webHandles = await getAllScanFolderHandles();
+			const targetHandles = onlySelected ? webHandles.filter((wh) => folderMatchesAllowedList(wh.path, allowedPaths)) : webHandles;
+			if (targetHandles.length === 0) {
+				if (onlySelected) {
+					setSyncMessage(`Applied whitelist (${allowedPaths.length} folder${allowedPaths.length === 1 ? "" : "s"}). Excluded folders removed from library.`);
+					tactile.success();
+				} else await handleOpenFolderImport();
+				return;
+			}
+			const taskId = `scan_selected_web_${Date.now()}`;
+			for (const wh of targetHandles) {
+				if (!await ensureDirectoryReadPermission(wh.dirHandle)) continue;
+				const { collected, collectedM3u, webHandlesMap } = await collectWebDirectoryFiles(wh.dirHandle, wh.path, taskId);
+				if (collected.length > 0 || collectedM3u.length > 0) await handleImportFiles(collected, taskId, webHandlesMap, collectedM3u);
+			}
+			tactile.success();
+		} finally {
+			setScanningFolders(false);
+		}
+	}, [
+		collectWebDirectoryFiles,
+		handleImportFiles,
+		handleOpenFolderImport,
+		handleScanNativeAndroid,
+		pruneTracksToAllowedFolders
+	]);
+	const handleChangeLibraryStartIndex = (0, import_react.useCallback)((idx) => {
+		if (!isLibraryTab(normalizedActiveTab)) return;
+		setLibraryStartIndices((prev) => prev[normalizedActiveTab] === idx ? prev : {
+			...prev,
+			[normalizedActiveTab]: idx
+		});
+	}, [normalizedActiveTab]);
+	const handleChangeAiScanConfig = (0, import_react.useCallback)((cfg) => {
+		updateSettings({ aiScanConfig: cfg });
+	}, [updateSettings]);
 	const studioPage = getStudioPage(normalizedActiveTab);
 	const eqPage = getEqPage(normalizedActiveTab);
 	const settingsPage = getSettingsPage(normalizedActiveTab);
@@ -63501,7 +66227,19 @@ function App() {
 				webkitdirectory: "",
 				accept: "audio/*,.flac,.alac,.wav,.mp3,.m4a,.aac,.ogg,.opus,.m3u,.m3u8",
 				onChange: (e) => {
-					handleImportFiles(e.target.files);
+					const files = e.target.files;
+					if (files && files.length > 0) {
+						const rootName = (files[0].webkitRelativePath || "").split("/").filter(Boolean)[0];
+						if (rootName) registerScanFolderEntries([{
+							id: `web_${normalizeFolderKey(rootName)}`,
+							path: rootName,
+							label: rootName,
+							enabled: true,
+							trackCount: files.length,
+							source: "web"
+						}], true);
+					}
+					handleImportFiles(files);
 					e.target.value = "";
 				},
 				className: "hidden"
@@ -63697,6 +66435,8 @@ function App() {
 									selectedGenreFilter,
 									selectedFolderFilter,
 									selectedPlaylistFilter,
+									initialStartIndex: libraryStartIndices[normalizedActiveTab] || 0,
+									onChangeStartIndex: handleChangeLibraryStartIndex,
 									onChangeSearchQuery: setSearchQuery,
 									onChangeViewMode: handleChangeLibraryViewMode,
 									onChangeSortBy: (nextSort) => updateSettings({ sortBy: nextSort }),
@@ -63714,6 +66454,8 @@ function App() {
 									onAddTracksToPlaylist: handleAddTracksToPlaylist,
 									onCreatePlaylist: handleCreatePlaylist,
 									onEditTracksMetadata: handleEditTracksMetadata,
+									onApplyTagCleanups: handleApplyTagCleanups,
+									onShowNoChangesToast: showNoChangesToast,
 									onAssignEqPreset: handleAssignEqPreset,
 									onSetRingtone: (track) => void handleSetRingtone(track),
 									onDeleteTracks: handleDeleteTracks,
@@ -63751,20 +66493,14 @@ function App() {
 									tracks,
 									smartPlaylists,
 									dailyRecommendations: dailyRecs,
+									initialScanConfig: settings.aiScanConfig,
+									onChangeScanConfig: handleChangeAiScanConfig,
 									onSignInGoogle: () => void handleSignInGoogle(),
 									onPlayTracks: (list, random = false) => playCollectionQueue(list, random),
 									onAddSmartPlaylist: (pl) => setSmartPlaylists((prev) => [pl, ...prev]),
 									onDeleteSmartPlaylist: (id) => setSmartPlaylists((prev) => prev.filter((p) => p.id !== id)),
 									onUpdateDailyRecommendations: setDailyRecs,
-									onApplyTagCleanups: (suggestions) => {
-										if (suggestions.length === 0) return;
-										const sugIds = new Set(suggestions.map((s) => s.trackId));
-										const nextTracks = applyTagSuggestionsToList(tracksRef.current, suggestions);
-										setTracks(nextTracks);
-										setQueue((prev) => applyTagSuggestionsToList(prev, suggestions));
-										const updatedSubset = nextTracks.filter((t) => sugIds.has(t.id));
-										if (updatedSubset.length > 0) persistTracksTagsToSource(updatedSubset);
-									},
+									onApplyTagCleanups: handleApplyTagCleanups,
 									onRemoveDuplicateTracks: handleDeleteTracks,
 									onApplyArtworkUpdates: (updates) => {
 										const map = new Map(updates.map((u) => [u.trackId, u.coverUrl]));
@@ -63857,11 +66593,17 @@ function App() {
 									cacheStats,
 									syncBusy,
 									syncMessage,
+									scanningFolders,
 									onUpdateSettings: updateSettings,
 									onSignInGoogle: () => void handleSignInGoogle(),
 									onSignOutGoogle: () => void signOutGoogleAccount(),
 									onBackupNow: () => void handleBackupNow(false),
 									onRestoreNow: () => void handleRestoreNow(),
+									onAddScanFolder: () => void handleAddScanFolder(),
+									onDiscoverScanFolders: () => void handleDiscoverScanFolders(),
+									onToggleScanFolder: handleToggleScanFolder,
+									onRemoveScanFolder: handleRemoveScanFolder,
+									onApplyAndScanSelectedFolders: () => void handleApplyAndScanSelectedFolders(),
 									onClearCache: () => {
 										tactile.tap();
 										const taskId = `clear_cache_${Date.now()}`;
@@ -63988,6 +66730,16 @@ function App() {
 				volume: settings.masterVolume,
 				lowBatteryMode: settings.lowBatteryMode,
 				streamingQuality: settings.streamingQuality,
+				showLyrics: settings.showLyrics !== false,
+				karaokeOffsetMs: settings.karaokeOffsetMs || 0,
+				fetchingLyrics,
+				tvStageOpen,
+				initialDeckPage: nowPlayingDeckPage,
+				onChangeDeckPage: setNowPlayingDeckPage,
+				onSetTvStageOpen: setTvStageOpen,
+				onToggleShowLyrics: () => updateSettings({ showLyrics: settings.showLyrics === false }),
+				onChangeKaraokeOffsetMs: (nextMs) => updateSettings({ karaokeOffsetMs: nextMs }),
+				onFetchTrackLyrics: (t) => void handleFetchTrackLyrics(t),
 				onClose: () => {
 					tactile.sheet(false);
 					setNowPlayingOpen(false);
@@ -64042,6 +66794,14 @@ function App() {
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(CastModal, {
 				open: castOpen,
+				track: currentTrack,
+				karaokeOffsetMs: settings.karaokeOffsetMs || 0,
+				onLaunchTvStage: () => {
+					setNowPlayingOpen(true);
+					setNowPlayingDeckPage("player");
+					if (settings.showLyrics === false) updateSettings({ showLyrics: true });
+					setTvStageOpen(true);
+				},
 				onClose: () => {
 					tactile.sheet(false);
 					setCastOpen(false);
@@ -64060,9 +66820,26 @@ function App() {
 				tasks: activeTasks,
 				onDismiss: dismissTask
 			}),
+			activeWorkspace !== "studio" && globalAiQuotaCountdown && typeof document !== "undefined" && (0, import_react_dom.createPortal)(/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+				className: "fixed bottom-[126px] sm:bottom-24 left-1/2 -translate-x-1/2 z-[60] w-[min(92vw,460px)] rounded-xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-2xl",
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(AiQuotaNotice, {
+					compact: true,
+					onDismiss: () => {}
+				})
+			}), document.body),
+			noChangesToast && typeof document !== "undefined" && (0, import_react_dom.createPortal)(/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+				role: "status",
+				"aria-live": "polite",
+				className: "fixed bottom-[126px] sm:bottom-24 left-1/2 -translate-x-1/2 z-[80] pointer-events-none px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white/95 dark:bg-zinc-900/95 text-zinc-900 dark:text-zinc-100 shadow-xl backdrop-blur-md flex items-center gap-2 text-xs font-medium whitespace-nowrap",
+				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Info, { className: "w-3.5 h-3.5 accent-text shrink-0" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { children: noChangesToast.message })]
+			}, noChangesToast.id), document.body),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(OfflineIndicator, {})
 		]
 	});
+}
+function App() {
+	if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("karaoke-display") === "1") return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(KaraokeReceiverDisplayScreen, {});
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(MainApp, {});
 }
 // src/main.tsx
 registerSW({ immediate: true });

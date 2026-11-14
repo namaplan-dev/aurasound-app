@@ -260,13 +260,20 @@ export const SlidablePageViewport: React.FC<SlidablePageViewportProps> = ({
       const incomingFromRight = newIdx > oldIdx;
       setEnableSettleTransition(false);
       setSettleOffset(incomingFromRight ? 42 : -42);
+      let clearTimer: number | null = null;
       const raf = window.requestAnimationFrame(() => {
         window.requestAnimationFrame(() => {
           setEnableSettleTransition(true);
           setSettleOffset(0);
+          clearTimer = window.setTimeout(() => {
+            setEnableSettleTransition(false);
+          }, 210);
         });
       });
-      return () => window.cancelAnimationFrame(raf);
+      return () => {
+        window.cancelAnimationFrame(raf);
+        if (clearTimer !== null) window.clearTimeout(clearTimer);
+      };
     }
   }, [activePageId, pageIds]);
 
@@ -276,7 +283,7 @@ export const SlidablePageViewport: React.FC<SlidablePageViewportProps> = ({
     const target = e.target as HTMLElement | null;
     if (
       target?.closest(
-        'input, textarea, select, canvas, [data-no-swipe="true"], [role="dialog"]'
+        'input, textarea, select, canvas, [data-no-swipe="true"], [role="dialog"], [role="menu"]'
       )
     ) {
       return;
@@ -354,6 +361,7 @@ export const SlidablePageViewport: React.FC<SlidablePageViewportProps> = ({
     : null;
 
   const translateX = isDragging ? dragDx : settleOffset;
+  const hasActiveTransform = isDragging || enableSettleTransition || translateX !== 0;
   const transition = isDragging
     ? 'none'
     : enableSettleTransition
@@ -377,10 +385,14 @@ export const SlidablePageViewport: React.FC<SlidablePageViewportProps> = ({
       className={`relative overflow-hidden ${className}`}
     >
       <div
-        style={{
-          transform: `translate3d(${translateX}px, 0, 0)`,
-          transition,
-        }}
+        style={
+          hasActiveTransform
+            ? {
+                transform: `translate3d(${translateX}px, 0, 0)`,
+                transition,
+              }
+            : undefined
+        }
         className="flex-1 min-h-0 flex flex-col overflow-hidden"
       >
         {children}

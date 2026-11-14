@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import {
   Cloud,
@@ -7,6 +8,7 @@ import {
   FolderOpen,
   HardDrive,
   ImagePlus,
+  Info,
   ListMusic,
   Mic2,
   Moon,
@@ -30,6 +32,7 @@ import {
   EQPreset,
   NavigationTab,
   Playlist,
+  ScanFolderEntry,
   SessionState,
   SmartPlaylist,
   TagCleanupSuggestion,
@@ -55,6 +58,7 @@ import {
   saveAudioBlobToCache,
 } from './services/offlineCacheService';
 import {
+  folderMatchesAllowedList,
   loadDailyRecommendations,
   loadEqPresets,
   loadPlaylists,
@@ -62,6 +66,7 @@ import {
   loadSettings,
   loadSmartPlaylists,
   loadTracks,
+  normalizeFolderKey,
   saveCustomEqPresets,
   saveDailyRecommendations,
   savePlaylists,
@@ -71,7 +76,15 @@ import {
   saveTracks,
 } from './services/storageService';
 import { repairMojibakeText } from './utils/textNormalization';
-import { applyTagSuggestionsToList } from './services/aiAssistantService';
+import {
+  applyTagSuggestionsToList,
+  buildAiQuotaStateFromPayload,
+  fetchLyricsForTrack,
+  resolveApiUrl,
+  setActiveAiQuotaState,
+} from './services/aiAssistantService';
+import { broadcastKaraokeCastState } from './services/karaokeCastChannel';
+import { AiQuotaNotice, useAiQuotaCountdown } from './components/AiQuotaNotice';
 import { LibraryBrowser, LibraryTab, TrackMetadataPatch } from './components/LibraryBrowser';
 import {
   parseM3uPlaylist,
@@ -80,11 +93,17 @@ import {
 import {
   deleteNativeAudioFiles,
   isNativeAndroidApp,
+  listAndroidMusicFolders,
+  pickAndroidMusicFolder,
   scanAndroidDeviceLibrary,
   writeNativeAudioTags,
 } from './services/nativeScanner';
 import {
+  deleteScanFolderHandle,
   deleteTracksFromWebFolder,
+  ensureDirectoryReadPermission,
+  getAllScanFolderHandles,
+  saveScanFolderHandle,
   saveTrackFileHandle,
   writeTracksTagsToWebStorage,
 } from './services/localFileHandleService';
@@ -96,6 +115,7 @@ import { SettingsCloudView, SettingsPage } from './components/SettingsCloudView'
 import { SlidablePageViewport, SlidableTabStrip } from './components/SlidableTabs';
 import { PlayerBar } from './components/PlayerBar';
 import { NowPlayingSheetHandle, NowPlayingView } from './components/NowPlayingView';
+import { KaraokeReceiverDisplayScreen } from './components/KaraokeLyricsView';
 import { HomescreenWidget } from './components/HomescreenWidget';
 import { CastModal } from './components/CastModal';
 import { ShareModal } from './components/ShareModal';
@@ -167,7 +187,7 @@ const WORKSPACES: Array<{
       { id: 'settings-devices', label: 'Devices & Power', shortLabel: 'Device', icon: Sliders },
       { id: 'settings-theme', label: 'Theme & Touch', shortLabel: 'Theme', icon: Palette },
       { id: 'settings-widgets', label: 'Widgets', shortLabel: 'Widget', icon: Smartphone },
-      { id: 'settings-storage', label: 'Storage', shortLabel: 'Cache', icon: HardDrive },
+      { id: 'settings-storage', label: 'Folders & Cache', shortLabel: 'Folders', icon: HardDrive },
       { id: 'settings-cloud', label: 'Cloud Sync', shortLabel: 'Cloud', icon: Cloud },
     ],
   },
@@ -189,7 +209,7 @@ function getWorkspaceForTab(tab: NavigationTab): WorkspaceId {
   return 'library';
 }
 
-export default function App() {
+function MainApp() {
   const initialSessionRef = useRef<SessionState | null>(null);
   if (!initialSessionRef.current) {
     initialSessionRef.current = loadSession();
@@ -247,8 +267,19 @@ export default function App() {
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
 
-  // Overlays & Modals — default to nice full-screen Player View on app open
-  const [nowPlayingOpen, setNowPlayingOpen] = useState<boolean>(true);
+  // Overlays & Modals — restore exact open/closed state and deck page from previous session
+  const [nowPlayingOpen, setNowPlayingOpen] = useState<boolean>(
+    () => initialSessionRef.current?.nowPlayingOpen ?? true
+  );
+  const [nowPlayingDeckPage, setNowPlayingDeckPage] = useState<'player' | 'queue'>(
+    () => initialSessionRef.current?.nowPlayingDeckPage ?? 'player'
+  );
+  const [libraryStartIndices, setLibraryStartIndices] = useState<
+    Partial<Record<LibraryTab, number>>
+  >(() => initialSessionRef.current?.libraryStartIndices || {});
+  const [scanningFolders, setScanningFolders] = useState(false);
+  const [fetchingLyrics, setFetchingLyrics] = useState(false);
+  const [tvStageOpen, setTvStageOpen] = useState(false);
   const [castOpen, setCastOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareMode, setShareMode] = useState<'track' | 'app'>('track');
@@ -259,8 +290,73 @@ export default function App() {
   const [syncBusy, setSyncBusy] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [activeTasks, setActiveTasks] = useState<AppTaskProgress[]>([]);
+  const [noChangesToast, setNoChangesToast] = useState<{ id: number; message: string } | null>(
+    null
+  );
   const taskCleanupTimersRef = useRef<Map<string, number>>(new Map());
   const nowPlayingSheetRef = useRef<NowPlayingSheetHandle | null>(null);
+
+  const showNoChangesToast = useCallback((message = 'No changes were made') => {
+    setNoChangesToast({ id: Date.now(), message });
+  }, []);
+
+  useEffect(() => {
+    if (!noChangesToast) return;
+    const dismissTimer = window.setTimeout(() => {
+      setNoChangesToast(null);
+    }, 3000);
+
+    const dismissOnInteraction = () => {
+      setNoChangesToast(null);
+    };
+
+    let listenersAttached = false;
+    const attachTimer = window.setTimeout(() => {
+      listenersAttached = true;
+      document.addEventListener('pointerdown', dismissOnInteraction, true);
+      document.addEventListener('keydown', dismissOnInteraction, true);
+    }, 120);
+
+    return () => {
+      window.clearTimeout(dismissTimer);
+      window.clearTimeout(attachTimer);
+      if (listenersAttached) {
+        document.removeEventListener('pointerdown', dismissOnInteraction, true);
+        document.removeEventListener('keydown', dismissOnInteraction, true);
+      }
+    };
+  }, [noChangesToast]);
+
+  const globalAiQuotaCountdown = useAiQuotaCountdown();
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const resp = await fetch(resolveApiUrl('/api/ai/status'));
+        if (!resp.ok || cancelled) return;
+        const data = (await resp.json().catch(() => ({}))) as {
+          available?: boolean;
+          quota?: Record<string, unknown>;
+        };
+        if (!cancelled && data.available === false && data.quota) {
+          setActiveAiQuotaState(
+            buildAiQuotaStateFromPayload({
+              error: data.quota.message,
+              retryAfterSeconds: data.quota.retryAfterSeconds,
+              resetAtIso: data.quota.resetAtIso,
+              quotaScope: data.quota.quotaScope,
+            })
+          );
+        }
+      } catch {
+        // Ignore startup check when offline
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const dismissTask = useCallback((taskId: string) => {
     const existingTimer = taskCleanupTimersRef.current.get(taskId);
@@ -340,7 +436,7 @@ export default function App() {
   const tracksRef = useRef<Track[]>(tracks);
   tracksRef.current = tracks;
 
-  // Apply theme, accent & tactile preferences synchronously; debounce localStorage write for 60fps slider drags
+  // Apply theme, accent & tactile preferences synchronously and flush settings reliably
   useEffect(() => {
     const root = document.documentElement;
     if (settings.themeMode === 'dark') root.classList.add('dark');
@@ -353,7 +449,7 @@ export default function App() {
     }
     settingsSaveTimerRef.current = window.setTimeout(() => {
       saveSettings(settings);
-    }, 180);
+    }, 60);
 
     return () => {
       if (settingsSaveTimerRef.current) {
@@ -478,6 +574,8 @@ export default function App() {
     selectedFolderFilter,
     selectedPlaylistFilter,
     nowPlayingOpen,
+    nowPlayingDeckPage,
+    libraryStartIndices,
   });
   latestSnapshotRef.current = {
     settings,
@@ -492,12 +590,17 @@ export default function App() {
     selectedFolderFilter,
     selectedPlaylistFilter,
     nowPlayingOpen,
+    nowPlayingDeckPage,
+    libraryStartIndices,
   };
 
   const persistSessionSnapshot = useCallback((alsoSaveSettingsFingerprint = false) => {
     const snap = latestSnapshotRef.current;
     const engineState = audioEngine.getState();
-    const playbackSec = Math.max(0, Math.round((engineState.currentTime || currentTimeRef.current) * 10) / 10);
+    const playbackSec = Math.max(
+      0,
+      Math.round((engineState.currentTime || currentTimeRef.current) * 10) / 10
+    );
     currentTimeRef.current = playbackSec;
 
     saveSession({
@@ -512,6 +615,8 @@ export default function App() {
       selectedFolderFilter: snap.selectedFolderFilter,
       selectedPlaylistFilter: snap.selectedPlaylistFilter,
       nowPlayingOpen: snap.nowPlayingOpen,
+      nowPlayingDeckPage: snap.nowPlayingDeckPage,
+      libraryStartIndices: snap.libraryStartIndices,
       libraryScrollTop: libraryScrollTopRef.current,
       mainScrollTop: mainScrollTopRef.current,
       updatedAt: Date.now(),
@@ -552,18 +657,58 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Continuously record playback progress (~1s) & flush immediately on pause/close/tab switch
+  // Continuously record playback progress (~500ms), sync Cast Karaoke display & flush on lifecycle events
+  const emitKaraokeCastSnapshot = useCallback(
+    (timeOverrideSec?: number) => {
+      const snap = latestSnapshotRef.current;
+      const track = snap.currentTrack;
+      if (!track) return;
+      broadcastKaraokeCastState({
+        trackId: track.id,
+        title: track.title,
+        artist: track.artist,
+        album: track.album,
+        coverUrl: track.coverUrl,
+        lyrics: track.lyrics,
+        currentTime: timeOverrideSec ?? currentTimeRef.current,
+        duration: track.duration || 180,
+        isPlaying: snap.isPlaying,
+        updatedAtMs: Date.now(),
+        karaokeOffsetMs: snap.settings.karaokeOffsetMs || 0,
+        themeAccent: snap.settings.themeAccent,
+        themeMode: snap.settings.themeMode,
+      });
+    },
+    []
+  );
+
+  useEffect(() => {
+    emitKaraokeCastSnapshot();
+  }, [
+    currentTrack,
+    isPlaying,
+    settings.karaokeOffsetMs,
+    settings.themeAccent,
+    settings.themeMode,
+    emitKaraokeCastSnapshot,
+  ]);
+
   useEffect(() => {
     const unsubProgress = audioEngine.subscribeProgress(({ currentTime }) => {
       currentTimeRef.current = currentTime;
+      emitKaraokeCastSnapshot(currentTime);
       const now = Date.now();
-      if (now - lastSessionSaveMsRef.current >= 1000) {
+      if (now - lastSessionSaveMsRef.current >= 500) {
         lastSessionSaveMsRef.current = now;
         persistSessionSnapshot(false);
       }
     });
 
     const handleLifecycleFlush = () => {
+      if (settingsSaveTimerRef.current) {
+        window.clearTimeout(settingsSaveTimerRef.current);
+        settingsSaveTimerRef.current = null;
+      }
       if (tracksSaveTimerRef.current) {
         window.clearTimeout(tracksSaveTimerRef.current);
         tracksSaveTimerRef.current = null;
@@ -579,17 +724,19 @@ export default function App() {
 
     window.addEventListener('beforeunload', handleLifecycleFlush);
     window.addEventListener('pagehide', handleLifecycleFlush);
+    window.addEventListener('blur', handleLifecycleFlush);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       unsubProgress();
       window.removeEventListener('beforeunload', handleLifecycleFlush);
       window.removeEventListener('pagehide', handleLifecycleFlush);
+      window.removeEventListener('blur', handleLifecycleFlush);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [persistSessionSnapshot]);
+  }, [persistSessionSnapshot, emitKaraokeCastSnapshot]);
 
-  // Persist immediately whenever navigation/playback/filter/overlay state changes
+  // Persist immediately whenever navigation/playback/filter/overlay/page state changes
   useEffect(() => {
     if (!hasRestoredSessionRef.current) return;
     persistSessionSnapshot(false);
@@ -604,14 +751,32 @@ export default function App() {
     selectedFolderFilter,
     selectedPlaylistFilter,
     nowPlayingOpen,
+    nowPlayingDeckPage,
+    libraryStartIndices,
     persistSessionSnapshot,
   ]);
 
-  // Visible tracks respect Offline Mode (type-scoped Search filtering happens in LibraryBrowser)
+  // Visible tracks respect Offline Mode and Selected Folders whitelist
   const visibleTracks = useMemo(() => {
-    if (!settings.offlineMode) return tracks;
-    return tracks.filter((t) => t.offlineCached || t.source === 'local');
-  }, [tracks, settings.offlineMode]);
+    let list = tracks;
+    if (settings.offlineMode) {
+      list = list.filter((t) => t.offlineCached || t.source === 'local');
+    }
+    if (settings.onlyScanSelectedFolders && (settings.selectedScanFolders?.length || 0) > 0) {
+      const enabledPaths = (settings.selectedScanFolders || [])
+        .filter((f) => f.enabled)
+        .map((f) => f.path);
+      list = list.filter(
+        (t) => t.source !== 'local' || folderMatchesAllowedList(t.folderPath, enabledPaths)
+      );
+    }
+    return list;
+  }, [
+    tracks,
+    settings.offlineMode,
+    settings.onlyScanSelectedFolders,
+    settings.selectedScanFolders,
+  ]);
 
   const updateSettings = useCallback((patch: Partial<AppSettings>) => {
     setSettings((prev) => ({ ...prev, ...patch }));
@@ -993,6 +1158,7 @@ export default function App() {
               genre: t.genre,
               year: t.year || '',
               composer: t.composer || '',
+              lyrics: t.lyrics || '',
             }));
 
           const res = await writeNativeAudioTags(payload, (prog) => {
@@ -1044,6 +1210,7 @@ export default function App() {
             genre: t.genre,
             year: t.year,
             composer: t.composer,
+            lyrics: t.lyrics || '',
           } satisfies AudioTagUpdate,
         }));
 
@@ -1110,6 +1277,7 @@ export default function App() {
           genre: patch.genre !== undefined && patch.genre.trim() ? patch.genre.trim() : t.genre,
           year: patch.year !== undefined ? patch.year.trim() || undefined : t.year,
           composer: patch.composer !== undefined ? patch.composer.trim() || undefined : t.composer,
+          lyrics: patch.lyrics !== undefined ? patch.lyrics.trim() || undefined : t.lyrics,
         };
         changedTracks.push(next);
         return next;
@@ -1128,6 +1296,77 @@ export default function App() {
       }
     },
     [persistTracksTagsToSource]
+  );
+
+  const handleApplyTagCleanups = useCallback(
+    (suggestions: TagCleanupSuggestion[]) => {
+      if (suggestions.length === 0) return;
+      const sugIds = new Set(suggestions.map((s) => s.trackId));
+      const nextTracks = applyTagSuggestionsToList(tracksRef.current, suggestions);
+      setTracks(nextTracks);
+      setQueue((prev) => applyTagSuggestionsToList(prev, suggestions));
+      const updatedSubset = nextTracks.filter((t) => sugIds.has(t.id));
+      if (updatedSubset.length > 0) {
+        void persistTracksTagsToSource(updatedSubset);
+      }
+    },
+    [persistTracksTagsToSource]
+  );
+
+  const handleFetchTrackLyrics = useCallback(
+    async (targetTrack: Track) => {
+      if (fetchingLyrics) return;
+      setFetchingLyrics(true);
+      const taskId = `lyrics_fetch_${targetTrack.id}`;
+      reportTaskProgress(
+        taskId,
+        'ai-tags',
+        'Finding Karaoke Lyrics',
+        `Searching synced lyrics for "${targetTrack.title}"...`,
+        1,
+        3,
+        'running',
+        { label: `${targetTrack.artist} — ${targetTrack.title}`, current: 1, total: 3, percent: 33 }
+      );
+      try {
+        const result = await fetchLyricsForTrack(targetTrack);
+        if (!result || !result.lyrics) {
+          showNoChangesToast('No lyrics found for this song yet');
+          dismissTask(taskId);
+          return;
+        }
+        const updatedTrack: Track = { ...targetTrack, lyrics: result.lyrics };
+        setTracks((prev) => prev.map((t) => (t.id === targetTrack.id ? updatedTrack : t)));
+        setQueue((prev) => prev.map((t) => (t.id === targetTrack.id ? updatedTrack : t)));
+        void persistTracksTagsToSource([updatedTrack]);
+        tactile.success();
+        reportTaskProgress(
+          taskId,
+          'ai-tags',
+          result.synced ? 'Synced Karaoke Lyrics Added' : 'Lyrics Added to File',
+          `Embedded from ${result.source}`,
+          3,
+          3,
+          'done',
+          { label: `${targetTrack.title}`, current: 3, total: 3, percent: 100 }
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Unable to fetch lyrics right now.';
+        reportTaskProgress(
+          taskId,
+          'ai-tags',
+          'Lyrics Lookup Paused',
+          msg,
+          3,
+          3,
+          'error',
+          { label: msg, current: 3, total: 3, percent: 100 }
+        );
+      } finally {
+        setFetchingLyrics(false);
+      }
+    },
+    [fetchingLyrics, reportTaskProgress, dismissTask, persistTracksTagsToSource, showNoChangesToast]
   );
 
   const handleDeleteTracks = useCallback(
@@ -1483,45 +1722,115 @@ export default function App() {
     [handleImportM3uFiles, refreshCacheStats, reportTaskProgress]
   );
 
+  const pruneTracksToAllowedFolders = useCallback(
+    (allowedPaths: string[]) => {
+      const removedIds = new Set<string>();
+      const remaining = tracksRef.current.filter((t) => {
+        if (t.source !== 'local') return true;
+        const ok = folderMatchesAllowedList(t.folderPath, allowedPaths);
+        if (!ok) removedIds.add(t.id);
+        return ok;
+      });
+      if (removedIds.size === 0) return 0;
+
+      setTracks(remaining);
+      setQueue((prev) => {
+        const filtered = prev.filter((t) => !removedIds.has(t.id));
+        return filtered.length > 0 ? filtered : remaining;
+      });
+      if (currentTrackId && removedIds.has(currentTrackId)) {
+        const nextTrack = remaining[0] || null;
+        setCurrentTrackId(nextTrack?.id || null);
+        if (!nextTrack && audioEngine.getState().isPlaying) {
+          void audioEngine.togglePlayPause();
+        }
+      }
+      if (
+        selectedFolderFilter &&
+        !folderMatchesAllowedList(selectedFolderFilter, allowedPaths)
+      ) {
+        setSelectedFolderFilter(null);
+      }
+      return removedIds.size;
+    },
+    [currentTrackId, selectedFolderFilter]
+  );
+
   const handleScanNativeAndroid = useCallback(
-    async (silentIfEmpty = false) => {
+    async (silentIfEmpty = false, overrideAllowedFolders?: string[]) => {
       if (!isNativeAndroidApp()) return 0;
+
+      const latestSettings = latestSnapshotRef.current.settings;
+      const useWhitelist =
+        Array.isArray(overrideAllowedFolders) || Boolean(latestSettings.onlyScanSelectedFolders);
+      const allowedFolders = Array.isArray(overrideAllowedFolders)
+        ? overrideAllowedFolders
+        : latestSettings.onlyScanSelectedFolders
+        ? (latestSettings.selectedScanFolders || [])
+            .filter((f) => f.enabled)
+            .map((f) => f.path)
+        : [];
+
+      if (useWhitelist && allowedFolders.length === 0) {
+        setAudioError(
+          'Select at least one music folder in Settings -> Folders & Cache (or turn off "Only scan selected folders").'
+        );
+        return 0;
+      }
+
       const taskId = `native_scan_${Date.now()}`;
       setImportingFiles(true);
       setAudioError(null);
       reportTaskProgress(
         taskId,
         'device-scan',
-        'Scanning Device Music Folders',
-        'Reading Android MediaStore index...',
+        useWhitelist ? 'Scanning Selected Folders' : 'Scanning Device Music Folders',
+        useWhitelist
+          ? `Scanning ${allowedFolders.length} selected folder(s)...`
+          : 'Reading Android MediaStore index...',
         0,
         100,
         'running',
         { label: 'Preparing Android MediaStore...', current: 0, total: 1, percent: 15 }
       );
       try {
-        const scannedTracks = await scanAndroidDeviceLibrary((prog) => {
-          const itemTotal = Math.max(1, prog.total);
-          reportTaskProgress(
-            taskId,
-            'device-scan',
-            'Scanning Device Music Folders',
-            `${prog.current} / ${itemTotal} audio files`,
-            prog.current,
-            itemTotal,
-            'running',
-            {
-              label: prog.fileName || 'Scanning audio files...',
-              current: 1,
-              total: 1,
-              percent: 100,
-            }
-          );
-        });
+        if (useWhitelist && !overrideAllowedFolders) {
+          pruneTracksToAllowedFolders(allowedFolders);
+        }
+
+        const scannedTracks = await scanAndroidDeviceLibrary(
+          (prog) => {
+            const itemTotal = Math.max(1, prog.total);
+            reportTaskProgress(
+              taskId,
+              'device-scan',
+              useWhitelist ? 'Scanning Selected Folders' : 'Scanning Device Music Folders',
+              `${prog.current} / ${itemTotal} audio files`,
+              prog.current,
+              itemTotal,
+              'running',
+              {
+                label: prog.fileName || 'Scanning audio files...',
+                current: 1,
+                total: 1,
+                percent: 100,
+              }
+            );
+          },
+          useWhitelist ? allowedFolders : undefined
+        );
+
         if (scannedTracks.length > 0) {
           setTracks((prev) => {
+            const basePrev =
+              useWhitelist && !overrideAllowedFolders
+                ? prev.filter(
+                    (t) =>
+                      t.source !== 'local' || folderMatchesAllowedList(t.folderPath, allowedFolders)
+                  )
+                : prev;
             const scannedByFp = new Map(scannedTracks.map((t) => [t.fingerprint, t]));
-            const updatedPrev = prev.map((existing) => {
+            const updatedPrev = basePrev.map((existing) => {
               const matched = scannedByFp.get(existing.fingerprint);
               if (!matched) return existing;
               return {
@@ -1542,7 +1851,9 @@ export default function App() {
             taskId,
             'device-scan',
             'Device Folder Scan Complete',
-            `Loaded ${scannedTracks.length} track(s) from device storage`,
+            `Loaded ${scannedTracks.length} track(s) from ${
+              useWhitelist ? `${allowedFolders.length} selected folder(s)` : 'device storage'
+            }`,
             scannedTracks.length,
             scannedTracks.length,
             'done',
@@ -1550,7 +1861,11 @@ export default function App() {
           );
         } else {
           if (!silentIfEmpty) {
-            setAudioError('No audio files were found in device storage yet.');
+            setAudioError(
+              useWhitelist
+                ? 'No audio files were found in the selected folders.'
+                : 'No audio files were found in device storage yet.'
+            );
           }
           reportTaskProgress(
             taskId,
@@ -1583,7 +1898,7 @@ export default function App() {
         setImportingFiles(false);
       }
     },
-    [reportTaskProgress]
+    [pruneTracksToAllowedFolders, reportTaskProgress]
   );
 
   // Cloud Sync Actions
@@ -2020,28 +2335,125 @@ export default function App() {
     [updateSettings]
   );
 
+  const collectWebDirectoryFiles = useCallback(
+    async (
+      dirHandle: FileSystemDirectoryHandle,
+      baseLabel: string,
+      taskId: string
+    ): Promise<{
+      collected: File[];
+      collectedM3u: File[];
+      webHandlesMap: Map<
+        File,
+        { fileHandle: FileSystemFileHandle; dirHandle: FileSystemDirectoryHandle; fileName: string }
+      >;
+    }> => {
+      type PickerDir = FileSystemDirectoryHandle & {
+        values: () => AsyncIterable<
+          | (FileSystemFileHandle & { kind: 'file'; name: string })
+          | (FileSystemDirectoryHandle & {
+              kind: 'directory';
+              name: string;
+              values: () => AsyncIterable<unknown>;
+            })
+        >;
+      };
+
+      const audioExts = /\.(flac|alac|wav|wave|mp3|m4a|aac|ogg|oga|opus)$/i;
+      const m3uExts = /\.(m3u8?|pls)$/i;
+      const collected: File[] = [];
+      const collectedM3u: File[] = [];
+      const webHandlesMap = new Map<
+        File,
+        { fileHandle: FileSystemFileHandle; dirHandle: FileSystemDirectoryHandle; fileName: string }
+      >();
+
+      const walk = async (handle: PickerDir, prefix: string) => {
+        for await (const entry of handle.values()) {
+          if (entry.kind === 'file' && typeof entry.getFile === 'function') {
+            if (audioExts.test(entry.name)) {
+              const f = await entry.getFile();
+              Object.defineProperty(f, 'webkitRelativePath', {
+                value: `${prefix}/${entry.name}`,
+                configurable: true,
+              });
+              collected.push(f);
+              webHandlesMap.set(f, {
+                fileHandle: entry,
+                dirHandle: handle,
+                fileName: entry.name,
+              });
+              if (collected.length % 5 === 1) {
+                reportTaskProgress(
+                  taskId,
+                  'device-scan',
+                  'Scanning Music Folder',
+                  `Found ${collected.length} track(s)`,
+                  collected.length,
+                  collected.length + 5,
+                  'running',
+                  { label: entry.name, current: 1, total: 1, percent: 100 }
+                );
+              }
+            } else if (m3uExts.test(entry.name)) {
+              const mf = await entry.getFile();
+              collectedM3u.push(mf);
+            }
+          } else if (entry.kind === 'directory' && typeof entry.values === 'function') {
+            await walk(entry as PickerDir, `${prefix}/${entry.name}`);
+          }
+        }
+      };
+
+      await walk(dirHandle as PickerDir, baseLabel);
+      return { collected, collectedM3u, webHandlesMap };
+    },
+    [reportTaskProgress]
+  );
+
+  const registerScanFolderEntries = useCallback((incoming: ScanFolderEntry[], forceEnableNew = true) => {
+    setSettings((prev) => {
+      const existing = Array.isArray(prev.selectedScanFolders) ? prev.selectedScanFolders : [];
+      const byNorm = new Map<string, ScanFolderEntry>(
+        existing.map((e) => [normalizeFolderKey(e.path), e])
+      );
+      for (const item of incoming) {
+        const key = normalizeFolderKey(item.path);
+        if (!key) continue;
+        const cur = byNorm.get(key);
+        if (cur) {
+          byNorm.set(key, {
+            ...cur,
+            trackCount: item.trackCount ?? cur.trackCount,
+            enabled: forceEnableNew ? true : cur.enabled,
+            source: item.source || cur.source,
+          });
+        } else {
+          byNorm.set(key, item);
+        }
+      }
+      return {
+        ...prev,
+        selectedScanFolders: Array.from(byNorm.values()),
+      };
+    });
+  }, []);
+
   const handleOpenFolderImport = useCallback(async () => {
     if (isNativeAndroidApp()) {
       await handleScanNativeAndroid(false);
       return;
     }
 
-    type PickerDir = FileSystemDirectoryHandle & {
-      values: () => AsyncIterable<
-        | (FileSystemFileHandle & { kind: 'file'; name: string })
-        | (FileSystemDirectoryHandle & { kind: 'directory'; name: string; values: () => AsyncIterable<unknown> })
-      >;
-    };
-
     const picker = (
       window as Window & {
-        showDirectoryPicker?: (opts?: { mode?: 'read' | 'readwrite' }) => Promise<PickerDir>;
+        showDirectoryPicker?: (opts?: { mode?: 'read' | 'readwrite' }) => Promise<FileSystemDirectoryHandle>;
       }
     ).showDirectoryPicker;
 
     if (typeof picker === 'function') {
       try {
-        let dirHandle: PickerDir;
+        let dirHandle: FileSystemDirectoryHandle;
         try {
           dirHandle = await picker({ mode: 'readwrite' });
         } catch (permErr) {
@@ -2051,14 +2463,6 @@ export default function App() {
           dirHandle = await picker({ mode: 'read' });
         }
 
-        const audioExts = /\.(flac|alac|wav|wave|mp3|m4a|aac|ogg|oga|opus)$/i;
-        const m3uExts = /\.(m3u8?|pls)$/i;
-        const collected: File[] = [];
-        const collectedM3u: File[] = [];
-        const webHandlesMap = new Map<
-          File,
-          { fileHandle: FileSystemFileHandle; dirHandle: FileSystemDirectoryHandle; fileName: string }
-        >();
         const walkTaskId = `folder_walk_${Date.now()}`;
         reportTaskProgress(
           walkTaskId,
@@ -2071,47 +2475,28 @@ export default function App() {
           { label: dirHandle.name, current: 0, total: 1, percent: 10 }
         );
 
-        const walk = async (handle: PickerDir, prefix: string) => {
-          for await (const entry of handle.values()) {
-            if (entry.kind === 'file' && typeof entry.getFile === 'function') {
-              if (audioExts.test(entry.name)) {
-                const f = await entry.getFile();
-                Object.defineProperty(f, 'webkitRelativePath', {
-                  value: `${prefix}/${entry.name}`,
-                  configurable: true,
-                });
-                collected.push(f);
-                webHandlesMap.set(f, {
-                  fileHandle: entry,
-                  dirHandle: handle,
-                  fileName: entry.name,
-                });
-                if (collected.length % 5 === 1) {
-                  reportTaskProgress(
-                    walkTaskId,
-                    'device-scan',
-                    'Scanning Music Folder',
-                    `Found ${collected.length} track(s)`,
-                    collected.length,
-                    collected.length + 5,
-                    'running',
-                    { label: entry.name, current: 1, total: 1, percent: 100 }
-                  );
-                }
-              } else if (m3uExts.test(entry.name)) {
-                const mf = await entry.getFile();
-                collectedM3u.push(mf);
-              }
-            } else if (entry.kind === 'directory' && typeof entry.values === 'function') {
-              await walk(
-                entry as PickerDir,
-                `${prefix}/${entry.name}`
-              );
-            }
-          }
-        };
+        const { collected, collectedM3u, webHandlesMap } = await collectWebDirectoryFiles(
+          dirHandle,
+          dirHandle.name,
+          walkTaskId
+        );
 
-        await walk(dirHandle, dirHandle.name);
+        const folderId = `web_${normalizeFolderKey(dirHandle.name) || Date.now().toString(36)}`;
+        await saveScanFolderHandle(folderId, dirHandle.name, dirHandle.name, dirHandle);
+        registerScanFolderEntries(
+          [
+            {
+              id: folderId,
+              path: dirHandle.name,
+              label: dirHandle.name,
+              enabled: true,
+              trackCount: collected.length,
+              source: 'web',
+            },
+          ],
+          true
+        );
+
         if (collected.length > 0 || collectedM3u.length > 0) {
           await handleImportFiles(collected, walkTaskId, webHandlesMap, collectedM3u);
         } else {
@@ -2136,7 +2521,205 @@ export default function App() {
     }
 
     folderInputRef.current?.click();
-  }, [handleImportFiles, handleScanNativeAndroid, reportTaskProgress]);
+  }, [
+    collectWebDirectoryFiles,
+    handleImportFiles,
+    handleScanNativeAndroid,
+    registerScanFolderEntries,
+    reportTaskProgress,
+  ]);
+
+  const handleAddScanFolder = useCallback(async () => {
+    setScanningFolders(true);
+    try {
+      if (isNativeAndroidApp()) {
+        const picked = await pickAndroidMusicFolder();
+        if (!picked.cancelled && picked.path) {
+          const entry: ScanFolderEntry = {
+            id: `android_${normalizeFolderKey(picked.path)}`,
+            path: picked.path,
+            label: picked.label || picked.path.split('/').pop() || picked.path,
+            enabled: true,
+            source: 'android',
+          };
+          registerScanFolderEntries([entry], true);
+          updateSettings({ onlyScanSelectedFolders: true });
+          await handleScanNativeAndroid(true, [picked.path]);
+        }
+        return;
+      }
+      await handleOpenFolderImport();
+      updateSettings({ onlyScanSelectedFolders: true });
+    } catch (err) {
+      setAudioError(err instanceof Error ? err.message : 'Unable to add music folder.');
+    } finally {
+      setScanningFolders(false);
+    }
+  }, [handleOpenFolderImport, handleScanNativeAndroid, registerScanFolderEntries, updateSettings]);
+
+  const handleDiscoverScanFolders = useCallback(async () => {
+    setScanningFolders(true);
+    try {
+      const discovered: ScanFolderEntry[] = [];
+      const hadExisting = (latestSnapshotRef.current.settings.selectedScanFolders || []).length > 0;
+
+      if (isNativeAndroidApp()) {
+        const androidFolders = await listAndroidMusicFolders();
+        for (const f of androidFolders) {
+          discovered.push({
+            id: `android_${normalizeFolderKey(f.path)}`,
+            path: f.path,
+            label: f.label || f.path,
+            enabled: !hadExisting,
+            trackCount: f.trackCount,
+            source: 'android',
+          });
+        }
+      } else {
+        const webHandles = await getAllScanFolderHandles();
+        for (const wh of webHandles) {
+          discovered.push({
+            id: wh.id,
+            path: wh.path,
+            label: wh.label,
+            enabled: true,
+            source: 'web',
+          });
+        }
+      }
+
+      // Also include any distinct local library folders already loaded
+      const folderCounts = new Map<string, number>();
+      for (const t of tracksRef.current) {
+        if (t.source !== 'local') continue;
+        const fp = (t.folderPath || '').trim();
+        if (!fp || fp === 'Reference Studio') continue;
+        folderCounts.set(fp, (folderCounts.get(fp) || 0) + 1);
+      }
+      for (const [fp, count] of folderCounts.entries()) {
+        discovered.push({
+          id: `lib_${normalizeFolderKey(fp)}`,
+          path: fp,
+          label: fp.split('/').pop() || fp,
+          enabled: !hadExisting,
+          trackCount: count,
+          source: isNativeAndroidApp() ? 'android' : 'library',
+        });
+      }
+
+      if (discovered.length > 0) {
+        registerScanFolderEntries(discovered, false);
+        setSyncMessage(`Found ${discovered.length} music folder(s). Check the ones you want scanned.`);
+        tactile.success();
+      } else {
+        setSyncMessage('No existing folders discovered yet — tap Add Folder to pick a directory.');
+      }
+    } catch (err) {
+      setAudioError(err instanceof Error ? err.message : 'Unable to discover music folders.');
+    } finally {
+      setScanningFolders(false);
+    }
+  }, [registerScanFolderEntries]);
+
+  const handleToggleScanFolder = useCallback((folderId: string) => {
+    setSettings((prev) => ({
+      ...prev,
+      selectedScanFolders: (prev.selectedScanFolders || []).map((f) =>
+        f.id === folderId ? { ...f, enabled: !f.enabled } : f
+      ),
+    }));
+  }, []);
+
+  const handleRemoveScanFolder = useCallback((folderId: string) => {
+    setSettings((prev) => ({
+      ...prev,
+      selectedScanFolders: (prev.selectedScanFolders || []).filter((f) => f.id !== folderId),
+    }));
+    void deleteScanFolderHandle(folderId);
+  }, []);
+
+  const handleApplyAndScanSelectedFolders = useCallback(async () => {
+    const latest = latestSnapshotRef.current.settings;
+    const onlySelected = Boolean(latest.onlyScanSelectedFolders);
+    const enabled = (latest.selectedScanFolders || []).filter((f) => f.enabled);
+    const allowedPaths = enabled.map((f) => f.path);
+
+    if (onlySelected && allowedPaths.length === 0) {
+      setAudioError('Please check at least one folder to scan.');
+      return;
+    }
+
+    setScanningFolders(true);
+    try {
+      if (onlySelected) {
+        pruneTracksToAllowedFolders(allowedPaths);
+      }
+
+      if (isNativeAndroidApp()) {
+        await handleScanNativeAndroid(false, onlySelected ? allowedPaths : undefined);
+        return;
+      }
+
+      const webHandles = await getAllScanFolderHandles();
+      const targetHandles = onlySelected
+        ? webHandles.filter((wh) => folderMatchesAllowedList(wh.path, allowedPaths))
+        : webHandles;
+
+      if (targetHandles.length === 0) {
+        if (onlySelected) {
+          setSyncMessage(
+            `Applied whitelist (${allowedPaths.length} folder${allowedPaths.length === 1 ? '' : 's'}). Excluded folders removed from library.`
+          );
+          tactile.success();
+        } else {
+          await handleOpenFolderImport();
+        }
+        return;
+      }
+
+      const taskId = `scan_selected_web_${Date.now()}`;
+      for (const wh of targetHandles) {
+        const granted = await ensureDirectoryReadPermission(wh.dirHandle);
+        if (!granted) continue;
+        const { collected, collectedM3u, webHandlesMap } = await collectWebDirectoryFiles(
+          wh.dirHandle,
+          wh.path,
+          taskId
+        );
+        if (collected.length > 0 || collectedM3u.length > 0) {
+          await handleImportFiles(collected, taskId, webHandlesMap, collectedM3u);
+        }
+      }
+      tactile.success();
+    } finally {
+      setScanningFolders(false);
+    }
+  }, [
+    collectWebDirectoryFiles,
+    handleImportFiles,
+    handleOpenFolderImport,
+    handleScanNativeAndroid,
+    pruneTracksToAllowedFolders,
+  ]);
+
+  const handleChangeLibraryStartIndex = useCallback(
+    (idx: number) => {
+      if (!isLibraryTab(normalizedActiveTab)) return;
+      setLibraryStartIndices((prev) =>
+        prev[normalizedActiveTab] === idx
+          ? prev
+          : { ...prev, [normalizedActiveTab]: idx }
+      );
+    },
+    [normalizedActiveTab]
+  );
+
+  const handleChangeAiScanConfig = useCallback(
+    (cfg: { scanLimitInput: string; batchSize: number; autoApplyTags: boolean }) => {
+      updateSettings({ aiScanConfig: cfg });
+    },
+    [updateSettings]
+  );
 
   const studioPage = getStudioPage(normalizedActiveTab);
   const eqPage = getEqPage(normalizedActiveTab);
@@ -2153,7 +2736,27 @@ export default function App() {
         webkitdirectory=""
         accept="audio/*,.flac,.alac,.wav,.mp3,.m4a,.aac,.ogg,.opus,.m3u,.m3u8"
         onChange={(e) => {
-          void handleImportFiles(e.target.files);
+          const files = e.target.files;
+          if (files && files.length > 0) {
+            const firstRel = (files[0] as File & { webkitRelativePath?: string }).webkitRelativePath || '';
+            const rootName = firstRel.split('/').filter(Boolean)[0];
+            if (rootName) {
+              registerScanFolderEntries(
+                [
+                  {
+                    id: `web_${normalizeFolderKey(rootName)}`,
+                    path: rootName,
+                    label: rootName,
+                    enabled: true,
+                    trackCount: files.length,
+                    source: 'web',
+                  },
+                ],
+                true
+              );
+            }
+          }
+          void handleImportFiles(files);
           e.target.value = '';
         }}
         className="hidden"
@@ -2396,6 +2999,8 @@ export default function App() {
                 selectedGenreFilter={selectedGenreFilter}
                 selectedFolderFilter={selectedFolderFilter}
                 selectedPlaylistFilter={selectedPlaylistFilter}
+                initialStartIndex={libraryStartIndices[normalizedActiveTab] || 0}
+                onChangeStartIndex={handleChangeLibraryStartIndex}
                 onChangeSearchQuery={setSearchQuery}
                 onChangeViewMode={handleChangeLibraryViewMode}
                 onChangeSortBy={(nextSort) => updateSettings({ sortBy: nextSort })}
@@ -2413,6 +3018,8 @@ export default function App() {
                 onAddTracksToPlaylist={handleAddTracksToPlaylist}
                 onCreatePlaylist={handleCreatePlaylist}
                 onEditTracksMetadata={handleEditTracksMetadata}
+                onApplyTagCleanups={handleApplyTagCleanups}
+                onShowNoChangesToast={showNoChangesToast}
                 onAssignEqPreset={handleAssignEqPreset}
                 onSetRingtone={(track) => void handleSetRingtone(track)}
                 onDeleteTracks={handleDeleteTracks}
@@ -2453,6 +3060,8 @@ export default function App() {
                 tracks={tracks}
                 smartPlaylists={smartPlaylists}
                 dailyRecommendations={dailyRecs}
+                initialScanConfig={settings.aiScanConfig}
+                onChangeScanConfig={handleChangeAiScanConfig}
                 onSignInGoogle={() => void handleSignInGoogle()}
                 onPlayTracks={(list, random = false) => playCollectionQueue(list, random)}
                 onAddSmartPlaylist={(pl) => setSmartPlaylists((prev) => [pl, ...prev])}
@@ -2460,17 +3069,7 @@ export default function App() {
                   setSmartPlaylists((prev) => prev.filter((p) => p.id !== id))
                 }
                 onUpdateDailyRecommendations={setDailyRecs}
-                onApplyTagCleanups={(suggestions: TagCleanupSuggestion[]) => {
-                  if (suggestions.length === 0) return;
-                  const sugIds = new Set(suggestions.map((s) => s.trackId));
-                  const nextTracks = applyTagSuggestionsToList(tracksRef.current, suggestions);
-                  setTracks(nextTracks);
-                  setQueue((prev) => applyTagSuggestionsToList(prev, suggestions));
-                  const updatedSubset = nextTracks.filter((t) => sugIds.has(t.id));
-                  if (updatedSubset.length > 0) {
-                    void persistTracksTagsToSource(updatedSubset);
-                  }
-                }}
+                onApplyTagCleanups={handleApplyTagCleanups}
                 onRemoveDuplicateTracks={handleDeleteTracks}
                 onApplyArtworkUpdates={(updates) => {
                   const map = new Map(updates.map((u) => [u.trackId, u.coverUrl]));
@@ -2553,11 +3152,17 @@ export default function App() {
                 cacheStats={cacheStats}
                 syncBusy={syncBusy}
                 syncMessage={syncMessage}
+                scanningFolders={scanningFolders}
                 onUpdateSettings={updateSettings}
                 onSignInGoogle={() => void handleSignInGoogle()}
                 onSignOutGoogle={() => void signOutGoogleAccount()}
                 onBackupNow={() => void handleBackupNow(false)}
                 onRestoreNow={() => void handleRestoreNow()}
+                onAddScanFolder={() => void handleAddScanFolder()}
+                onDiscoverScanFolders={() => void handleDiscoverScanFolders()}
+                onToggleScanFolder={handleToggleScanFolder}
+                onRemoveScanFolder={handleRemoveScanFolder}
+                onApplyAndScanSelectedFolders={() => void handleApplyAndScanSelectedFolders()}
                 onClearCache={() => {
                   tactile.tap();
                   const taskId = `clear_cache_${Date.now()}`;
@@ -2715,6 +3320,20 @@ export default function App() {
         volume={settings.masterVolume}
         lowBatteryMode={settings.lowBatteryMode}
         streamingQuality={settings.streamingQuality}
+        showLyrics={settings.showLyrics !== false}
+        karaokeOffsetMs={settings.karaokeOffsetMs || 0}
+        fetchingLyrics={fetchingLyrics}
+        tvStageOpen={tvStageOpen}
+        initialDeckPage={nowPlayingDeckPage}
+        onChangeDeckPage={setNowPlayingDeckPage}
+        onSetTvStageOpen={setTvStageOpen}
+        onToggleShowLyrics={() =>
+          updateSettings({ showLyrics: settings.showLyrics === false })
+        }
+        onChangeKaraokeOffsetMs={(nextMs) =>
+          updateSettings({ karaokeOffsetMs: nextMs })
+        }
+        onFetchTrackLyrics={(t) => void handleFetchTrackLyrics(t)}
         onClose={() => {
           tactile.sheet(false);
           setNowPlayingOpen(false);
@@ -2776,6 +3395,16 @@ export default function App() {
       {/* Modals */}
       <CastModal
         open={castOpen}
+        track={currentTrack}
+        karaokeOffsetMs={settings.karaokeOffsetMs || 0}
+        onLaunchTvStage={() => {
+          setNowPlayingOpen(true);
+          setNowPlayingDeckPage('player');
+          if (settings.showLyrics === false) {
+            updateSettings({ showLyrics: true });
+          }
+          setTvStageOpen(true);
+        }}
         onClose={() => {
           tactile.sheet(false);
           setCastOpen(false);
@@ -2794,7 +3423,42 @@ export default function App() {
 
       <TaskProgressDock tasks={activeTasks} onDismiss={dismissTask} />
 
+      {activeWorkspace !== 'studio' &&
+        globalAiQuotaCountdown &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div className="fixed bottom-[126px] sm:bottom-24 left-1/2 -translate-x-1/2 z-[60] w-[min(92vw,460px)] rounded-xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shadow-2xl">
+            <AiQuotaNotice compact onDismiss={() => {}} />
+          </div>,
+          document.body
+        )}
+
+      {noChangesToast &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            key={noChangesToast.id}
+            role="status"
+            aria-live="polite"
+            className="fixed bottom-[126px] sm:bottom-24 left-1/2 -translate-x-1/2 z-[80] pointer-events-none px-3.5 py-2 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white/95 dark:bg-zinc-900/95 text-zinc-900 dark:text-zinc-100 shadow-xl backdrop-blur-md flex items-center gap-2 text-xs font-medium whitespace-nowrap"
+          >
+            <Info className="w-3.5 h-3.5 accent-text shrink-0" />
+            <span>{noChangesToast.message}</span>
+          </div>,
+          document.body
+        )}
+
       <OfflineIndicator />
     </div>
   );
+}
+
+export default function App() {
+  const isKaraokeReceiver =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('karaoke-display') === '1';
+  if (isKaraokeReceiver) {
+    return <KaraokeReceiverDisplayScreen />;
+  }
+  return <MainApp />;
 }

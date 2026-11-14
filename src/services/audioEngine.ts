@@ -326,6 +326,7 @@ class HiFiAudioEngine {
     this.isCrossfading = false;
     this.preloadedTrackId = null;
     this.virtualOffsetSec = 0;
+    this.pendingRestoreTimeSec = null;
     this.lastError = null;
 
     const syncUrl = this.getSyncCachedUrl(track);
@@ -383,9 +384,13 @@ class HiFiAudioEngine {
 
     const clampedPos = Math.max(0, Math.min(positionSeconds || 0, track.duration || 0));
     this.virtualOffsetSec = clampedPos;
+    this.pendingRestoreTimeSec = clampedPos;
+    this.emitProgress(true);
 
     try {
       const url = await this.resolveTrackUrl(track);
+      if (this.currentTrack?.id !== track.id) return;
+
       const active = this.getActiveElement();
       const inactive = this.getInactiveElement();
 
@@ -411,21 +416,46 @@ class HiFiAudioEngine {
             if (settled) return;
             settled = true;
             active.removeEventListener('loadedmetadata', finish);
+            active.removeEventListener('canplay', finish);
             active.removeEventListener('error', finish);
             resolve();
           };
           active.addEventListener('loadedmetadata', finish);
+          active.addEventListener('canplay', finish);
           active.addEventListener('error', finish);
-          window.setTimeout(finish, 1500);
+          window.setTimeout(finish, 3500);
         });
       }
 
-      if (track.source === 'builtin') {
-        active.currentTime = clampedPos % 8;
-      } else if (Number.isFinite(active.duration) && active.duration > 0) {
-        active.currentTime = Math.min(clampedPos, active.duration);
-      } else {
-        active.currentTime = clampedPos;
+      if (this.currentTrack?.id !== track.id) return;
+
+      const applySeek = () => {
+        try {
+          if (track.source === 'builtin') {
+            active.currentTime = clampedPos % 8;
+            this.pendingRestoreTimeSec = null;
+          } else if (active.readyState >= 1) {
+            const target =
+              Number.isFinite(active.duration) && active.duration > 0
+                ? Math.min(clampedPos, active.duration)
+                : clampedPos;
+            active.currentTime = target;
+            this.pendingRestoreTimeSec = null;
+          }
+        } catch {
+          // Keep pendingRestoreTimeSec intact so deferred listener or UI fallback keeps exact position
+        }
+      };
+
+      applySeek();
+
+      if (track.source !== 'builtin' && active.readyState < 1) {
+        const onLateMetadata = () => {
+          if (this.currentTrack?.id !== track.id) return;
+          applySeek();
+          this.emitProgress(true);
+        };
+        active.addEventListener('loadedmetadata', onLateMetadata, { once: true });
       }
 
       this.updateMediaSession(track);
@@ -438,6 +468,7 @@ class HiFiAudioEngine {
             await this.ctx.resume();
           }
           await active.play();
+          applySeek();
           this.isPlaying = true;
           this.emitStatus();
           this.startProgressLoop();
@@ -477,6 +508,19 @@ class HiFiAudioEngine {
       this.stopProgressLoop();
     } else {
       try {
+        if (this.pendingRestoreTimeSec !== null && this.currentTrack) {
+          const target = this.pendingRestoreTimeSec;
+          if (this.currentTrack.source === 'builtin') {
+            active.currentTime = target % 8;
+            this.pendingRestoreTimeSec = null;
+          } else if (active.readyState >= 1) {
+            active.currentTime =
+              Number.isFinite(active.duration) && active.duration > 0
+                ? Math.min(target, active.duration)
+                : target;
+            this.pendingRestoreTimeSec = null;
+          }
+        }
         await active.play();
         this.isPlaying = true;
         this.lastError = null;
@@ -499,23 +543,30 @@ class HiFiAudioEngine {
     const active = this.getActiveElement();
     const maxDur = this.currentTrack?.duration || active.duration || 0;
     const clamped = Math.max(0, Math.min(seconds, maxDur));
+    this.pendingRestoreTimeSec = null;
     if (this.currentTrack?.source === 'builtin') {
       // Synthesized WAV loops every 8s while tracking virtual timeline
       this.virtualOffsetSec = clamped;
       active.currentTime = clamped % 8;
     } else if (Number.isFinite(active.duration) && active.duration > 0) {
       active.currentTime = Math.min(clamped, active.duration);
+    } else {
+      this.pendingRestoreTimeSec = clamped;
     }
     this.emitProgress(true);
   }
 
   private virtualOffsetSec = 0;
+  private pendingRestoreTimeSec: number | null = null;
   private lastTickTimestamp = 0;
 
   private getCurrentTrackTime(): number {
     const active = this.getActiveElement();
     if (this.currentTrack?.source === 'builtin') {
       return this.virtualOffsetSec;
+    }
+    if (this.pendingRestoreTimeSec !== null) {
+      return this.pendingRestoreTimeSec;
     }
     return Number.isFinite(active.currentTime) ? active.currentTime : 0;
   }

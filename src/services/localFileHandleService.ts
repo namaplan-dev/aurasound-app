@@ -14,9 +14,18 @@ export interface StoredWebFileHandleEntry {
   savedAt: number;
 }
 
+export interface StoredWebFolderHandleEntry {
+  id: string;
+  path: string;
+  label: string;
+  dirHandle: FileSystemDirectoryHandle;
+  savedAt: number;
+}
+
 const HANDLES_DB_NAME = 'aurasound_handles_db';
-const HANDLES_DB_VERSION = 1;
+const HANDLES_DB_VERSION = 2;
 const HANDLES_STORE = 'file_handles';
+const FOLDER_HANDLES_STORE = 'folder_handles';
 
 interface FsPermissionHandle {
   queryPermission?: (desc: { mode: 'read' | 'readwrite' }) => Promise<'granted' | 'denied' | 'prompt'>;
@@ -40,6 +49,26 @@ async function ensureReadWritePermission(handle: FsPermissionHandle | null | und
   }
 }
 
+export async function ensureDirectoryReadPermission(
+  handle: FileSystemDirectoryHandle | null | undefined
+): Promise<boolean> {
+  if (!handle) return false;
+  const perm = handle as unknown as FsPermissionHandle;
+  try {
+    if (typeof perm.queryPermission === 'function') {
+      const state = await perm.queryPermission({ mode: 'read' });
+      if (state === 'granted') return true;
+    }
+    if (typeof perm.requestPermission === 'function') {
+      const res = await perm.requestPermission({ mode: 'read' });
+      return res === 'granted';
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function openHandlesDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(HANDLES_DB_NAME, HANDLES_DB_VERSION);
@@ -48,10 +77,67 @@ function openHandlesDb(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains(HANDLES_STORE)) {
         db.createObjectStore(HANDLES_STORE);
       }
+      if (!db.objectStoreNames.contains(FOLDER_HANDLES_STORE)) {
+        db.createObjectStore(FOLDER_HANDLES_STORE);
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
+}
+
+export async function saveScanFolderHandle(
+  id: string,
+  path: string,
+  label: string,
+  dirHandle: FileSystemDirectoryHandle
+): Promise<void> {
+  try {
+    const db = await openHandlesDb();
+    const entry: StoredWebFolderHandleEntry = {
+      id,
+      path,
+      label,
+      dirHandle,
+      savedAt: Date.now(),
+    };
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(FOLDER_HANDLES_STORE, 'readwrite');
+      tx.objectStore(FOLDER_HANDLES_STORE).put(entry, id);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch {
+    // Browser may block IndexedDB handle serialization in private mode
+  }
+}
+
+export async function getAllScanFolderHandles(): Promise<StoredWebFolderHandleEntry[]> {
+  try {
+    const db = await openHandlesDb();
+    return await new Promise<StoredWebFolderHandleEntry[]>((resolve, reject) => {
+      const tx = db.transaction(FOLDER_HANDLES_STORE, 'readonly');
+      const req = tx.objectStore(FOLDER_HANDLES_STORE).getAll();
+      req.onsuccess = () => resolve(Array.isArray(req.result) ? (req.result as StoredWebFolderHandleEntry[]) : []);
+      req.onerror = () => reject(req.error);
+    });
+  } catch {
+    return [];
+  }
+}
+
+export async function deleteScanFolderHandle(id: string): Promise<void> {
+  try {
+    const db = await openHandlesDb();
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(FOLDER_HANDLES_STORE, 'readwrite');
+      tx.objectStore(FOLDER_HANDLES_STORE).delete(id);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch {
+    // ignore
+  }
 }
 
 export async function saveTrackFileHandle(
@@ -247,4 +333,92 @@ export async function writeTracksTagsToWebStorage(
     permissionDeniedCount,
     unsupportedFormatCount,
   };
+}
+
+export async function readWebAudioBlobForTrack(trackId: string): Promise<Blob | null> {
+  const entry = await getTrackFileHandle(trackId);
+  if (entry?.fileHandle) {
+    try {
+      const file = await entry.fileHandle.getFile();
+      if (file && file.size > 0) return file;
+    } catch {
+      // fall through to IndexedDB offline audio cache
+    }
+  }
+  const cached = await getAudioBlobFromCache(trackId);
+  return cached || null;
+}
+
+export interface SaveTextNearSourceResult {
+  savedToDisk: boolean;
+  fileName: string;
+  savedPath: string;
+  downloadedFallback?: boolean;
+}
+
+export async function saveTextFileNearTrack(
+  track: Track,
+  textContent: string,
+  suggestedTxtName: string
+): Promise<SaveTextNearSourceResult> {
+  const entry = await getTrackFileHandle(track.id);
+  let targetDir: FileSystemDirectoryHandle | null = entry?.dirHandle || null;
+
+  if (!targetDir && track.folderPath) {
+    const folders = await getAllScanFolderHandles();
+    const normFolder = track.folderPath.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '').toLowerCase();
+    const hit = folders.find(
+      (f) => f.path.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '').toLowerCase() === normFolder
+    );
+    if (hit) targetDir = hit.dirHandle;
+  }
+
+  if (targetDir) {
+    const granted = await ensureReadWritePermission(
+      targetDir as unknown as FsPermissionHandle
+    );
+    if (granted) {
+      try {
+        const txtHandle = await targetDir.getFileHandle(suggestedTxtName, { create: true });
+        const writable = await (
+          txtHandle as FileSystemFileHandle & {
+            createWritable: () => Promise<{
+              write: (data: Blob | BufferSource | string) => Promise<void>;
+              close: () => Promise<void>;
+            }>;
+          }
+        ).createWritable();
+        await writable.write(new Blob([textContent], { type: 'text/plain;charset=utf-8' }));
+        await writable.close();
+        return {
+          savedToDisk: true,
+          fileName: suggestedTxtName,
+          savedPath: track.folderPath ? `${track.folderPath}/${suggestedTxtName}` : suggestedTxtName,
+        };
+      } catch {
+        // Fall back to clean download below
+      }
+    }
+  }
+
+  // Fallback blob download when File System Access write permission is unavailable
+  try {
+    const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = suggestedTxtName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.setTimeout(() => URL.revokeObjectURL(url), 4000);
+    return {
+      savedToDisk: false,
+      fileName: suggestedTxtName,
+      savedPath: suggestedTxtName,
+      downloadedFallback: true,
+    };
+  } catch {
+    throw new Error('Unable to save transcript text file.');
+  }
 }

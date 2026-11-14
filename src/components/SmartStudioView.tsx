@@ -28,7 +28,10 @@ import {
 } from '../types/music';
 import { evaluateSmartPlaylist } from '../services/smartPlaylistEngine';
 import {
+  AiQuotaExhaustedError,
   applyTagSuggestionsToList,
+  clearActiveAiQuotaState,
+  parseAiErrorResponse,
   prioritizeTracksForTagScan,
   resizeArtworkFileToDataUrl,
   resolveApiUrl,
@@ -40,6 +43,7 @@ import { tactile } from '../services/tactileFeedback';
 import { PaginationBar } from './PaginationBar';
 import { useViewportPageSize } from '../hooks/useViewportPageSize';
 import { CoverArt } from './CoverArt';
+import { AiQuotaNotice, useAiQuotaCountdown } from './AiQuotaNotice';
 
 export type StudioPage = 'mixes' | 'playlists' | 'duplicates' | 'tags' | 'artwork';
 
@@ -67,6 +71,16 @@ interface SmartStudioViewProps {
     status?: 'running' | 'done' | 'error',
     item?: TaskItemProgress
   ) => void;
+  initialScanConfig?: {
+    scanLimitInput?: string;
+    batchSize?: number;
+    autoApplyTags?: boolean;
+  };
+  onChangeScanConfig?: (cfg: {
+    scanLimitInput: string;
+    batchSize: number;
+    autoApplyTags: boolean;
+  }) => void;
 }
 
 const PAGE_TITLES: Record<StudioPage, { title: string; subtitle: string }> = {
@@ -107,10 +121,14 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
   onRemoveDuplicateTracks,
   onApplyArtworkUpdates,
   onTaskProgress,
+  initialScanConfig,
+  onChangeScanConfig,
 }) => {
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [aiQuotaNote, setAiQuotaNote] = useState<string | null>(null);
+  const activeQuotaCountdown = useAiQuotaCountdown();
   const [playlistViewTab, setPlaylistViewTab] = useState<'list' | 'create'>('list');
   const [creatorMode, setCreatorMode] = useState<'ai' | 'rules'>('ai');
 
@@ -124,9 +142,24 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
   const [manualFavOnly, setManualFavOnly] = useState(false);
 
   // Adjustable AI Scan Scope & Batch Controls
-  const [scanLimitInput, setScanLimitInput] = useState<string>('15');
-  const [batchSize, setBatchSize] = useState<number>(15);
-  const [autoApplyTags, setAutoApplyTags] = useState<boolean>(true);
+  const [scanLimitInput, setScanLimitInput] = useState<string>(
+    initialScanConfig?.scanLimitInput ?? '15'
+  );
+  const [batchSize, setBatchSize] = useState<number>(initialScanConfig?.batchSize ?? 15);
+  const [autoApplyTags, setAutoApplyTags] = useState<boolean>(
+    initialScanConfig?.autoApplyTags ?? true
+  );
+  const scanConfigMountRef = useRef(true);
+  const onChangeScanConfigRef = useRef(onChangeScanConfig);
+  onChangeScanConfigRef.current = onChangeScanConfig;
+
+  useEffect(() => {
+    if (scanConfigMountRef.current) {
+      scanConfigMountRef.current = false;
+      return;
+    }
+    onChangeScanConfigRef.current?.({ scanLimitInput, batchSize, autoApplyTags });
+  }, [scanLimitInput, batchSize, autoApplyTags]);
 
   const effectiveScanCount = useMemo(() => {
     if (tracks.length === 0) return 0;
@@ -276,8 +309,19 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
           listeningHistory: recent,
         }),
       });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || 'AI generation failed.');
+      const data = (await resp.json().catch(() => ({}))) as {
+        name?: string;
+        description?: string;
+        mood?: string;
+        rules?: Array<{ field: SmartRule['field']; value: string }>;
+        matchedTrackIds?: string[];
+        [key: string]: unknown;
+      };
+      if (!resp.ok) {
+        throw parseAiErrorResponse(resp, data, 'AI playlist generation failed');
+      }
+      clearActiveAiQuotaState();
+      setAiQuotaNote(null);
 
       const rules: SmartRule[] = Array.isArray(data.rules)
         ? data.rules.map((r: { field: SmartRule['field']; value: string }) => ({
@@ -318,14 +362,25 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
         { label: created.name, current: 3, total: 3, percent: 100 }
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unable to generate smart playlist.';
-      setAiError(msg);
-      report(taskId, 'ai-playlist', 'AI Playlist Error', msg, 3, 3, 'error', {
-        label: msg,
-        current: 3,
-        total: 3,
-        percent: 100,
-      });
+      if (err instanceof AiQuotaExhaustedError) {
+        setAiError(null);
+        setAiQuotaNote('Smart playlist generation paused until AI tokens refill.');
+        report(taskId, 'ai-playlist', 'AI Tokens Temporarily Used Up', err.message, 3, 3, 'error', {
+          label: 'Waiting for AI token refill',
+          current: 3,
+          total: 3,
+          percent: 100,
+        });
+      } else {
+        const msg = err instanceof Error ? err.message : 'Unable to generate smart playlist.';
+        setAiError(msg);
+        report(taskId, 'ai-playlist', 'AI Playlist Error', msg, 3, 3, 'error', {
+          label: msg,
+          current: 3,
+          total: 3,
+          percent: 100,
+        });
+      }
     } finally {
       setAiLoading(false);
     }
@@ -377,8 +432,12 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tracks, topGenres, favoriteArtists }),
       });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error || 'Failed to refresh daily mixes.');
+      const data = (await resp.json().catch(() => ({}))) as { mixes?: Array<Omit<DailyRecommendation, 'id' | 'generatedAt'>>; [key: string]: unknown };
+      if (!resp.ok) {
+        throw parseAiErrorResponse(resp, data, 'Failed to refresh daily mixes');
+      }
+      clearActiveAiQuotaState();
+      setAiQuotaNote(null);
 
       const mixes: DailyRecommendation[] = (data.mixes || []).map(
         (m: Omit<DailyRecommendation, 'id' | 'generatedAt'>, idx: number) => ({
@@ -402,14 +461,25 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
         { label: `Ready: ${mixes.length} decks`, current: 3, total: 3, percent: 100 }
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Daily mix refresh failed.';
-      setAiError(msg);
-      report(taskId, 'ai-mixes', 'Daily Mixes Error', msg, 3, 3, 'error', {
-        label: msg,
-        current: 3,
-        total: 3,
-        percent: 100,
-      });
+      if (err instanceof AiQuotaExhaustedError) {
+        setAiError(null);
+        setAiQuotaNote('Daily Mix refresh paused until AI tokens refill.');
+        report(taskId, 'ai-mixes', 'AI Tokens Temporarily Used Up', err.message, 3, 3, 'error', {
+          label: 'Waiting for AI token refill',
+          current: 3,
+          total: 3,
+          percent: 100,
+        });
+      } else {
+        const msg = err instanceof Error ? err.message : 'Daily mix refresh failed.';
+        setAiError(msg);
+        report(taskId, 'ai-mixes', 'Daily Mixes Error', msg, 3, 3, 'error', {
+          label: msg,
+          current: 3,
+          total: 3,
+          percent: 100,
+        });
+      }
     } finally {
       setDailyLoading(false);
     }
@@ -453,7 +523,9 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
     setTagStatus(null);
     setTagSuggestions([]);
     setAiError(null);
+    setAiQuotaNote(null);
     setTagPage(0);
+    let savedBeforeQuota = 0;
 
     report(
       taskId,
@@ -484,6 +556,7 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
         {
           batchSize,
           onBatchComplete: (batch) => {
+            savedBeforeQuota += batch.length;
             const stamped = batch.map((item) => ({ ...item, applied: autoApplyTags }));
             if (autoApplyTags && stamped.length > 0) {
               onApplyTagCleanups(stamped);
@@ -519,14 +592,32 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
         { label: `${mapped.length} track(s) updated`, current: 1, total: 1, percent: 100 }
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unable to scan library tags with AI.';
-      setAiError(msg);
-      report(taskId, 'ai-tags', 'AI Tag Scan Error', msg, 0, scopedTracks.length, 'error', {
-        label: msg,
-        current: 1,
-        total: 1,
-        percent: 100,
-      });
+      if (err instanceof AiQuotaExhaustedError) {
+        setAiError(null);
+        const partialMsg =
+          savedBeforeQuota > 0
+            ? `${savedBeforeQuota} track(s) were already updated before AI tokens ran out — tap Resume once tokens restore.`
+            : 'Tap Resume once tokens restore to continue scanning your prioritized tracks.';
+        setAiQuotaNote(partialMsg);
+        if (savedBeforeQuota > 0) {
+          setTagStatus(`Saved ${savedBeforeQuota} fix(es) so far before AI token cooldown.`);
+        }
+        report(taskId, 'ai-tags', 'AI Tokens Temporarily Used Up', err.message, savedBeforeQuota, scopedTracks.length, 'error', {
+          label: 'Waiting for AI token refill',
+          current: 1,
+          total: 1,
+          percent: 100,
+        });
+      } else {
+        const msg = err instanceof Error ? err.message : 'Unable to scan library tags with AI.';
+        setAiError(msg);
+        report(taskId, 'ai-tags', 'AI Tag Scan Error', msg, 0, scopedTracks.length, 'error', {
+          label: msg,
+          current: 1,
+          total: 1,
+          percent: 100,
+        });
+      }
     } finally {
       setTagLoading(false);
     }
@@ -542,6 +633,7 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
         suggestedAlbum: s.currentAlbum,
         suggestedGenre: s.currentGenre,
         suggestedYear: s.currentYear || '',
+        suggestedLyrics: s.currentLyrics || '',
       },
     ]);
     setTagSuggestions((prev) =>
@@ -558,6 +650,7 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
     setDupLoading(true);
     setDupStatus(null);
     setAiError(null);
+    setAiQuotaNote(null);
     setDupPage(0);
 
     report(
@@ -655,14 +748,30 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
         { label: `Found ${foundGroups.length} duplicate group(s)`, current: 1, total: 1, percent: 100 }
       );
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Tag correction or duplicate scan failed.';
-      setAiError(msg);
-      report(taskId, 'ai-duplicates', 'Duplicate Scan Error', msg, 0, 100, 'error', {
-        label: msg,
-        current: 1,
-        total: 1,
-        percent: 100,
-      });
+      if (err instanceof AiQuotaExhaustedError) {
+        setAiError(null);
+        const fixedSoFar = appliedFixes.size;
+        setAiQuotaNote(
+          fixedSoFar > 0
+            ? `Auto-corrected ${fixedSoFar} track(s) before AI tokens paused. Remaining batches can resume once tokens restore.`
+            : 'Large/disordered batch used up AI tokens. Resume once tokens restore.'
+        );
+        report(taskId, 'ai-duplicates', 'AI Tokens Temporarily Used Up', err.message, 0, 100, 'error', {
+          label: 'Waiting for AI token refill',
+          current: 1,
+          total: 1,
+          percent: 100,
+        });
+      } else {
+        const msg = err instanceof Error ? err.message : 'Tag correction or duplicate scan failed.';
+        setAiError(msg);
+        report(taskId, 'ai-duplicates', 'Duplicate Scan Error', msg, 0, 100, 'error', {
+          label: msg,
+          current: 1,
+          total: 1,
+          percent: 100,
+        });
+      }
     } finally {
       setDupLoading(false);
     }
@@ -1014,6 +1123,35 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
           )}
         </div>
       </div>
+
+      {activeQuotaCountdown && (
+        <div className="shrink-0">
+          <AiQuotaNotice
+            extraNote={aiQuotaNote}
+            onRetry={
+              page === 'tags'
+                ? () => void handleScanTagsWithAi()
+                : page === 'duplicates'
+                ? () => void handleScanDuplicatesWithAi()
+                : page === 'mixes'
+                ? () => void handleRefreshDailyMixes()
+                : page === 'artwork'
+                ? () => void handleFindOriginalAlbumArt()
+                : undefined
+            }
+            retryLabel={
+              page === 'tags'
+                ? 'Resume Tag Scan'
+                : page === 'duplicates'
+                ? 'Resume Duplicate Scan'
+                : page === 'mixes'
+                ? 'Retry Daily Mixes'
+                : 'Resume Art Search'
+            }
+            onDismiss={() => setAiQuotaNote(null)}
+          />
+        </div>
+      )}
 
       {aiError && (
         <div className="shrink-0 px-3.5 py-2 rounded-xl border border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/30 text-xs text-red-700 dark:text-red-300 flex items-center justify-between gap-2">
@@ -1659,7 +1797,14 @@ export const SmartStudioView: React.FC<SmartStudioViewProps> = ({
                         {s.suggestedArtist} — {s.suggestedTitle} ({s.suggestedAlbum}
                         {s.suggestedYear ? ` · ${s.suggestedYear}` : ''} · {s.suggestedGenre})
                       </div>
-                      <div className="text-[11px] text-zinc-500 truncate">{s.reason}</div>
+                      <div className="text-[11px] text-zinc-500 truncate flex items-center gap-1.5">
+                        <span className="truncate">{s.reason}</span>
+                        {s.suggestedLyrics && s.suggestedLyrics !== s.currentLyrics && (
+                          <span className="accent-text font-medium shrink-0">
+                            · {/\[\d{1,3}:\d{2}/.test(s.suggestedLyrics) ? '+ Synced Lyrics' : '+ Lyrics'}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {s.applied ? (
                       <button

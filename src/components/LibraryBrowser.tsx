@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ArrowUpDown,
   BellRing,
@@ -13,6 +14,7 @@ import {
   List,
   ListMusic,
   ListPlus,
+  Mic2,
   Moon,
   MoreVertical,
   Music,
@@ -36,6 +38,7 @@ import {
   LibrarySortConfig,
   LibrarySortField,
   Playlist,
+  TagCleanupSuggestion,
   ThemeMode,
   Track,
   ViewMode,
@@ -50,6 +53,7 @@ import {
 import { cleanFileNameTitle } from '../services/metadataParser';
 import { AlphabetIndexSlider } from './AlphabetIndexSlider';
 import { CoverArt } from './CoverArt';
+import { AiCorrectionTarget, ItemAiCorrectionModal } from './ItemAiCorrectionModal';
 import { PaginationBar } from './PaginationBar';
 import { useViewportPageSize } from '../hooks/useViewportPageSize';
 import { tactile } from '../services/tactileFeedback';
@@ -64,6 +68,7 @@ export interface TrackMetadataPatch {
   genre?: string;
   year?: string;
   composer?: string;
+  lyrics?: string;
 }
 
 interface LibraryBrowserProps {
@@ -82,6 +87,8 @@ interface LibraryBrowserProps {
   selectedGenreFilter: string | null;
   selectedFolderFilter: string | null;
   selectedPlaylistFilter: string | null;
+  initialStartIndex?: number;
+  onChangeStartIndex?: (idx: number) => void;
   onChangeSearchQuery: (q: string) => void;
   onChangeViewMode: (mode: ViewMode) => void;
   onChangeSortBy: (next: LibrarySortConfig) => void;
@@ -99,6 +106,8 @@ interface LibraryBrowserProps {
   onAddTracksToPlaylist: (trackIds: string[], playlistId: string) => void;
   onCreatePlaylist: (name: string, initialTrackIds?: string[]) => void;
   onEditTracksMetadata: (trackIds: string[], patch: TrackMetadataPatch) => void;
+  onApplyTagCleanups: (suggestions: TagCleanupSuggestion[]) => void;
+  onShowNoChangesToast: (message?: string) => void;
   onAssignEqPreset: (trackIds: string[], presetId: string | undefined) => void;
   onSetRingtone: (track: Track) => void;
   onDeleteTracks: (trackIds: string[]) => void;
@@ -322,7 +331,8 @@ const TAB_SINGULAR_LABEL: Record<LibraryTab, string> = {
 
 function computeAnchoredMenuPosition(
   anchorEl: HTMLElement | null,
-  estimatedHeight: number
+  menuWidth: number,
+  menuHeight: number
 ): { top: number; right: number } {
   if (!anchorEl) {
     return { top: 64, right: 16 };
@@ -330,14 +340,22 @@ function computeAnchoredMenuPosition(
   const rect = anchorEl.getBoundingClientRect();
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const right = Math.max(10, vw - rect.right);
-  const spaceBelow = vh - rect.bottom - 10;
-  const spaceAbove = rect.top - 10;
-  let top = rect.bottom + 4;
-  if (spaceBelow < estimatedHeight && spaceAbove >= spaceBelow) {
-    top = rect.top - estimatedHeight - 4;
+  const safeW = Math.min(menuWidth, vw - 16);
+  const right = Math.max(8, Math.min(vw - safeW - 8, vw - rect.right));
+  const spaceBelow = vh - rect.bottom - 8;
+  const spaceAbove = rect.top - 8;
+
+  let top: number;
+  if (spaceBelow >= menuHeight) {
+    top = rect.bottom + 2;
+  } else if (spaceAbove >= menuHeight) {
+    top = rect.top - menuHeight - 2;
+  } else if (spaceBelow >= spaceAbove) {
+    top = Math.max(8, vh - menuHeight - 8);
+  } else {
+    top = 8;
   }
-  top = Math.max(8, Math.min(top, Math.max(8, vh - estimatedHeight - 8)));
+  top = Math.max(8, Math.min(top, Math.max(8, vh - menuHeight - 8)));
   return { top, right };
 }
 
@@ -349,6 +367,7 @@ interface TrackActionMenuProps {
   onSetEq: (tracks: Track[]) => void;
   onShuffleFromTrack: (track: Track) => void;
   onEditTags: (track: Track) => void;
+  onAiCorrection: (track: Track) => void;
   onGetInfo: (track: Track) => void;
   onDeleteTrack: (trackId: string) => void;
   onSetRingtone: (track: Track) => void;
@@ -362,6 +381,7 @@ const TrackActionMenu: React.FC<TrackActionMenuProps> = ({
   onSetEq,
   onShuffleFromTrack,
   onEditTags,
+  onAiCorrection,
   onGetInfo,
   onDeleteTrack,
   onSetRingtone,
@@ -370,6 +390,7 @@ const TrackActionMenu: React.FC<TrackActionMenuProps> = ({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number }>({ top: 64, right: 16 });
   const btnRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -385,11 +406,18 @@ const TrackActionMenu: React.FC<TrackActionMenuProps> = ({
     };
   }, [open]);
 
+  useLayoutEffect(() => {
+    if (!open || !menuRef.current) return;
+    const w = menuRef.current.offsetWidth || 192;
+    const h = menuRef.current.offsetHeight || 314;
+    setMenuPos(computeAnchoredMenuPosition(btnRef.current, w, h));
+  }, [open, confirmDelete]);
+
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     tactile.tap();
     if (!open) {
-      setMenuPos(computeAnchoredMenuPosition(btnRef.current, 322));
+      setMenuPos(computeAnchoredMenuPosition(btnRef.current, 192, 316));
       setOpen(true);
     } else {
       setOpen(false);
@@ -397,11 +425,12 @@ const TrackActionMenu: React.FC<TrackActionMenuProps> = ({
   };
 
   return (
-    <div data-no-drag="true" className="relative shrink-0">
+    <div data-no-drag="true" data-no-swipe="true" className="relative shrink-0">
       <button
         ref={btnRef}
         type="button"
         data-no-drag="true"
+        data-no-swipe="true"
         aria-label={`Actions for ${track.title}`}
         aria-expanded={open}
         onClick={handleToggle}
@@ -410,27 +439,32 @@ const TrackActionMenu: React.FC<TrackActionMenuProps> = ({
         <MoreVertical className="w-4 h-4" />
       </button>
 
-      {open && (
-        <div
-          data-no-drag="true"
-          onClick={(e) => {
-            e.stopPropagation();
-            setOpen(false);
-          }}
-          className="fixed inset-0 z-50 bg-black/20"
-        >
+      {open &&
+        typeof document !== 'undefined' &&
+        createPortal(
           <div
-            role="menu"
-            aria-label={`Menu for ${track.title}`}
-            style={{ top: `${menuPos.top}px`, right: `${menuPos.right}px` }}
-            onClick={(e) => e.stopPropagation()}
-            className="fixed w-48 max-h-[calc(100dvh-16px)] rounded-xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden text-xs"
+            data-no-drag="true"
+            data-no-swipe="true"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen(false);
+            }}
+            className="fixed inset-0 z-[70] bg-black/25"
           >
-            <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/80 text-[12px] font-semibold text-zinc-600 dark:text-zinc-300 truncate">
-              {track.title}
-            </div>
+            <div
+              ref={menuRef}
+              role="menu"
+              aria-label={`Menu for ${track.title}`}
+              style={{ top: `${menuPos.top}px`, right: `${menuPos.right}px` }}
+              onClick={(e) => e.stopPropagation()}
+              className="fixed w-48 [@media(max-height:480px)]:w-72 rounded-xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden text-xs"
+            >
+              <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/80 text-[12px] font-semibold text-zinc-600 dark:text-zinc-300 truncate">
+                {track.title}
+              </div>
 
-            <div className="py-0.5 divide-y divide-zinc-100/80 dark:divide-zinc-800/50">
+              <div className="py-0.5 grid grid-cols-1 [@media(max-height:480px)]:grid-cols-2 divide-y divide-zinc-100/80 dark:divide-zinc-800/50">
               <button
                 type="button"
                 role="menuitem"
@@ -521,6 +555,20 @@ const TrackActionMenu: React.FC<TrackActionMenuProps> = ({
                 onClick={() => {
                   tactile.tap();
                   setOpen(false);
+                  onAiCorrection(track);
+                }}
+                className="w-full h-[31px] px-3 text-left flex items-center gap-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 font-medium"
+              >
+                <Wand2 className="w-3.5 h-3.5 accent-text shrink-0" />
+                <span>AI Correction</span>
+              </button>
+
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  tactile.tap();
+                  setOpen(false);
                   onGetInfo(track);
                 }}
                 className="w-full h-[31px] px-3 text-left flex items-center gap-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-800"
@@ -578,10 +626,11 @@ const TrackActionMenu: React.FC<TrackActionMenuProps> = ({
                 <BellRing className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
                 <span>Ringtone</span>
               </button>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
@@ -594,6 +643,7 @@ interface CollectionActionMenuProps {
   onPlayAll: (tracks: Track[], random: boolean) => void;
   onSetEq: (tracks: Track[]) => void;
   onEditTags: (tracks: Track[]) => void;
+  onAiCorrection: (item: GroupedCollectionItem) => void;
   onGetInfo: (item: GroupedCollectionItem) => void;
   onExportM3u?: (playlistId: string) => void;
   onDelete: (item: GroupedCollectionItem) => void;
@@ -608,6 +658,7 @@ const CollectionActionMenu: React.FC<CollectionActionMenuProps> = ({
   onPlayAll,
   onSetEq,
   onEditTags,
+  onAiCorrection,
   onGetInfo,
   onExportM3u,
   onDelete,
@@ -617,6 +668,7 @@ const CollectionActionMenu: React.FC<CollectionActionMenuProps> = ({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number }>({ top: 64, right: 16 });
   const btnRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!open) {
@@ -632,12 +684,19 @@ const CollectionActionMenu: React.FC<CollectionActionMenuProps> = ({
     };
   }, [open]);
 
+  useLayoutEffect(() => {
+    if (!open || !menuRef.current) return;
+    const w = menuRef.current.offsetWidth || 192;
+    const h = menuRef.current.offsetHeight || 314;
+    setMenuPos(computeAnchoredMenuPosition(btnRef.current, w, h));
+  }, [open, confirmDelete]);
+
   const handleToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     tactile.tap();
     if (!open) {
       const rowCount = (item.tracks.length > 0 ? 9 : 2) + (onExportM3u ? 1 : 0);
-      setMenuPos(computeAnchoredMenuPosition(btnRef.current, 34 + rowCount * 31));
+      setMenuPos(computeAnchoredMenuPosition(btnRef.current, 192, 34 + rowCount * 31));
       setOpen(true);
     } else {
       setOpen(false);
@@ -645,11 +704,12 @@ const CollectionActionMenu: React.FC<CollectionActionMenuProps> = ({
   };
 
   return (
-    <div data-no-drag="true" className="relative shrink-0">
+    <div data-no-drag="true" data-no-swipe="true" className="relative shrink-0">
       <button
         ref={btnRef}
         type="button"
         data-no-drag="true"
+        data-no-swipe="true"
         aria-label={`Actions for ${item.label}`}
         aria-expanded={open}
         onClick={handleToggle}
@@ -658,27 +718,32 @@ const CollectionActionMenu: React.FC<CollectionActionMenuProps> = ({
         <MoreVertical className="w-4 h-4" />
       </button>
 
-      {open && (
-        <div
-          data-no-drag="true"
-          onClick={(e) => {
-            e.stopPropagation();
-            setOpen(false);
-          }}
-          className="fixed inset-0 z-50 bg-black/20"
-        >
+      {open &&
+        typeof document !== 'undefined' &&
+        createPortal(
           <div
-            role="menu"
-            aria-label={`Menu for ${item.label}`}
-            style={{ top: `${menuPos.top}px`, right: `${menuPos.right}px` }}
-            onClick={(e) => e.stopPropagation()}
-            className="fixed w-48 max-h-[calc(100dvh-16px)] rounded-xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden text-xs"
+            data-no-drag="true"
+            data-no-swipe="true"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              setOpen(false);
+            }}
+            className="fixed inset-0 z-[70] bg-black/25"
           >
-            <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/80 text-[12px] font-semibold text-zinc-600 dark:text-zinc-300 truncate">
-              {item.label}
-            </div>
+            <div
+              ref={menuRef}
+              role="menu"
+              aria-label={`Menu for ${item.label}`}
+              style={{ top: `${menuPos.top}px`, right: `${menuPos.right}px` }}
+              onClick={(e) => e.stopPropagation()}
+              className="fixed w-48 [@media(max-height:480px)]:w-72 rounded-xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden text-xs"
+            >
+              <div className="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/80 text-[12px] font-semibold text-zinc-600 dark:text-zinc-300 truncate">
+                {item.label}
+              </div>
 
-            <div className="py-0.5 divide-y divide-zinc-100/80 dark:divide-zinc-800/50">
+              <div className="py-0.5 grid grid-cols-1 [@media(max-height:480px)]:grid-cols-2 divide-y divide-zinc-100/80 dark:divide-zinc-800/50">
               {item.tracks.length > 0 && (
                 <>
                   <button
@@ -764,6 +829,20 @@ const CollectionActionMenu: React.FC<CollectionActionMenuProps> = ({
                     <Tag className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
                     <span>Edit Tag</span>
                   </button>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      tactile.tap();
+                      setOpen(false);
+                      onAiCorrection(item);
+                    }}
+                    className="w-full h-[31px] px-3 text-left flex items-center gap-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-800 font-medium"
+                  >
+                    <Wand2 className="w-3.5 h-3.5 accent-text shrink-0" />
+                    <span>AI Correction</span>
+                  </button>
                 </>
               )}
 
@@ -848,10 +927,11 @@ const CollectionActionMenu: React.FC<CollectionActionMenuProps> = ({
                   <span>Ringtone</span>
                 </button>
               )}
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
@@ -875,6 +955,7 @@ const TrackRow = React.memo<{
   onShuffleFromTrack: (track: Track) => void;
   onToggleFavorite: (trackId: string) => void;
   onEditTags: (track: Track) => void;
+  onAiCorrection: (track: Track) => void;
   onGetInfo: (track: Track) => void;
   onDeleteTrack: (trackId: string) => void;
   onSetRingtone: (track: Track) => void;
@@ -897,6 +978,7 @@ const TrackRow = React.memo<{
   onShuffleFromTrack,
   onToggleFavorite,
   onEditTags,
+  onAiCorrection,
   onGetInfo,
   onDeleteTrack,
   onSetRingtone,
@@ -959,11 +1041,20 @@ const TrackRow = React.memo<{
         />
         <div className="min-w-0 flex-1">
           <div
-            className={`text-sm font-medium truncate ${
+            className={`text-sm font-medium truncate flex items-center gap-1.5 ${
               isActive || isHighlighted ? 'accent-text' : 'text-zinc-900 dark:text-zinc-100'
             }`}
           >
-            {track.title}
+            <span className="truncate">{track.title}</span>
+            {Boolean(track.lyrics?.trim()) && (
+              <span
+                title="Has embedded lyrics"
+                aria-label="Has embedded lyrics"
+                className="inline-flex shrink-0"
+              >
+                <Mic2 className="w-3.5 h-3.5 accent-text" />
+              </span>
+            )}
           </div>
           <div className="text-xs text-zinc-500 dark:text-zinc-400 truncate flex items-center gap-1.5">
             <span className="truncate">{track.artist}</span>
@@ -1009,6 +1100,7 @@ const TrackRow = React.memo<{
             onSetEq={onSetEq}
             onShuffleFromTrack={onShuffleFromTrack}
             onEditTags={onEditTags}
+            onAiCorrection={onAiCorrection}
             onGetInfo={onGetInfo}
             onDeleteTrack={onDeleteTrack}
             onSetRingtone={onSetRingtone}
@@ -1036,6 +1128,8 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
     selectedGenreFilter,
     selectedFolderFilter,
     selectedPlaylistFilter,
+    initialStartIndex = 0,
+    onChangeStartIndex,
     onChangeSearchQuery,
     onChangeViewMode,
     onChangeSortBy,
@@ -1053,6 +1147,8 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
     onAddTracksToPlaylist,
     onCreatePlaylist,
     onEditTracksMetadata,
+    onApplyTagCleanups,
+    onShowNoChangesToast,
     onAssignEqPreset,
     onSetRingtone,
     onDeleteTracks,
@@ -1080,7 +1176,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
     const longPressTimerRef = useRef<number | null>(null);
     const longPressOriginRef = useRef<{ x: number; y: number } | null>(null);
 
-    const [startIndex, setStartIndex] = useState(0);
+    const [startIndex, setStartIndex] = useState(initialStartIndex);
     const [highlightedId, setHighlightedId] = useState<string | null>(null);
     const [transientPopLetter, setTransientPopLetter] = useState<string | null>(null);
     const [newPlaylistName, setNewPlaylistName] = useState('');
@@ -1096,8 +1192,9 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
     const [pickerNewPlaylistName, setPickerNewPlaylistName] = useState('');
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
-    // Set EQ modal + Get Info modal
+    // Set EQ modal + Get Info modal + AI Correction modal
     const [eqModalTracks, setEqModalTracks] = useState<Track[] | null>(null);
+    const [aiCorrectionTarget, setAiCorrectionTarget] = useState<AiCorrectionTarget | null>(null);
     const [infoTarget, setInfoTarget] = useState<
       | { kind: 'track'; track: Track }
       | { kind: 'collection'; item: GroupedCollectionItem; label: string }
@@ -1112,6 +1209,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
     const [editGenre, setEditGenre] = useState('');
     const [editYear, setEditYear] = useState('');
     const [editComposer, setEditComposer] = useState('');
+    const [editLyrics, setEditLyrics] = useState('');
 
     // Touch-drag vertical scrolling refs (deferred threshold so item taps stay crisp & horizontal swipes bubble to page pager)
     const touchStartXRef = useRef<number | null>(null);
@@ -1307,18 +1405,38 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
         ? totalPages - 1
         : Math.min(totalPages - 1, Math.floor(clampedStartIndex / layout.pageSize));
 
-    useEffect(() => {
-      setStartIndex(0);
-    }, [
-      tab,
+    const subFilterKey = [
       searchQuery,
-      sortBy,
-      selectedAlbumFilter,
-      selectedArtistFilter,
-      selectedGenreFilter,
-      selectedFolderFilter,
-      selectedPlaylistFilter,
-    ]);
+      sortBy.field,
+      sortBy.ascending ? '1' : '0',
+      selectedAlbumFilter || '',
+      selectedArtistFilter || '',
+      selectedGenreFilter || '',
+      selectedFolderFilter || '',
+      selectedPlaylistFilter || '',
+    ].join('|');
+    const prevTabRef = useRef<LibraryTab>(tab);
+    const prevSubFilterRef = useRef<string>(subFilterKey);
+
+    useEffect(() => {
+      if (prevTabRef.current !== tab) {
+        prevTabRef.current = tab;
+        prevSubFilterRef.current = subFilterKey;
+        setStartIndex(initialStartIndex);
+        return;
+      }
+      if (prevSubFilterRef.current !== subFilterKey) {
+        prevSubFilterRef.current = subFilterKey;
+        setStartIndex(0);
+      }
+    }, [tab, subFilterKey, initialStartIndex]);
+
+    const onChangeStartIndexRef = useRef(onChangeStartIndex);
+    onChangeStartIndexRef.current = onChangeStartIndex;
+
+    useEffect(() => {
+      onChangeStartIndexRef.current?.(clampedStartIndex);
+    }, [clampedStartIndex]);
 
     useEffect(() => {
       setSelectionMode(false);
@@ -1326,6 +1444,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
       setQueueMenuOpen(false);
       setPlaylistPickerTracks(null);
       setEqModalTracks(null);
+      setAiCorrectionTarget(null);
       setInfoTarget(null);
       setDeleteConfirmOpen(false);
       setOverflowOpen(false);
@@ -1720,6 +1839,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
         setEditGenre(first.genre || '');
         setEditYear(first.year || '');
         setEditComposer(first.composer || '');
+        setEditLyrics(first.lyrics || '');
       } else {
         const allSame = (pick: (t: Track) => string) => {
           const val = pick(first);
@@ -1731,6 +1851,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
         setEditGenre(allSame((t) => t.genre || ''));
         setEditYear(allSame((t) => t.year || ''));
         setEditComposer(allSame((t) => t.composer || ''));
+        setEditLyrics('');
       }
     }, []);
 
@@ -2352,6 +2473,13 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                       onShuffleFromTrack={onShuffleFromTrack}
                       onToggleFavorite={onToggleFavorite}
                       onEditTags={(target) => openTagEditorForTracks([target])}
+                      onAiCorrection={(target) =>
+                        setAiCorrectionTarget({
+                          label: target.title,
+                          kindLabel: 'Track',
+                          tracks: [target],
+                        })
+                      }
                       onGetInfo={(target) => setInfoTarget({ kind: 'track', track: target })}
                       onDeleteTrack={handleDeleteSingleTrack}
                       onSetRingtone={onSetRingtone}
@@ -2430,13 +2558,22 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                           <div className="flex items-start justify-between gap-1">
                             <div className="min-w-0 flex-1">
                               <div
-                                className={`text-xs font-medium truncate ${
+                                className={`text-xs font-medium truncate flex items-center gap-1 ${
                                   active || highlighted
                                     ? 'accent-text'
                                     : 'text-zinc-900 dark:text-zinc-100'
                                 }`}
                               >
-                                {track.title}
+                                <span className="truncate">{track.title}</span>
+                                {Boolean(track.lyrics?.trim()) && (
+                                  <span
+                                    title="Has embedded lyrics"
+                                    aria-label="Has embedded lyrics"
+                                    className="inline-flex shrink-0"
+                                  >
+                                    <Mic2 className="w-3 h-3 accent-text" />
+                                  </span>
+                                )}
                               </div>
                               <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate mt-0.5">
                                 {track.artist} · {track.format}
@@ -2454,6 +2591,13 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                               onSetEq={(list) => setEqModalTracks(list)}
                               onShuffleFromTrack={onShuffleFromTrack}
                               onEditTags={(target) => openTagEditorForTracks([target])}
+                              onAiCorrection={(target) =>
+                                setAiCorrectionTarget({
+                                  label: target.title,
+                                  kindLabel: 'Track',
+                                  tracks: [target],
+                                })
+                              }
                               onGetInfo={(target) => setInfoTarget({ kind: 'track', track: target })}
                               onDeleteTrack={handleDeleteSingleTrack}
                               onSetRingtone={onSetRingtone}
@@ -2572,6 +2716,13 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                             onPlayAll={onPlayAll}
                             onSetEq={(list) => setEqModalTracks(list)}
                             onEditTags={(list) => openTagEditorForTracks(list)}
+                            onAiCorrection={(col) =>
+                              setAiCorrectionTarget({
+                                label: col.label,
+                                kindLabel: singularLabel,
+                                tracks: col.tracks,
+                              })
+                            }
                             onGetInfo={(col) =>
                               setInfoTarget({ kind: 'collection', item: col, label: singularLabel })
                             }
@@ -2689,6 +2840,13 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                             onPlayAll={onPlayAll}
                             onSetEq={(list) => setEqModalTracks(list)}
                             onEditTags={(list) => openTagEditorForTracks(list)}
+                            onAiCorrection={(col) =>
+                              setAiCorrectionTarget({
+                                label: col.label,
+                                kindLabel: singularLabel,
+                                tracks: col.tracks,
+                              })
+                            }
                             onGetInfo={(col) =>
                               setInfoTarget({ kind: 'collection', item: col, label: singularLabel })
                             }
@@ -2732,15 +2890,20 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
           itemLabel={tab === 'songs' ? 'tracks' : tab}
         />
 
-        {/* Rocket Player-Style Sorted By Modal (All 13 Sort Modes + Ascending Checkbox) */}
-        {sortModalOpen && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Sorted By"
-            onClick={() => setSortModalOpen(false)}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3"
-          >
+        {/* Portaled Library Modals (Guaranteed above PlayerBar & Header, never clipped) */}
+        {typeof document !== 'undefined' &&
+          createPortal(
+            <>
+              {/* Rocket Player-Style Sorted By Modal (All 13 Sort Modes + Ascending Checkbox) */}
+              {sortModalOpen && (
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Sorted By"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={() => setSortModalOpen(false)}
+                  className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3"
+                >
             <div
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-[340px] [@media(max-height:580px)]:max-w-[520px] max-h-[calc(100dvh-1.5rem)] rounded-2xl border border-zinc-200 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xl overflow-hidden flex flex-col"
@@ -2807,7 +2970,8 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
             aria-modal="true"
             aria-label="Add to Playlist"
             onClick={() => setPlaylistPickerTracks(null)}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3"
+            onPointerDown={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3"
           >
             <div
               onClick={(e) => e.stopPropagation()}
@@ -2902,7 +3066,8 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
             aria-modal="true"
             aria-label="Confirm deletion"
             onClick={() => setDeleteConfirmOpen(false)}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3"
+            onPointerDown={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3"
           >
             <div
               onClick={(e) => e.stopPropagation()}
@@ -2946,7 +3111,8 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
             aria-modal="true"
             aria-label="Edit Tags"
             onClick={() => setEditingTrackIds(null)}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3"
+            onPointerDown={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3"
           >
             <form
               onClick={(e) => e.stopPropagation()}
@@ -2960,6 +3126,7 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                 if (editGenre.trim() || isSingle) patch.genre = editGenre.trim() || 'Hi-Res Local';
                 if (editYear.trim() || isSingle) patch.year = editYear.trim();
                 if (editComposer.trim() || isSingle) patch.composer = editComposer.trim();
+                if (isSingle) patch.lyrics = editLyrics.trim();
 
                 tactile.success();
                 onEditTracksMetadata(editingTrackIds, patch);
@@ -3086,6 +3253,21 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                     className="w-full h-8 px-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs"
                   />
                 </div>
+
+                {editingTrackIds.length === 1 && (
+                  <div>
+                    <label className="block font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                      Lyrics (LRC timestamps or plain text)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={editLyrics}
+                      onChange={(e) => setEditLyrics(e.target.value)}
+                      placeholder="[00:12.50] Paste synced LRC or plain lyrics..."
+                      className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-xs font-mono-tabular resize-none"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="shrink-0 px-4 py-2.5 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-800/60 flex items-center justify-end gap-2">
@@ -3114,7 +3296,8 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
             aria-modal="true"
             aria-label="Set Equalizer Preset"
             onClick={() => setEqModalTracks(null)}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3"
+            onPointerDown={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3"
           >
             <div
               onClick={(e) => e.stopPropagation()}
@@ -3220,7 +3403,8 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
             aria-modal="true"
             aria-label="Audio Information"
             onClick={() => setInfoTarget(null)}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3"
+            onPointerDown={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-[2px] flex items-center justify-center p-3"
           >
             <div
               onClick={(e) => e.stopPropagation()}
@@ -3304,6 +3488,24 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
                           ? eqPresets.find((p) => p.id === liveTrack.eqPresetId)?.name ||
                             'Custom'
                           : 'Global Default'}
+                      </div>
+                    </div>
+                    <div className="col-span-2">
+                      <div className="text-[10px] text-zinc-400">Embedded Lyrics</div>
+                      <div className="truncate font-medium flex items-center gap-1.5">
+                        {liveTrack.lyrics?.trim() ? (
+                          <>
+                            <Mic2 className="w-3 h-3 accent-text shrink-0" />
+                            <span>
+                              {/\[\d{1,3}:\d{2}(?:[.:]\d{1,3})?\]/.test(liveTrack.lyrics)
+                                ? 'LRC Synced'
+                                : 'Embedded'}{' '}
+                              ({liveTrack.lyrics.split(/\r?\n/).filter((l) => l.trim()).length} lines)
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-zinc-500">None — run AI Correction to fetch</span>
+                        )}
                       </div>
                     </div>
                     <div className="col-span-2">
@@ -3436,6 +3638,16 @@ export const LibraryBrowser: React.FC<LibraryBrowserProps> = React.memo(
             </div>
           </div>
         )}
+            </>,
+            document.body
+          )}
+
+        <ItemAiCorrectionModal
+          target={aiCorrectionTarget}
+          onClose={() => setAiCorrectionTarget(null)}
+          onApplySuggestions={onApplyTagCleanups}
+          onShowNoChangesToast={onShowNoChangesToast}
+        />
       </div>
     );
   }

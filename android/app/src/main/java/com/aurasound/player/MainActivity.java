@@ -44,6 +44,10 @@ public class MainActivity extends BridgeActivity {
             ViewCompat.requestApplyInsets(rootView);
         }
 
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            getBridge().getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);
+        }
+
         handleWidgetIntent(getIntent());
     }
 

@@ -19,9 +19,17 @@ export type NavigationTab =
   | 'settings-appearance'
   | 'settings-storage'
   | 'settings-cloud'
+  | 'recordings'
   | 'studio'
   | 'equalizer'
   | 'settings';
+
+export type RecordingCategory =
+  | 'phone-call'
+  | 'voice-memo'
+  | 'cam-audio'
+  | 'meeting'
+  | 'voice-note';
 
 export type ViewMode = 'list' | 'grid';
 
@@ -70,10 +78,22 @@ export interface Track {
   lastSkippedAt?: number;
   addedAt: number;
   offlineCached: boolean;
+  /** Optional embedded or AI-fetched lyrics (LRC [mm:ss.xx] or plain text) */
+  lyrics?: string;
   /** Optional EQ preset ID assigned specifically to this track/collection */
   eqPresetId?: string;
   /** Hashed key for matching cloud metadata across sessions */
   fingerprint: string;
+  /** Isolated Private Recordings Vault fields (never mixed into music library) */
+  isRecording?: boolean;
+  recordingCategory?: RecordingCategory;
+  recordingParticipants?: string[];
+  transcript?: string;
+  transcriptSummary?: string;
+  transcriptTags?: string[];
+  transcribedAt?: number;
+  transcriptSavedPath?: string;
+  folderTreeUri?: string;
 }
 
 export type LibrarySortField =
@@ -144,6 +164,16 @@ export interface DailyRecommendation {
   generatedAt: number;
 }
 
+export interface ScanFolderEntry {
+  id: string;
+  path: string;
+  label: string;
+  enabled: boolean;
+  trackCount?: number;
+  source: 'android' | 'web' | 'library';
+  treeUri?: string;
+}
+
 export interface AppSettings {
   themeMode: ThemeMode;
   themeAccent: ThemeAccent;
@@ -171,6 +201,17 @@ export interface AppSettings {
   tactileSounds?: boolean;
   hapticFeedback?: boolean;
   sortBy?: LibrarySortConfig;
+  onlyScanSelectedFolders?: boolean;
+  selectedScanFolders?: ScanFolderEntry[];
+  recordingsEnabled?: boolean;
+  recordingFolders?: ScanFolderEntry[];
+  showLyrics?: boolean;
+  karaokeOffsetMs?: number;
+  aiScanConfig?: {
+    scanLimitInput?: string;
+    batchSize?: number;
+    autoApplyTags?: boolean;
+  };
 }
 
 export interface SessionState {
@@ -185,6 +226,10 @@ export interface SessionState {
   selectedFolderFilter: string | null;
   selectedPlaylistFilter: string | null;
   nowPlayingOpen: boolean;
+  nowPlayingDeckPage?: 'player' | 'queue';
+  libraryStartIndices?: Partial<
+    Record<'songs' | 'albums' | 'artists' | 'genres' | 'playlists' | 'folders', number>
+  >;
   libraryScrollTop: number;
   mainScrollTop: number;
   updatedAt: number;
@@ -223,11 +268,13 @@ export interface TagCleanupSuggestion {
   currentAlbum: string;
   currentGenre: string;
   currentYear?: string;
+  currentLyrics?: string;
   suggestedTitle: string;
   suggestedArtist: string;
   suggestedAlbum: string;
   suggestedGenre: string;
   suggestedYear?: string;
+  suggestedLyrics?: string;
   reason: string;
   selected: boolean;
   applied?: boolean;

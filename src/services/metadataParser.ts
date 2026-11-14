@@ -72,9 +72,29 @@ interface ParsedTags {
   genre?: string;
   year?: string;
   composer?: string;
+  lyrics?: string;
   sampleRate?: number;
   bitDepth?: number;
   coverDataUrl?: string;
+}
+
+function decodeId3Uslt(frame: Uint8Array): string {
+  if (frame.length < 5) return '';
+  const enc = frame[0];
+  let idx = 4; // skip encoding (1) + language (3)
+  if (enc === 1 || enc === 2) {
+    while (idx + 1 < frame.length && !(frame[idx] === 0 && frame[idx + 1] === 0)) {
+      idx += 2;
+    }
+    idx = Math.min(frame.length, idx + 2);
+  } else {
+    while (idx < frame.length && frame[idx] !== 0) {
+      idx++;
+    }
+    idx = Math.min(frame.length, idx + 1);
+  }
+  if (idx >= frame.length) return '';
+  return decodeId3Text(enc, frame.subarray(idx)).trim();
 }
 
 function bytesToDataUrl(mime: string, data: Uint8Array): string | undefined {
@@ -110,6 +130,7 @@ function parseId3v2(buf: Uint8Array): ParsedTags {
       else if (id === 'TAL') tags.album = decodeId3Text(frame[0], frame.subarray(1));
       else if (id === 'TCO') tags.genre = decodeId3Text(frame[0], frame.subarray(1));
       else if (id === 'TCM') tags.composer = decodeId3Text(frame[0], frame.subarray(1));
+      else if (id === 'ULT' && !tags.lyrics) tags.lyrics = decodeId3Uslt(frame) || undefined;
       pos += size;
     } else {
       const id = String.fromCharCode(buf[pos], buf[pos + 1], buf[pos + 2], buf[pos + 3]);
@@ -124,6 +145,7 @@ function parseId3v2(buf: Uint8Array): ParsedTags {
       else if (id === 'TCON') tags.genre = decodeId3Text(frame[0], frame.subarray(1));
       else if (id === 'TCOM') tags.composer = decodeId3Text(frame[0], frame.subarray(1));
       else if (id === 'TYER' || id === 'TDRC') tags.year = decodeId3Text(frame[0], frame.subarray(1)).slice(0, 4);
+      else if (id === 'USLT' && !tags.lyrics) tags.lyrics = decodeId3Uslt(frame) || undefined;
       else if (id === 'APIC' && !tags.coverDataUrl && frame.length > 8) {
         let idx = 1;
         let mime = '';
@@ -200,6 +222,7 @@ function parseFlac(buf: Uint8Array): ParsedTags {
             else if (key === 'GENRE') tags.genre = val;
             else if (key === 'COMPOSER') tags.composer = val;
             else if (key === 'DATE' || key === 'YEAR') tags.year = val.slice(0, 4);
+            else if ((key === 'LYRICS' || key === 'UNSYNCEDLYRICS') && val) tags.lyrics = val;
           }
         }
       }
@@ -285,6 +308,7 @@ function parseOggVorbisComments(buf: Uint8Array): ParsedTags {
       else if (key === 'GENRE') tags.genre = val;
       else if (key === 'COMPOSER') tags.composer = val;
       else if (key === 'DATE' || key === 'YEAR') tags.year = val.slice(0, 4);
+      else if ((key === 'LYRICS' || key === 'UNSYNCEDLYRICS') && val) tags.lyrics = val;
     }
   }
   return tags;
@@ -338,6 +362,7 @@ function parseMp4Ilst(buf: Uint8Array): ParsedTags {
         else if (atomType === '\u00a9gen') tags.genre = textVal;
         else if (atomType === '\u00a9wrt') tags.composer = textVal;
         else if (atomType === '\u00a9day') tags.year = textVal.slice(0, 4);
+        else if (atomType === '\u00a9lyr' && textVal.trim()) tags.lyrics = textVal.trim();
       }
     }
     pos += atomSize;
@@ -578,6 +603,7 @@ export async function parseLocalAudioFile(file: File): Promise<Track> {
     genre,
     year: parsed.year,
     composer: parsed.composer ? repairMojibakeText(parsed.composer) : undefined,
+    lyrics: parsed.lyrics || undefined,
     duration,
     format,
     sampleRate,

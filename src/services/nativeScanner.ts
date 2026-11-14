@@ -15,6 +15,7 @@ interface NativeScannedTrack {
   genre: string;
   year?: string;
   composer?: string;
+  lyrics?: string;
   durationSec: number;
   fileName: string;
   folderPath: string;
@@ -27,6 +28,7 @@ interface NativeScannedTrack {
   bitDepth: number;
   bitrateKbps: number;
   addedAt: number;
+  folderTreeUri?: string;
 }
 
 export interface NativeScanProgress {
@@ -44,6 +46,7 @@ export interface NativeTagWriteItem {
   genre?: string;
   year?: string;
   composer?: string;
+  lyrics?: string;
 }
 
 export interface NativeDeleteResult {
@@ -58,8 +61,31 @@ export interface NativeTagWriteResult {
   cancelled: boolean;
 }
 
+export interface DeviceMusicFolderInfo {
+  path: string;
+  label: string;
+  trackCount: number;
+}
+
+export interface PickedDeviceFolderResult {
+  cancelled: boolean;
+  path?: string;
+  label?: string;
+  treeUri?: string;
+}
+
 interface LocalMusicScannerPlugin {
-  scanDeviceAudio(): Promise<{ tracks: NativeScannedTrack[]; count: number }>;
+  scanDeviceAudio(options?: {
+    allowedFolders?: string[];
+    excludeFolders?: string[];
+    includeNonMusic?: boolean;
+    treeUris?: string[];
+  }): Promise<{ tracks: NativeScannedTrack[]; count: number }>;
+  listDeviceMusicFolders(options?: {
+    includeNonMusic?: boolean;
+    excludeFolders?: string[];
+  }): Promise<{ folders: DeviceMusicFolderInfo[]; count: number }>;
+  pickDeviceFolder(): Promise<PickedDeviceFolderResult>;
   deleteAudioFiles(options: {
     uris: string[];
     paths: string[];
@@ -71,6 +97,18 @@ interface LocalMusicScannerPlugin {
     contentUri?: string;
     filePath?: string;
   }): Promise<{ success: boolean; cancelled: boolean; uri?: string }>;
+  readAudioFileBase64(options: {
+    contentUri?: string;
+    filePath?: string;
+    maxBytes?: number;
+  }): Promise<{ base64: string; byteLength: number }>;
+  saveTranscriptNearSource(options: {
+    contentUri?: string;
+    filePath?: string;
+    folderTreeUri?: string;
+    fileName: string;
+    textContent: string;
+  }): Promise<{ success: boolean; savedPath: string; nearSource: boolean }>;
   addListener(
     eventName: 'scanProgress' | 'tagWriteProgress',
     listenerFunc: (event: NativeScanProgress) => void
@@ -150,8 +188,72 @@ export async function writeNativeAudioTags(
   }
 }
 
-export async function scanAndroidDeviceLibrary(
-  onProgress?: (progress: NativeScanProgress) => void
+export async function listAndroidMusicFolders(
+  excludeFolders?: string[]
+): Promise<DeviceMusicFolderInfo[]> {
+  if (!isNativeAndroidApp()) return [];
+  const cleanExclude = (excludeFolders || []).map((f) => f.trim()).filter(Boolean);
+  const res = await LocalMusicScanner.listDeviceMusicFolders({
+    includeNonMusic: false,
+    ...(cleanExclude.length > 0 ? { excludeFolders: cleanExclude } : {}),
+  });
+  return Array.isArray(res?.folders) ? res.folders : [];
+}
+
+export async function listAndroidRecordingFolders(
+  excludeFolders?: string[]
+): Promise<DeviceMusicFolderInfo[]> {
+  if (!isNativeAndroidApp()) return [];
+  const cleanExclude = (excludeFolders || []).map((f) => f.trim()).filter(Boolean);
+  const res = await LocalMusicScanner.listDeviceMusicFolders({
+    includeNonMusic: true,
+    ...(cleanExclude.length > 0 ? { excludeFolders: cleanExclude } : {}),
+  });
+  return Array.isArray(res?.folders) ? res.folders : [];
+}
+
+export async function pickAndroidMusicFolder(): Promise<PickedDeviceFolderResult> {
+  if (!isNativeAndroidApp()) {
+    return { cancelled: true };
+  }
+  return LocalMusicScanner.pickDeviceFolder();
+}
+
+export async function readNativeAudioFileBase64(
+  track: Track
+): Promise<{ base64: string; byteLength: number }> {
+  return LocalMusicScanner.readAudioFileBase64({
+    contentUri: track.nativeUri,
+    filePath: track.nativePath,
+    maxBytes: 18 * 1024 * 1024,
+  });
+}
+
+export async function saveNativeTranscriptNearSource(
+  track: Track,
+  fileName: string,
+  textContent: string
+): Promise<{ success: boolean; savedPath: string; nearSource: boolean }> {
+  if (!isNativeAndroidApp()) {
+    return { success: false, savedPath: '', nearSource: false };
+  }
+  return LocalMusicScanner.saveTranscriptNearSource({
+    contentUri: track.nativeUri,
+    filePath: track.nativePath,
+    folderTreeUri: track.folderTreeUri,
+    fileName,
+    textContent,
+  });
+}
+
+async function runAndroidMediaScanInternal(
+  onProgress: ((progress: NativeScanProgress) => void) | undefined,
+  options: {
+    allowedFolders?: string[];
+    excludeFolders?: string[];
+    includeNonMusic?: boolean;
+    treeUris?: string[];
+  }
 ): Promise<Track[]> {
   if (!isNativeAndroidApp()) return [];
 
@@ -172,7 +274,22 @@ export async function scanAndroidDeviceLibrary(
 
   let res: { tracks: NativeScannedTrack[]; count: number };
   try {
-    res = await LocalMusicScanner.scanDeviceAudio();
+    const cleanAllowed = Array.isArray(options.allowedFolders)
+      ? options.allowedFolders.map((f) => f.trim()).filter(Boolean)
+      : undefined;
+    const cleanExclude = Array.isArray(options.excludeFolders)
+      ? options.excludeFolders.map((f) => f.trim()).filter(Boolean)
+      : undefined;
+    const cleanTrees = Array.isArray(options.treeUris)
+      ? options.treeUris.map((u) => u.trim()).filter(Boolean)
+      : undefined;
+
+    res = await LocalMusicScanner.scanDeviceAudio({
+      ...(cleanAllowed && cleanAllowed.length > 0 ? { allowedFolders: cleanAllowed } : {}),
+      ...(cleanExclude && cleanExclude.length > 0 ? { excludeFolders: cleanExclude } : {}),
+      ...(options.includeNonMusic ? { includeNonMusic: true } : {}),
+      ...(cleanTrees && cleanTrees.length > 0 ? { treeUris: cleanTrees } : {}),
+    });
   } finally {
     if (handle) {
       void handle.remove();
@@ -203,25 +320,27 @@ export async function scanAndroidDeviceLibrary(
       : DEFAULT_FALLBACK_COVER;
 
     mapped.push({
-      id: `android_${item.mediaId}_${fingerprint}`,
+      id: `${options.includeNonMusic ? 'rec_android' : 'android'}_${item.mediaId}_${fingerprint}`,
       title,
       artist,
       album,
       genre,
       year: yearMatch ? yearMatch[1] : undefined,
       composer: item.composer ? repairMojibakeText(item.composer) : undefined,
-      duration: Math.max(1, item.durationSec || 180),
+      lyrics: item.lyrics && item.lyrics.trim() ? item.lyrics.trim() : undefined,
+      duration: Math.max(1, item.durationSec || (options.includeNonMusic ? 15 : 180)),
       format: item.format || 'MP3',
       sampleRate: item.sampleRate || 44100,
       bitDepth: item.bitDepth || 16,
       bitrateKbps: item.bitrateKbps || 320,
       coverUrl,
       source: 'local',
-      folderPath: item.folderPath || 'Device Music',
+      folderPath: item.folderPath || (options.includeNonMusic ? 'Recordings' : 'Device Music'),
       fileName: item.fileName,
       fileSize: item.fileSize,
       nativeUri: item.contentUri,
       nativePath: item.filePath,
+      folderTreeUri: item.folderTreeUri,
       favorite: false,
       rating: 0,
       playCount: 0,
@@ -229,6 +348,7 @@ export async function scanAndroidDeviceLibrary(
       addedAt: item.addedAt || Date.now(),
       offlineCached: true,
       fingerprint,
+      ...(options.includeNonMusic ? { isRecording: true } : {}),
     });
 
     if (onProgress && (i % 25 === 0 || i === totalItems - 1)) {
@@ -241,4 +361,30 @@ export async function scanAndroidDeviceLibrary(
   }
 
   return mapped;
+}
+
+export async function scanAndroidDeviceLibrary(
+  onProgress?: (progress: NativeScanProgress) => void,
+  allowedFolders?: string[],
+  excludeFolders?: string[]
+): Promise<Track[]> {
+  return runAndroidMediaScanInternal(onProgress, {
+    allowedFolders,
+    excludeFolders,
+    includeNonMusic: false,
+  });
+}
+
+export async function scanAndroidRecordingsLibrary(
+  onProgress?: (progress: NativeScanProgress) => void,
+  allowedFolders?: string[],
+  treeUris?: string[],
+  excludeFolders?: string[]
+): Promise<Track[]> {
+  return runAndroidMediaScanInternal(onProgress, {
+    allowedFolders,
+    excludeFolders,
+    includeNonMusic: true,
+    treeUris,
+  });
 }

@@ -13,6 +13,8 @@ import android.media.MediaScannerConnection;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Environment;
+import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import androidx.activity.result.ActivityResultLauncher;
@@ -40,11 +42,15 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import android.media.MediaMetadataRetriever;
+import android.util.Base64;
 import org.json.JSONObject;
 
 @CapacitorPlugin(
@@ -64,6 +70,7 @@ public class LocalMusicScannerPlugin extends Plugin {
     private ActivityResultLauncher<IntentSenderRequest> deleteIntentLauncher;
     private ActivityResultLauncher<IntentSenderRequest> writeIntentLauncher;
     private ActivityResultLauncher<Intent> writeSettingsLauncher;
+    private ActivityResultLauncher<Intent> folderPickerLauncher;
 
     private PluginCall pendingDeleteCall;
     private List<Uri> pendingDeleteUris = new ArrayList<>();
@@ -76,6 +83,8 @@ public class LocalMusicScannerPlugin extends Plugin {
     private Uri pendingRingtoneUri;
     private String pendingRingtonePath = "";
 
+    private PluginCall pendingFolderCall;
+
     private static class TagWriteItem {
         final Uri uri;
         final String filePath;
@@ -85,6 +94,8 @@ public class LocalMusicScannerPlugin extends Plugin {
         final String genre;
         final String year;
         final String composer;
+        final String lyrics;
+        final boolean hasLyricsField;
 
         TagWriteItem(
             Uri uri,
@@ -94,7 +105,9 @@ public class LocalMusicScannerPlugin extends Plugin {
             String album,
             String genre,
             String year,
-            String composer
+            String composer,
+            String lyrics,
+            boolean hasLyricsField
         ) {
             this.uri = uri;
             this.filePath = filePath;
@@ -104,6 +117,8 @@ public class LocalMusicScannerPlugin extends Plugin {
             this.genre = genre;
             this.year = year;
             this.composer = composer;
+            this.lyrics = lyrics;
+            this.hasLyricsField = hasLyricsField;
         }
     }
 
@@ -198,6 +213,44 @@ public class LocalMusicScannerPlugin extends Plugin {
                 }
             }
         );
+
+        folderPickerLauncher = getBridge().registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                PluginCall call = pendingFolderCall;
+                pendingFolderCall = null;
+                if (call == null) return;
+
+                if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null && result.getData().getData() != null) {
+                    Uri treeUri = result.getData().getData();
+                    try {
+                        int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
+                        getContext().getContentResolver().takePersistableUriPermission(treeUri, takeFlags);
+                    } catch (Exception ignored) {
+                        try {
+                            getContext().getContentResolver().takePersistableUriPermission(
+                                treeUri,
+                                Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            );
+                        } catch (Exception ignored2) {
+                            // Persistable grant is best-effort
+                        }
+                    }
+                    String folderPath = extractRelativePathFromTreeUri(treeUri);
+                    String label = extractFolderLabel(folderPath);
+                    JSObject res = new JSObject();
+                    res.put("cancelled", false);
+                    res.put("path", folderPath);
+                    res.put("label", label);
+                    res.put("treeUri", treeUri.toString());
+                    call.resolve(res);
+                } else {
+                    JSObject res = new JSObject();
+                    res.put("cancelled", true);
+                    call.resolve(res);
+                }
+            }
+        );
     }
 
     private String getRequiredPermissionAlias() {
@@ -221,6 +274,43 @@ public class LocalMusicScannerPlugin extends Plugin {
             runMediaStoreScan(call);
         } else {
             call.reject("Audio storage permission denied. Please allow music access in Android Settings.");
+        }
+    }
+
+    @PluginMethod
+    public void listDeviceMusicFolders(PluginCall call) {
+        String alias = getRequiredPermissionAlias();
+        if (getPermissionState(alias) != PermissionState.GRANTED) {
+            requestPermissionForAlias(alias, call, "folderPermissionsCallback");
+            return;
+        }
+        runFolderDiscovery(call);
+    }
+
+    @PermissionCallback
+    private void folderPermissionsCallback(PluginCall call) {
+        String alias = getRequiredPermissionAlias();
+        if (getPermissionState(alias) == PermissionState.GRANTED) {
+            runFolderDiscovery(call);
+        } else {
+            call.reject("Audio storage permission denied. Please allow music access in Android Settings.");
+        }
+    }
+
+    @PluginMethod
+    public void pickDeviceFolder(PluginCall call) {
+        try {
+            pendingFolderCall = call;
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+            intent.addFlags(
+                Intent.FLAG_GRANT_READ_URI_PERMISSION |
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION |
+                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+            );
+            getActivity().runOnUiThread(() -> folderPickerLauncher.launch(intent));
+        } catch (Exception ex) {
+            pendingFolderCall = null;
+            call.reject("Unable to open Android folder picker: " + ex.getMessage(), ex);
         }
     }
 
@@ -360,6 +450,7 @@ public class LocalMusicScannerPlugin extends Plugin {
             }
             if (uri == null && filePath.isEmpty()) continue;
 
+            boolean hasLyrics = obj.has("lyrics") && !obj.isNull("lyrics");
             items.add(new TagWriteItem(
                 uri,
                 filePath,
@@ -368,7 +459,9 @@ public class LocalMusicScannerPlugin extends Plugin {
                 obj.optString("album", ""),
                 obj.optString("genre", ""),
                 obj.optString("year", ""),
-                obj.optString("composer", "")
+                obj.optString("composer", ""),
+                obj.optString("lyrics", "").trim(),
+                hasLyrics
             ));
         }
 
@@ -461,6 +554,230 @@ public class LocalMusicScannerPlugin extends Plugin {
                 call.reject("Unable to set ringtone: " + ex.getMessage(), ex);
             }
         });
+    }
+
+    @PluginMethod
+    public void readAudioFileBase64(PluginCall call) {
+        String rawUri = call.getString("contentUri", "").trim();
+        String filePath = call.getString("filePath", "").trim();
+        int maxBytes = Math.min(20 * 1024 * 1024, Math.max(1024 * 1024, call.getInt("maxBytes", 18 * 1024 * 1024)));
+
+        executor.execute(() -> {
+            try (InputStream in = !rawUri.isEmpty() && rawUri.startsWith("content://")
+                ? getContext().getContentResolver().openInputStream(Uri.parse(rawUri))
+                : (!filePath.isEmpty() ? new FileInputStream(filePath) : null)
+            ) {
+                if (in == null) {
+                    call.reject("Unable to open audio recording file.");
+                    return;
+                }
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                byte[] buf = new byte[32768];
+                int n;
+                int total = 0;
+                while ((n = in.read(buf)) > 0) {
+                    if (total + n > maxBytes) {
+                        call.reject("Recording exceeds 18 MB limit for direct transfer.");
+                        return;
+                    }
+                    bos.write(buf, 0, n);
+                    total += n;
+                }
+                String b64 = Base64.encodeToString(bos.toByteArray(), Base64.NO_WRAP);
+                JSObject res = new JSObject();
+                res.put("base64", b64);
+                res.put("byteLength", total);
+                call.resolve(res);
+            } catch (Exception ex) {
+                call.reject("Failed to read audio recording: " + ex.getMessage(), ex);
+            }
+        });
+    }
+
+    @PluginMethod
+    public void saveTranscriptNearSource(PluginCall call) {
+        String rawUri = call.getString("contentUri", "").trim();
+        String filePath = call.getString("filePath", "").trim();
+        String folderTreeUriStr = call.getString("folderTreeUri", "").trim();
+        String fileName = call.getString("fileName", "").trim();
+        String textContent = call.getString("textContent", "");
+
+        if (fileName.isEmpty()) {
+            call.reject("Missing transcript file name.");
+            return;
+        }
+        if (textContent == null) textContent = "";
+
+        final String safeText = textContent;
+        executor.execute(() -> {
+            ContentResolver resolver = getContext().getContentResolver();
+            byte[] payload = safeText.getBytes(StandardCharsets.UTF_8);
+
+            // 1. Try SAF writable tree URI if user picked this recording folder via SAF
+            if (!folderTreeUriStr.isEmpty()) {
+                try {
+                    Uri treeUri = Uri.parse(folderTreeUriStr);
+                    String treeDocId = DocumentsContract.getTreeDocumentId(treeUri);
+                    Uri parentDocUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, treeDocId);
+                    Uri existingDoc = findChildDocumentByName(resolver, treeUri, treeDocId, fileName);
+                    Uri targetDocUri = existingDoc != null
+                        ? existingDoc
+                        : DocumentsContract.createDocument(resolver, parentDocUri, "text/plain", fileName);
+                    if (targetDocUri != null) {
+                        try (OutputStream out = resolver.openOutputStream(targetDocUri, "wt")) {
+                            if (out != null) {
+                                out.write(payload);
+                                out.flush();
+                                JSObject res = new JSObject();
+                                res.put("success", true);
+                                res.put("savedPath", extractRelativePathFromTreeUri(treeUri) + "/" + fileName);
+                                res.put("nearSource", true);
+                                call.resolve(res);
+                                return;
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {
+                    // Fall through to File / MediaStore methods
+                }
+            }
+
+            // 2. Try writing directly next to filePath when direct filesystem access is permitted
+            if (!filePath.isEmpty()) {
+                try {
+                    File src = new File(filePath);
+                    File parentDir = src.getParentFile();
+                    if (parentDir != null && (parentDir.exists() || parentDir.mkdirs())) {
+                        File outFile = new File(parentDir, fileName);
+                        try (FileOutputStream fos = new FileOutputStream(outFile, false)) {
+                            fos.write(payload);
+                            fos.flush();
+                        }
+                        MediaScannerConnection.scanFile(
+                            getContext(),
+                            new String[] { outFile.getAbsolutePath() },
+                            new String[] { "text/plain" },
+                            null
+                        );
+                        JSObject res = new JSObject();
+                        res.put("success", true);
+                        res.put("savedPath", outFile.getAbsolutePath());
+                        res.put("nearSource", true);
+                        call.resolve(res);
+                        return;
+                    }
+                } catch (Exception ignored) {
+                    // Scoped storage on Android 10+ may reject direct File write outside app dirs
+                }
+            }
+
+            // 3. Try MediaStore.Files with matching RELATIVE_PATH on Android 10+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                String relFolder = "";
+                if (!rawUri.isEmpty()) {
+                    try {
+                        Uri srcUri = Uri.parse(rawUri);
+                        try (Cursor c = resolver.query(
+                            srcUri,
+                            new String[] { MediaStore.Audio.Media.RELATIVE_PATH },
+                            null,
+                            null,
+                            null
+                        )) {
+                            if (c != null && c.moveToFirst()) {
+                                int col = c.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH);
+                                if (col >= 0) relFolder = safeStr(c.getString(col));
+                            }
+                        }
+                    } catch (Exception ignored) {
+                        // ignore
+                    }
+                }
+                if (relFolder.isEmpty() && !filePath.isEmpty()) {
+                    relFolder = resolveRelativeFolderPath("", filePath);
+                    if ("Device Music".equals(relFolder)) relFolder = "";
+                }
+                if (!relFolder.isEmpty() && !relFolder.endsWith("/")) {
+                    relFolder = relFolder + "/";
+                }
+
+                Uri filesUri = MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
+                String[] attemptPaths = !relFolder.isEmpty()
+                    ? new String[] { relFolder, Environment.DIRECTORY_DOCUMENTS + "/AuraSound Transcripts/" }
+                    : new String[] { Environment.DIRECTORY_DOCUMENTS + "/AuraSound Transcripts/" };
+
+                for (int i = 0; i < attemptPaths.length; i++) {
+                    String targetRel = attemptPaths[i];
+                    try {
+                        // Remove any prior duplicate file owned by app with same path/name
+                        try {
+                            resolver.delete(
+                                filesUri,
+                                MediaStore.Files.FileColumns.DISPLAY_NAME + "=? AND " + MediaStore.MediaColumns.RELATIVE_PATH + "=?",
+                                new String[] { fileName, targetRel }
+                            );
+                        } catch (Exception ignored) {
+                            // ignore
+                        }
+
+                        ContentValues cv = new ContentValues();
+                        cv.put(MediaStore.Files.FileColumns.DISPLAY_NAME, fileName);
+                        cv.put(MediaStore.Files.FileColumns.MIME_TYPE, "text/plain");
+                        cv.put(MediaStore.MediaColumns.RELATIVE_PATH, targetRel);
+                        Uri inserted = resolver.insert(filesUri, cv);
+                        if (inserted != null) {
+                            try (OutputStream out = resolver.openOutputStream(inserted, "wt")) {
+                                if (out != null) {
+                                    out.write(payload);
+                                    out.flush();
+                                    JSObject res = new JSObject();
+                                    res.put("success", true);
+                                    res.put("savedPath", targetRel + fileName);
+                                    res.put("nearSource", i == 0 && !relFolder.isEmpty());
+                                    call.resolve(res);
+                                    return;
+                                }
+                            }
+                        }
+                    } catch (Exception ignored) {
+                        // Try fallback Documents directory on OEM Scoped Storage restrictions
+                    }
+                }
+            }
+
+            call.reject("Could not write transcript text file to phone storage. Add this folder with Add Folder to grant write access.");
+        });
+    }
+
+    private Uri findChildDocumentByName(ContentResolver resolver, Uri treeUri, String parentDocId, String targetName) {
+        Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentDocId);
+        try (Cursor c = resolver.query(
+            childrenUri,
+            new String[] {
+                DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+            },
+            null,
+            null,
+            null
+        )) {
+            if (c != null) {
+                int idIdx = c.getColumnIndex(DocumentsContract.Document.COLUMN_DOCUMENT_ID);
+                int nameIdx = c.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME);
+                while (c.moveToNext()) {
+                    String name = nameIdx >= 0 ? safeStr(c.getString(nameIdx)) : "";
+                    if (targetName.equalsIgnoreCase(name)) {
+                        String docId = idIdx >= 0 ? c.getString(idIdx) : null;
+                        if (docId != null) {
+                            return DocumentsContract.buildDocumentUriUsingTree(treeUri, docId);
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            // ignore
+        }
+        return null;
     }
 
     private void executeTagWritesAsync(PluginCall call, List<TagWriteItem> items) {
@@ -605,6 +922,10 @@ public class LocalMusicScannerPlugin extends Plugin {
         "TT2", "TP1", "TAL", "TCO", "TYE", "TCM"
     ));
 
+    private static final Set<String> LYRICS_ID3_FRAMES = new HashSet<>(Arrays.asList(
+        "USLT", "SYLT", "ULT"
+    ));
+
     private boolean rewriteMp3ToTemp(ContentResolver resolver, TagWriteItem item, File tempFile) throws IOException {
         byte[] header10 = new byte[10];
         int oldTagTotalBytes = 0;
@@ -621,7 +942,7 @@ public class LocalMusicScannerPlugin extends Plugin {
                 if (tagBodySize > 0 && tagBodySize <= 24 * 1024 * 1024) {
                     byte[] tagBody = new byte[tagBodySize];
                     int got = readFully(in, tagBody, 0, tagBodySize);
-                    parsePreservedId3Frames(tagBody, got, version, flags, preservedFrames);
+                    parsePreservedId3Frames(tagBody, got, version, flags, item.hasLyricsField, preservedFrames);
                 }
             }
         }
@@ -638,6 +959,9 @@ public class LocalMusicScannerPlugin extends Plugin {
             }
         }
         if (!item.composer.isEmpty()) allFrames.add(encodeId3v23TextFrame("TCOM", item.composer));
+        if (item.hasLyricsField && !item.lyrics.isEmpty()) {
+            allFrames.add(encodeId3v23UsltFrame(item.lyrics));
+        }
         allFrames.addAll(preservedFrames);
 
         int framesBytesLen = 0;
@@ -700,6 +1024,7 @@ public class LocalMusicScannerPlugin extends Plugin {
         int len,
         int version,
         int flags,
+        boolean replaceLyrics,
         List<byte[]> out
     ) {
         if (version != 3 && version != 4) return;
@@ -716,7 +1041,10 @@ public class LocalMusicScannerPlugin extends Plugin {
             byte f1 = tagBody[pos + 9];
             pos += 10;
             if (size <= 0 || pos + size > len) break;
-            if (!REPLACED_ID3_FRAMES.contains(frameId)) {
+            boolean shouldReplace =
+                REPLACED_ID3_FRAMES.contains(frameId) ||
+                (replaceLyrics && LYRICS_ID3_FRAMES.contains(frameId));
+            if (!shouldReplace) {
                 byte[] rebuilt = new byte[10 + size];
                 byte[] idBytes = frameId.getBytes(StandardCharsets.US_ASCII);
                 System.arraycopy(idBytes, 0, rebuilt, 0, 4);
@@ -732,6 +1060,10 @@ public class LocalMusicScannerPlugin extends Plugin {
 
     private static final Set<String> REPLACED_VORBIS_KEYS = new HashSet<>(Arrays.asList(
         "TITLE", "ARTIST", "ALBUM", "GENRE", "DATE", "YEAR", "COMPOSER"
+    ));
+
+    private static final Set<String> LYRICS_VORBIS_KEYS = new HashSet<>(Arrays.asList(
+        "LYRICS", "UNSYNCEDLYRICS"
     ));
 
     private boolean rewriteFlacToTemp(ContentResolver resolver, TagWriteItem item, File tempFile) throws IOException {
@@ -782,7 +1114,10 @@ public class LocalMusicScannerPlugin extends Plugin {
                             int eq = entry.indexOf('=');
                             if (eq > 0) {
                                 String key = entry.substring(0, eq).trim().toUpperCase(Locale.ROOT);
-                                if (!REPLACED_VORBIS_KEYS.contains(key)) {
+                                boolean shouldReplace =
+                                    REPLACED_VORBIS_KEYS.contains(key) ||
+                                    (item.hasLyricsField && LYRICS_VORBIS_KEYS.contains(key));
+                                if (!shouldReplace) {
                                     preservedComments.add(entry);
                                 }
                             }
@@ -805,6 +1140,7 @@ public class LocalMusicScannerPlugin extends Plugin {
             if (yr.length() >= 4) comments.add("DATE=" + yr.substring(0, 4));
         }
         if (!item.composer.isEmpty()) comments.add("COMPOSER=" + item.composer);
+        if (item.hasLyricsField && !item.lyrics.isEmpty()) comments.add("LYRICS=" + item.lyrics);
         comments.addAll(preservedComments);
 
         ByteArrayOutputStream vorbisBuf = new ByteArrayOutputStream();
@@ -880,6 +1216,31 @@ public class LocalMusicScannerPlugin extends Plugin {
         frame[11] = (byte) 0xFF;
         frame[12] = (byte) 0xFE;
         System.arraycopy(utf16, 0, frame, 13, utf16.length);
+        return frame;
+    }
+
+    private byte[] encodeId3v23UsltFrame(String lyrics) {
+        byte[] utf16 = lyrics.getBytes(StandardCharsets.UTF_16LE);
+        int payloadLen = 1 + 3 + 4 + 2 + utf16.length;
+        byte[] frame = new byte[10 + payloadLen];
+        frame[0] = 'U';
+        frame[1] = 'S';
+        frame[2] = 'L';
+        frame[3] = 'T';
+        writeUint32BE(frame, 4, payloadLen);
+        frame[8] = 0;
+        frame[9] = 0;
+        frame[10] = 0x01; // UTF-16 with BOM
+        frame[11] = 'e';
+        frame[12] = 'n';
+        frame[13] = 'g';
+        frame[14] = (byte) 0xFF; // Empty descriptor BOM + null terminator
+        frame[15] = (byte) 0xFE;
+        frame[16] = 0x00;
+        frame[17] = 0x00;
+        frame[18] = (byte) 0xFF; // Lyrics BOM
+        frame[19] = (byte) 0xFE;
+        System.arraycopy(utf16, 0, frame, 20, utf16.length);
         return frame;
     }
 
@@ -966,10 +1327,230 @@ public class LocalMusicScannerPlugin extends Plugin {
         out.write((val >>> 24) & 0xFF);
     }
 
-    private void runMediaStoreScan(PluginCall call) {
+    private String normalizeFolderKey(String raw) {
+        if (raw == null) return "";
+        String norm = raw.trim().replace('\\', '/');
+        while (norm.startsWith("/")) norm = norm.substring(1);
+        while (norm.endsWith("/")) norm = norm.substring(0, norm.length() - 1);
+        return norm.toLowerCase(Locale.ROOT);
+    }
+
+    private String extractFolderLabel(String folderPath) {
+        if (folderPath == null || folderPath.trim().isEmpty()) return "Device Music";
+        String clean = folderPath.trim().replace('\\', '/').replaceAll("/+$", "");
+        int idx = clean.lastIndexOf('/');
+        return idx >= 0 && idx + 1 < clean.length() ? clean.substring(idx + 1) : clean;
+    }
+
+    private String extractRelativePathFromTreeUri(Uri treeUri) {
+        try {
+            String docId = DocumentsContract.getTreeDocumentId(treeUri);
+            if (docId != null && !docId.trim().isEmpty()) {
+                int colon = docId.indexOf(':');
+                String after = colon >= 0 ? docId.substring(colon + 1) : docId;
+                after = after.replace('\\', '/').replaceAll("^/+", "").replaceAll("/+$", "");
+                if (!after.isEmpty()) {
+                    return after;
+                }
+                return "Device Music";
+            }
+        } catch (Exception ignored) {
+            // Fallback to URI path segment
+        }
+        String pathSeg = treeUri.getLastPathSegment();
+        if (pathSeg != null && !pathSeg.isEmpty()) {
+            int colon = pathSeg.indexOf(':');
+            String clean = colon >= 0 ? pathSeg.substring(colon + 1) : pathSeg;
+            clean = clean.replace('\\', '/').replaceAll("^/+", "").replaceAll("/+$", "");
+            if (!clean.isEmpty()) return clean;
+        }
+        return "Device Music";
+    }
+
+    private String resolveRelativeFolderPath(String relPathColVal, String dataPath) {
+        String folderPath = safeStr(relPathColVal).replace('\\', '/').replaceAll("^/+", "").replaceAll("/+$", "");
+        if (folderPath.isEmpty() && !safeStr(dataPath).isEmpty()) {
+            File parent = new File(dataPath).getParentFile();
+            if (parent != null) {
+                String parentAbs = parent.getAbsolutePath().replace('\\', '/');
+                try {
+                    String extRoot = Environment.getExternalStorageDirectory().getAbsolutePath().replace('\\', '/').replaceAll("/+$", "");
+                    if (parentAbs.startsWith(extRoot + "/")) {
+                        folderPath = parentAbs.substring(extRoot.length() + 1);
+                    }
+                } catch (Exception ignored) {
+                    // ignore
+                }
+                if (folderPath.isEmpty()) {
+                    folderPath = parent.getName();
+                }
+            }
+        }
+        if (folderPath.isEmpty()) {
+            folderPath = "Device Music";
+        }
+        return folderPath;
+    }
+
+    private Set<String> parseAllowedFolders(PluginCall call) {
+        Set<String> allowed = new HashSet<>();
+        if (call == null) return allowed;
+        JSArray arr = call.getArray("allowedFolders");
+        if (arr == null) return allowed;
+        for (int i = 0; i < arr.length(); i++) {
+            String item = normalizeFolderKey(arr.optString(i, ""));
+            if (!item.isEmpty()) {
+                allowed.add(item);
+            }
+        }
+        return allowed;
+    }
+
+    private boolean folderMatchesAllowed(String folderPath, Set<String> allowedSet) {
+        if (allowedSet == null || allowedSet.isEmpty()) return true;
+        String candidate = normalizeFolderKey(folderPath);
+        if (candidate.isEmpty()) return false;
+        for (String allowed : allowedSet) {
+            if (candidate.equals(allowed) || candidate.startsWith(allowed + "/")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Set<String> parseFolderSetParam(PluginCall call, String paramName) {
+        Set<String> set = new HashSet<>();
+        if (call == null) return set;
+        JSArray arr = call.getArray(paramName);
+        if (arr == null) return set;
+        for (int i = 0; i < arr.length(); i++) {
+            String item = normalizeFolderKey(arr.optString(i, ""));
+            if (!item.isEmpty()) {
+                set.add(item);
+            }
+        }
+        return set;
+    }
+
+    private boolean isDefaultRecordingFolder(String folderPath) {
+        String norm = normalizeFolderKey(folderPath);
+        if (norm.isEmpty()) return false;
+        String[] parts = norm.split("/");
+        for (String seg : parts) {
+            if (
+                "recordings".equals(seg) ||
+                "recording".equals(seg) ||
+                "call".equals(seg) ||
+                "calls".equals(seg) ||
+                "callrecordings".equals(seg) ||
+                "call recordings".equals(seg) ||
+                "soundrecorder".equals(seg) ||
+                "sound_recorder".equals(seg) ||
+                "voicerecorder".equals(seg) ||
+                "voice_recorder".equals(seg) ||
+                "phonerecord".equals(seg) ||
+                "audiorecorder".equals(seg) ||
+                "voice memos".equals(seg) ||
+                "voice notes".equals(seg) ||
+                "dcim".equals(seg)
+            ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void runFolderDiscovery(PluginCall call) {
+        boolean includeNonMusic = Boolean.TRUE.equals(call.getBoolean("includeNonMusic", false));
+        Set<String> excludedFolders = parseFolderSetParam(call, "excludeFolders");
         executor.execute(() -> {
             try {
-                JSArray tracks = queryMediaStoreAudio();
+                JSArray folders = queryMediaStoreFolders(includeNonMusic, excludedFolders);
+                JSObject result = new JSObject();
+                result.put("folders", folders);
+                result.put("count", folders.length());
+                call.resolve(result);
+            } catch (Exception ex) {
+                call.reject("Failed to list device folders: " + ex.getMessage(), ex);
+            }
+        });
+    }
+
+    private JSArray queryMediaStoreFolders(boolean includeNonMusic, Set<String> excludedFolders) {
+        JSArray results = new JSArray();
+        Uri collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        List<String> projectionList = new ArrayList<>();
+        projectionList.add(MediaStore.Audio.Media._ID);
+        projectionList.add(MediaStore.Audio.Media.DURATION);
+        projectionList.add(MediaStore.Audio.Media.SIZE);
+        projectionList.add(MediaStore.Audio.Media.DATA);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            projectionList.add(MediaStore.Audio.Media.RELATIVE_PATH);
+        }
+
+        String[] projection = projectionList.toArray(new String[0]);
+        String selection = includeNonMusic ? null : (MediaStore.Audio.Media.IS_MUSIC + " != 0");
+
+        Map<String, Integer> folderCounts = new LinkedHashMap<>();
+        try (Cursor cursor = getContext().getContentResolver().query(collection, projection, selection, null, null)) {
+            if (cursor != null) {
+                int durationCol = cursor.getColumnIndex(MediaStore.Audio.Media.DURATION);
+                int sizeCol = cursor.getColumnIndex(MediaStore.Audio.Media.SIZE);
+                int dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA);
+                int relPathCol = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                    ? cursor.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH)
+                    : -1;
+
+                while (cursor.moveToNext()) {
+                    long durationMs = durationCol >= 0 ? cursor.getLong(durationCol) : 0L;
+                    long size = sizeCol >= 0 ? cursor.getLong(sizeCol) : 0L;
+                    if (size <= (includeNonMusic ? 1024L : 4096L)) continue;
+                    if (!includeNonMusic && durationMs > 0 && durationMs < 10000) continue;
+
+                    String dataPath = dataCol >= 0 ? safeStr(cursor.getString(dataCol)) : "";
+                    String relPath = relPathCol >= 0 ? safeStr(cursor.getString(relPathCol)) : "";
+                    String folderPath = resolveRelativeFolderPath(relPath, dataPath);
+
+                    if (!includeNonMusic) {
+                        if (isDefaultRecordingFolder(folderPath) || folderMatchesAllowed(folderPath, excludedFolders)) {
+                            continue;
+                        }
+                    } else {
+                        if (!excludedFolders.isEmpty() && folderMatchesAllowed(folderPath, excludedFolders)) {
+                            continue;
+                        }
+                    }
+                    folderCounts.put(folderPath, (folderCounts.containsKey(folderPath) ? folderCounts.get(folderPath) : 0) + 1);
+                }
+            }
+        }
+
+        for (Map.Entry<String, Integer> entry : folderCounts.entrySet()) {
+            JSObject obj = new JSObject();
+            obj.put("path", entry.getKey());
+            obj.put("label", extractFolderLabel(entry.getKey()));
+            obj.put("trackCount", entry.getValue());
+            results.put(obj);
+        }
+        return results;
+    }
+
+    private void runMediaStoreScan(PluginCall call) {
+        Set<String> allowedFolders = parseAllowedFolders(call);
+        Set<String> excludedFolders = parseFolderSetParam(call, "excludeFolders");
+        boolean includeNonMusic = Boolean.TRUE.equals(call.getBoolean("includeNonMusic", false));
+        List<String> treeUris = new ArrayList<>();
+        JSArray treeArr = call.getArray("treeUris");
+        if (treeArr != null) {
+            for (int i = 0; i < treeArr.length(); i++) {
+                String u = treeArr.optString(i, "").trim();
+                if (!u.isEmpty()) treeUris.add(u);
+            }
+        }
+
+        executor.execute(() -> {
+            try {
+                JSArray tracks = queryMediaStoreAudio(allowedFolders, excludedFolders, includeNonMusic, treeUris);
                 JSObject result = new JSObject();
                 result.put("tracks", tracks);
                 result.put("count", tracks.length());
@@ -980,8 +1561,14 @@ public class LocalMusicScannerPlugin extends Plugin {
         });
     }
 
-    private JSArray queryMediaStoreAudio() {
+    private JSArray queryMediaStoreAudio(
+        Set<String> allowedFolders,
+        Set<String> excludedFolders,
+        boolean includeNonMusic,
+        List<String> treeUris
+    ) {
         JSArray results = new JSArray();
+        Set<String> seenKeys = new HashSet<>();
         Uri collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
 
         List<String> projectionList = new ArrayList<>();
@@ -1009,137 +1596,260 @@ public class LocalMusicScannerPlugin extends Plugin {
         }
 
         String[] projection = projectionList.toArray(new String[0]);
-        String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
-        String sortOrder = MediaStore.Audio.Media.TITLE + " COLLATE NOCASE ASC";
+        String selection = includeNonMusic ? null : (MediaStore.Audio.Media.IS_MUSIC + " != 0");
+        String sortOrder = includeNonMusic
+            ? (MediaStore.Audio.Media.DATE_ADDED + " DESC")
+            : (MediaStore.Audio.Media.TITLE + " COLLATE NOCASE ASC");
 
         try (Cursor cursor = getContext().getContentResolver().query(collection, projection, selection, null, sortOrder)) {
-            if (cursor == null) return results;
+            if (cursor != null) {
+                int totalRows = cursor.getCount();
+                emitScanProgress(0, totalRows, includeNonMusic ? "Scanning recordings folders..." : "Scanning device music folders...");
 
-            int totalRows = cursor.getCount();
-            emitScanProgress(0, totalRows, "Scanning device music folders...");
+                int idCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID);
+                int titleCol = cursor.getColumnIndex(MediaStore.Audio.Media.TITLE);
+                int artistCol = cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST);
+                int albumCol = cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM);
+                int durationCol = cursor.getColumnIndex(MediaStore.Audio.Media.DURATION);
+                int sizeCol = cursor.getColumnIndex(MediaStore.Audio.Media.SIZE);
+                int mimeCol = cursor.getColumnIndex(MediaStore.Audio.Media.MIME_TYPE);
+                int dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA);
+                int displayNameCol = cursor.getColumnIndex(MediaStore.Audio.Media.DISPLAY_NAME);
+                int dateAddedCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATE_ADDED);
+                int yearCol = cursor.getColumnIndex(MediaStore.Audio.Media.YEAR);
+                int relPathCol = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                    ? cursor.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH)
+                    : -1;
+                int bitrateCol = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                    ? cursor.getColumnIndex(MediaStore.Audio.Media.BITRATE)
+                    : -1;
+                int genreCol = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+                    ? cursor.getColumnIndex(MediaStore.Audio.Media.GENRE)
+                    : -1;
+                int composerCol = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+                    ? cursor.getColumnIndex(MediaStore.Audio.Media.COMPOSER)
+                    : -1;
 
-            int idCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID);
-            int titleCol = cursor.getColumnIndex(MediaStore.Audio.Media.TITLE);
-            int artistCol = cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST);
-            int albumCol = cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM);
-            int durationCol = cursor.getColumnIndex(MediaStore.Audio.Media.DURATION);
-            int sizeCol = cursor.getColumnIndex(MediaStore.Audio.Media.SIZE);
-            int mimeCol = cursor.getColumnIndex(MediaStore.Audio.Media.MIME_TYPE);
-            int dataCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATA);
-            int displayNameCol = cursor.getColumnIndex(MediaStore.Audio.Media.DISPLAY_NAME);
-            int dateAddedCol = cursor.getColumnIndex(MediaStore.Audio.Media.DATE_ADDED);
-            int yearCol = cursor.getColumnIndex(MediaStore.Audio.Media.YEAR);
-            int relPathCol = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-                ? cursor.getColumnIndex(MediaStore.Audio.Media.RELATIVE_PATH)
-                : -1;
-            int bitrateCol = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-                ? cursor.getColumnIndex(MediaStore.Audio.Media.BITRATE)
-                : -1;
-            int genreCol = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
-                ? cursor.getColumnIndex(MediaStore.Audio.Media.GENRE)
-                : -1;
-            int composerCol = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
-                ? cursor.getColumnIndex(MediaStore.Audio.Media.COMPOSER)
-                : -1;
+                int scannedRow = 0;
+                while (cursor.moveToNext()) {
+                    scannedRow++;
+                    long id = cursor.getLong(idCol);
+                    long durationMs = durationCol >= 0 ? cursor.getLong(durationCol) : 0L;
+                    long size = sizeCol >= 0 ? cursor.getLong(sizeCol) : 0L;
+                    String displayName = displayNameCol >= 0 ? safeStr(cursor.getString(displayNameCol)) : "";
+                    String dataPath = dataCol >= 0 ? safeStr(cursor.getString(dataCol)) : "";
+                    String mimeType = mimeCol >= 0 ? safeStr(cursor.getString(mimeCol)) : "";
 
-            int scannedRow = 0;
-            while (cursor.moveToNext()) {
-                scannedRow++;
-                long id = cursor.getLong(idCol);
-                long durationMs = durationCol >= 0 ? cursor.getLong(durationCol) : 0L;
-                long size = sizeCol >= 0 ? cursor.getLong(sizeCol) : 0L;
-                String displayName = displayNameCol >= 0 ? safeStr(cursor.getString(displayNameCol)) : "";
-                String dataPath = dataCol >= 0 ? safeStr(cursor.getString(dataCol)) : "";
-                String mimeType = mimeCol >= 0 ? safeStr(cursor.getString(mimeCol)) : "";
+                    if (scannedRow == 1 || scannedRow % 10 == 0 || scannedRow == totalRows) {
+                        emitScanProgress(scannedRow, Math.max(totalRows, scannedRow), !displayName.isEmpty() ? displayName : "Scanning audio...");
+                    }
 
-                if (scannedRow == 1 || scannedRow % 10 == 0 || scannedRow == totalRows) {
-                    emitScanProgress(scannedRow, Math.max(totalRows, scannedRow), !displayName.isEmpty() ? displayName : "Scanning audio...");
+                    if (size <= (includeNonMusic ? 1024L : 4096L)) continue;
+                    if (!includeNonMusic && durationMs > 0 && durationMs < 10000) continue;
+
+                    String relPath = relPathCol >= 0 ? safeStr(cursor.getString(relPathCol)) : "";
+                    String folderPath = resolveRelativeFolderPath(relPath, dataPath);
+
+                    if (allowedFolders != null && !allowedFolders.isEmpty() && !folderMatchesAllowed(folderPath, allowedFolders)) {
+                        continue;
+                    }
+                    if (!includeNonMusic) {
+                        boolean explicitlyWhitelisted = allowedFolders != null && !allowedFolders.isEmpty() && folderMatchesAllowed(folderPath, allowedFolders);
+                        if (!explicitlyWhitelisted && isDefaultRecordingFolder(folderPath)) {
+                            continue;
+                        }
+                        if (!excludedFolders.isEmpty() && folderMatchesAllowed(folderPath, excludedFolders)) {
+                            continue;
+                        }
+                    } else if (!excludedFolders.isEmpty() && folderMatchesAllowed(folderPath, excludedFolders)) {
+                        continue;
+                    }
+
+                    String fileNameResolved = !displayName.isEmpty() ? displayName : new File(dataPath).getName();
+                    String lowerName = (!displayName.isEmpty() ? displayName : dataPath).toLowerCase(Locale.ROOT);
+                    String title = titleCol >= 0 ? safeStr(cursor.getString(titleCol)) : "";
+                    if (title.isEmpty()) {
+                        title = stripExtension(fileNameResolved);
+                    }
+
+                    String artist = artistCol >= 0 ? safeStr(cursor.getString(artistCol)) : "";
+                    if (artist.isEmpty() || "<unknown>".equalsIgnoreCase(artist)) {
+                        artist = includeNonMusic ? "Voice Recording" : "Unknown Artist";
+                    }
+
+                    String album = albumCol >= 0 ? safeStr(cursor.getString(albumCol)) : "";
+                    if (album.isEmpty() || "<unknown>".equalsIgnoreCase(album)) {
+                        album = includeNonMusic ? extractFolderLabel(folderPath) : "Local Collection";
+                    }
+
+                    String genre = genreCol >= 0 ? safeStr(cursor.getString(genreCol)) : "";
+                    if (genre.isEmpty()) {
+                        genre = includeNonMusic ? "Recording" : "Local Audio";
+                    }
+
+                    int yearVal = yearCol >= 0 ? cursor.getInt(yearCol) : 0;
+                    String composer = composerCol >= 0 ? safeStr(cursor.getString(composerCol)) : "";
+
+                    Uri contentUri = ContentUris.withAppendedId(collection, id);
+                    int durationSec = Math.max(1, (int) Math.round(durationMs / 1000.0));
+                    String format = detectFormat(lowerName, mimeType);
+                    int bitrateBps = bitrateCol >= 0 ? cursor.getInt(bitrateCol) : 0;
+                    int bitrateKbps = bitrateBps > 0
+                        ? Math.max(64, Math.round(bitrateBps / 1000f))
+                        : (durationSec > 0 ? Math.max(64, (int) Math.round((size * 8.0) / durationSec / 1000.0)) : 192);
+
+                    int sampleRate = ("FLAC".equals(format) || "WAV".equals(format)) ? 48000 : 44100;
+                    int bitDepth = ("FLAC".equals(format) || "WAV".equals(format) || "ALAC".equals(format)) ? 24 : 16;
+                    long addedAtMs = dateAddedCol >= 0 ? cursor.getLong(dateAddedCol) * 1000L : System.currentTimeMillis();
+
+                    String embeddedLyrics = includeNonMusic ? "" : extractEmbeddedLyrics(getContext().getContentResolver(), contentUri, dataPath, format);
+
+                    String key = normalizeFolderKey(folderPath) + "/" + fileNameResolved.toLowerCase(Locale.ROOT) + "#" + size;
+                    seenKeys.add(key);
+
+                    JSObject item = new JSObject();
+                    item.put("mediaId", id);
+                    item.put("title", title);
+                    item.put("artist", artist);
+                    item.put("album", album);
+                    item.put("genre", genre);
+                    if (yearVal > 1900 && yearVal < 2100) {
+                        item.put("year", String.valueOf(yearVal));
+                    }
+                    if (!composer.isEmpty()) {
+                        item.put("composer", composer);
+                    }
+                    if (embeddedLyrics != null && !embeddedLyrics.isEmpty()) {
+                        item.put("lyrics", embeddedLyrics);
+                    }
+                    item.put("durationSec", durationSec);
+                    item.put("fileName", fileNameResolved);
+                    item.put("folderPath", folderPath);
+                    item.put("filePath", dataPath);
+                    item.put("contentUri", contentUri.toString());
+                    item.put("albumArtUri", "");
+                    item.put("fileSize", size);
+                    item.put("format", format);
+                    item.put("sampleRate", sampleRate);
+                    item.put("bitDepth", bitDepth);
+                    item.put("bitrateKbps", bitrateKbps);
+                    item.put("addedAt", addedAtMs);
+                    results.put(item);
                 }
 
-                if (size <= 4096) continue;
-                if (durationMs > 0 && durationMs < 10000) continue;
-
-                String lowerName = (!displayName.isEmpty() ? displayName : dataPath).toLowerCase(Locale.ROOT);
-                String title = titleCol >= 0 ? safeStr(cursor.getString(titleCol)) : "";
-                if (title.isEmpty()) {
-                    title = stripExtension(!displayName.isEmpty() ? displayName : new File(dataPath).getName());
-                }
-
-                String artist = artistCol >= 0 ? safeStr(cursor.getString(artistCol)) : "";
-                if (artist.isEmpty() || "<unknown>".equalsIgnoreCase(artist)) {
-                    artist = "Unknown Artist";
-                }
-
-                String album = albumCol >= 0 ? safeStr(cursor.getString(albumCol)) : "";
-                if (album.isEmpty() || "<unknown>".equalsIgnoreCase(album)) {
-                    album = "Local Collection";
-                }
-
-                String genre = genreCol >= 0 ? safeStr(cursor.getString(genreCol)) : "";
-                if (genre.isEmpty()) {
-                    genre = "Local Audio";
-                }
-
-                int yearVal = yearCol >= 0 ? cursor.getInt(yearCol) : 0;
-                String composer = composerCol >= 0 ? safeStr(cursor.getString(composerCol)) : "";
-
-                String folderPath = "";
-                if (relPathCol >= 0) {
-                    folderPath = safeStr(cursor.getString(relPathCol)).replaceAll("/+$", "");
-                }
-                if (folderPath.isEmpty() && !dataPath.isEmpty()) {
-                    File parent = new File(dataPath).getParentFile();
-                    folderPath = parent != null ? parent.getName() : "Device Music";
-                }
-                if (folderPath.isEmpty()) {
-                    folderPath = "Device Music";
-                }
-
-                Uri contentUri = ContentUris.withAppendedId(collection, id);
-                String albumArtUri = "";
-
-                int durationSec = Math.max(1, (int) Math.round(durationMs / 1000.0));
-                String format = detectFormat(lowerName, mimeType);
-                int bitrateBps = bitrateCol >= 0 ? cursor.getInt(bitrateCol) : 0;
-                int bitrateKbps = bitrateBps > 0
-                    ? Math.max(64, Math.round(bitrateBps / 1000f))
-                    : (durationSec > 0 ? Math.max(128, (int) Math.round((size * 8.0) / durationSec / 1000.0)) : 320);
-
-                int sampleRate = ("FLAC".equals(format) || "WAV".equals(format)) ? 48000 : 44100;
-                int bitDepth = ("FLAC".equals(format) || "WAV".equals(format) || "ALAC".equals(format)) ? 24 : 16;
-                long addedAtMs = dateAddedCol >= 0 ? cursor.getLong(dateAddedCol) * 1000L : System.currentTimeMillis();
-
-                JSObject item = new JSObject();
-                item.put("mediaId", id);
-                item.put("title", title);
-                item.put("artist", artist);
-                item.put("album", album);
-                item.put("genre", genre);
-                if (yearVal > 1900 && yearVal < 2100) {
-                    item.put("year", String.valueOf(yearVal));
-                }
-                if (!composer.isEmpty()) {
-                    item.put("composer", composer);
-                }
-                item.put("durationSec", durationSec);
-                item.put("fileName", !displayName.isEmpty() ? displayName : new File(dataPath).getName());
-                item.put("folderPath", folderPath);
-                item.put("filePath", dataPath);
-                item.put("contentUri", contentUri.toString());
-                item.put("albumArtUri", albumArtUri);
-                item.put("fileSize", size);
-                item.put("format", format);
-                item.put("sampleRate", sampleRate);
-                item.put("bitDepth", bitDepth);
-                item.put("bitrateKbps", bitrateKbps);
-                item.put("addedAt", addedAtMs);
-                results.put(item);
+                emitScanProgress(totalRows, totalRows, "Completed device scan");
             }
+        }
 
-            emitScanProgress(totalRows, totalRows, "Completed device scan");
+        // Also scan any SAF tree folders (covers folders hidden by .nomedia such as phone call recorder directories)
+        if (includeNonMusic && treeUris != null && !treeUris.isEmpty()) {
+            for (String treeUriStr : treeUris) {
+                scanSafTreeForRecordings(treeUriStr, seenKeys, results);
+            }
         }
 
         return results;
+    }
+
+    private void scanSafTreeForRecordings(String treeUriStr, Set<String> seenKeys, JSArray results) {
+        try {
+            Uri treeUri = Uri.parse(treeUriStr);
+            String rootDocId = DocumentsContract.getTreeDocumentId(treeUri);
+            String baseFolder = extractRelativePathFromTreeUri(treeUri);
+            ContentResolver resolver = getContext().getContentResolver();
+            List<String[]> queue = new ArrayList<>();
+            queue.add(new String[] { rootDocId, baseFolder });
+            int visited = 0;
+
+            while (!queue.isEmpty() && visited < 40) {
+                visited++;
+                String[] cur = queue.remove(0);
+                String docId = cur[0];
+                String relFolder = cur[1];
+                Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, docId);
+                try (Cursor c = resolver.query(
+                    childrenUri,
+                    new String[] {
+                        DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                        DocumentsContract.Document.COLUMN_MIME_TYPE,
+                        DocumentsContract.Document.COLUMN_SIZE,
+                        DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+                    },
+                    null,
+                    null,
+                    null
+                )) {
+                    if (c == null) continue;
+                    int idCol = c.getColumnIndex(DocumentsContract.Document.COLUMN_DOCUMENT_ID);
+                    int nameCol = c.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME);
+                    int mimeCol = c.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE);
+                    int sizeCol = c.getColumnIndex(DocumentsContract.Document.COLUMN_SIZE);
+                    int modCol = c.getColumnIndex(DocumentsContract.Document.COLUMN_LAST_MODIFIED);
+
+                    while (c.moveToNext()) {
+                        String childDocId = idCol >= 0 ? safeStr(c.getString(idCol)) : "";
+                        String name = nameCol >= 0 ? safeStr(c.getString(nameCol)) : "";
+                        String mime = mimeCol >= 0 ? safeStr(c.getString(mimeCol)) : "";
+                        long size = sizeCol >= 0 ? c.getLong(sizeCol) : 0L;
+                        long modMs = modCol >= 0 ? c.getLong(modCol) : System.currentTimeMillis();
+                        if (childDocId.isEmpty() || name.isEmpty()) continue;
+
+                        if (DocumentsContract.Document.MIME_TYPE_DIR.equals(mime)) {
+                            queue.add(new String[] { childDocId, relFolder + "/" + name });
+                            continue;
+                        }
+
+                        String lower = name.toLowerCase(Locale.ROOT);
+                        boolean isAudio = mime.startsWith("audio/") ||
+                            lower.endsWith(".mp3") || lower.endsWith(".m4a") || lower.endsWith(".wav") ||
+                            lower.endsWith(".aac") || lower.endsWith(".ogg") || lower.endsWith(".opus") ||
+                            lower.endsWith(".flac") || lower.endsWith(".amr") || lower.endsWith(".3gp");
+                        if (!isAudio || size <= 1024L) continue;
+
+                        String key = normalizeFolderKey(relFolder) + "/" + lower + "#" + size;
+                        if (seenKeys.contains(key)) continue;
+                        seenKeys.add(key);
+
+                        Uri docUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childDocId);
+                        int durationSec = 30;
+                        try (MediaMetadataRetriever mmr = new MediaMetadataRetriever()) {
+                            mmr.setDataSource(getContext(), docUri);
+                            String durStr = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+                            if (durStr != null) {
+                                durationSec = Math.max(1, (int) Math.round(Long.parseLong(durStr) / 1000.0));
+                            }
+                        } catch (Exception ignored) {
+                            // keep best-effort duration
+                        }
+
+                        String format = detectFormat(lower, mime);
+                        JSObject item = new JSObject();
+                        item.put("mediaId", Math.abs(childDocId.hashCode()));
+                        item.put("title", stripExtension(name));
+                        item.put("artist", "Voice Recording");
+                        item.put("album", extractFolderLabel(relFolder));
+                        item.put("genre", "Recording");
+                        item.put("durationSec", durationSec);
+                        item.put("fileName", name);
+                        item.put("folderPath", relFolder);
+                        item.put("filePath", "");
+                        item.put("contentUri", docUri.toString());
+                        item.put("folderTreeUri", treeUriStr);
+                        item.put("albumArtUri", "");
+                        item.put("fileSize", size);
+                        item.put("format", format);
+                        item.put("sampleRate", 44100);
+                        item.put("bitDepth", 16);
+                        item.put("bitrateKbps", durationSec > 0 ? Math.max(64, (int) Math.round((size * 8.0) / durationSec / 1000.0)) : 128);
+                        item.put("addedAt", modMs > 0 ? modMs : System.currentTimeMillis());
+                        results.put(item);
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            // Skip unreachable SAF tree URI
+        }
     }
 
     private void emitScanProgress(int current, int total, String fileName) {
@@ -1175,5 +1885,152 @@ public class LocalMusicScannerPlugin extends Plugin {
         if (lowerName.endsWith(".ogg") || lowerName.endsWith(".oga") || lowerName.endsWith(".opus") || mimeType.contains("ogg") || mimeType.contains("opus")) return "OGG";
         if (lowerName.endsWith(".aac") || mimeType.contains("aac")) return "AAC";
         return "MP3";
+    }
+
+    private String decodeId3TextBytes(int encoding, byte[] buf, int start, int end) {
+        if (end <= start) return "";
+        int len = end - start;
+        try {
+            if (encoding == 1) {
+                boolean le = len >= 2 && (buf[start] & 0xFF) == 0xFF && (buf[start + 1] & 0xFF) == 0xFE;
+                boolean be = len >= 2 && (buf[start] & 0xFF) == 0xFE && (buf[start + 1] & 0xFF) == 0xFF;
+                int off = (le || be) ? start + 2 : start;
+                String s = new String(buf, off, end - off, le ? StandardCharsets.UTF_16LE : StandardCharsets.UTF_16BE);
+                return s.replace("\0", "").trim();
+            }
+            if (encoding == 2) {
+                return new String(buf, start, len, StandardCharsets.UTF_16BE).replace("\0", "").trim();
+            }
+            if (encoding == 3) {
+                return new String(buf, start, len, StandardCharsets.UTF_8).replace("\0", "").trim();
+            }
+            return new String(buf, start, len, StandardCharsets.ISO_8859_1).replace("\0", "").trim();
+        } catch (Exception ex) {
+            return "";
+        }
+    }
+
+    private String extractEmbeddedLyrics(ContentResolver resolver, Uri contentUri, String filePath, String format) {
+        if (!"MP3".equals(format) && !"FLAC".equals(format)) return "";
+        try (InputStream in = new BufferedInputStream(
+            contentUri != null ? resolver.openInputStream(contentUri) : new FileInputStream(filePath)
+        )) {
+            if (in == null) return "";
+            byte[] head = new byte[10];
+            if (readFully(in, head, 0, 10) < 4) return "";
+
+            if (head[0] == 'I' && head[1] == 'D' && head[2] == '3') {
+                int version = head[3] & 0xFF;
+                int flags = head[5] & 0xFF;
+                int tagSize = readSynchsafeInt(head, 6);
+                if (tagSize <= 0 || tagSize > 2 * 1024 * 1024) return "";
+                byte[] tagBody = new byte[tagSize];
+                int got = readFully(in, tagBody, 0, tagSize);
+                int pos = 0;
+                if ((flags & 0x40) != 0 && pos + 4 <= got) {
+                    int extSize = version == 4 ? readSynchsafeInt(tagBody, pos) : readUint32BE(tagBody, pos);
+                    pos += version == 4 ? extSize : 4 + extSize;
+                }
+                while (pos + 10 <= got) {
+                    if (tagBody[pos] == 0) break;
+                    if (version == 2) {
+                        String id3v22 = new String(tagBody, pos, 3, StandardCharsets.US_ASCII);
+                        int size = ((tagBody[pos + 3] & 0xFF) << 16) | ((tagBody[pos + 4] & 0xFF) << 8) | (tagBody[pos + 5] & 0xFF);
+                        pos += 6;
+                        if (size <= 0 || pos + size > got) break;
+                        if ("ULT".equals(id3v22) && size >= 5) {
+                            int enc = tagBody[pos] & 0xFF;
+                            int idx = pos + 4;
+                            if (enc == 1 || enc == 2) {
+                                while (idx + 1 < pos + size && !(tagBody[idx] == 0 && tagBody[idx + 1] == 0)) idx += 2;
+                                idx += 2;
+                            } else {
+                                while (idx < pos + size && tagBody[idx] != 0) idx++;
+                                idx++;
+                            }
+                            if (idx < pos + size) return decodeId3TextBytes(enc, tagBody, idx, pos + size);
+                        }
+                        pos += size;
+                    } else {
+                        String id = new String(tagBody, pos, 4, StandardCharsets.US_ASCII);
+                        int size = version == 4 ? readSynchsafeInt(tagBody, pos + 4) : readUint32BE(tagBody, pos + 4);
+                        pos += 10;
+                        if (size <= 0 || pos + size > got) break;
+                        if ("USLT".equals(id) && size >= 5) {
+                            int enc = tagBody[pos] & 0xFF;
+                            int idx = pos + 4;
+                            if (enc == 1 || enc == 2) {
+                                while (idx + 1 < pos + size && !(tagBody[idx] == 0 && tagBody[idx + 1] == 0)) idx += 2;
+                                idx += 2;
+                            } else {
+                                while (idx < pos + size && tagBody[idx] != 0) idx++;
+                                idx++;
+                            }
+                            if (idx < pos + size) return decodeId3TextBytes(enc, tagBody, idx, pos + size);
+                        }
+                        pos += size;
+                    }
+                }
+            } else if (head[0] == 'f' && head[1] == 'L' && head[2] == 'a' && head[3] == 'C') {
+                boolean isLast = false;
+                byte[] firstHdr = Arrays.copyOfRange(head, 4, 8);
+                byte[] extraTwo = Arrays.copyOfRange(head, 8, 10);
+                boolean usedPreRead = false;
+                while (!isLast) {
+                    byte[] blkHdr = new byte[4];
+                    if (!usedPreRead) {
+                        System.arraycopy(firstHdr, 0, blkHdr, 0, 4);
+                        usedPreRead = true;
+                    } else if (readFully(in, blkHdr, 0, 4) != 4) {
+                        break;
+                    }
+                    isLast = (blkHdr[0] & 0x80) != 0;
+                    int blkType = blkHdr[0] & 0x7F;
+                    int blkLen = ((blkHdr[1] & 0xFF) << 16) | ((blkHdr[2] & 0xFF) << 8) | (blkHdr[3] & 0xFF);
+                    if (blkLen < 0 || blkLen > 2 * 1024 * 1024) break;
+                    byte[] blkData = new byte[blkLen];
+                    int filled;
+                    if (extraTwo != null) {
+                        int copy = Math.min(2, blkLen);
+                        System.arraycopy(extraTwo, 0, blkData, 0, copy);
+                        filled = copy;
+                        if (blkLen > copy) {
+                            filled += readFully(in, blkData, copy, blkLen - copy);
+                        }
+                        extraTwo = null;
+                    } else {
+                        filled = readFully(in, blkData, 0, blkLen);
+                    }
+                    if (filled < blkLen) break;
+                    if (blkType == 4 && blkLen >= 8) {
+                        int pos = 0;
+                        int vLen = readUint32LE(blkData, pos);
+                        pos += 4 + Math.max(0, vLen);
+                        if (pos + 4 <= blkLen) {
+                            int count = readUint32LE(blkData, pos);
+                            pos += 4;
+                            for (int i = 0; i < count && pos + 4 <= blkLen; i++) {
+                                int eLen = readUint32LE(blkData, pos);
+                                pos += 4;
+                                if (eLen < 0 || pos + eLen > blkLen) break;
+                                String entry = new String(blkData, pos, eLen, StandardCharsets.UTF_8);
+                                pos += eLen;
+                                int eq = entry.indexOf('=');
+                                if (eq > 0) {
+                                    String key = entry.substring(0, eq).trim().toUpperCase(Locale.ROOT);
+                                    if ("LYRICS".equals(key) || "UNSYNCEDLYRICS".equals(key)) {
+                                        String val = entry.substring(eq + 1).trim();
+                                        if (!val.isEmpty()) return val;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            // Fast best-effort header read only
+        }
+        return "";
     }
 }

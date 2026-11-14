@@ -1,26 +1,39 @@
-import React from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { User } from 'firebase/auth';
 import {
   BatteryCharging,
   Bluetooth,
+  CheckSquare,
   Cloud,
   CloudDownload,
   CloudUpload,
+  FolderOpen,
+  FolderPlus,
   HardDrive,
   Loader2,
+  Lock,
   LogIn,
   LogOut,
+  Mic,
+  Mic2,
   Moon,
+  RefreshCw,
+  ShieldCheck,
   Smartphone,
+  Square,
   Sun,
   Trash2,
   Vibrate,
   Volume2,
   Wrench,
+  X,
 } from 'lucide-react';
 import { AppSettings, StreamingQuality, ThemeAccent } from '../types/music';
 import { tactile } from '../services/tactileFeedback';
 import { APP_VERSION } from '../version';
+import { useViewportPageSize } from '../hooks/useViewportPageSize';
+import { PaginationBar } from './PaginationBar';
+import { PinPromptModal } from './PinPromptModal';
 
 export type SettingsPage = 'audio' | 'devices' | 'theme' | 'widgets' | 'storage' | 'cloud';
 
@@ -31,6 +44,9 @@ interface SettingsCloudViewProps {
   cacheStats: { count: number; totalBytes: number };
   syncBusy: boolean;
   syncMessage: string | null;
+  scanningFolders?: boolean;
+  scanningRecordings?: boolean;
+  focusRecordingsStorageSignal?: number;
   onUpdateSettings: (patch: Partial<AppSettings>) => void;
   onSignInGoogle: () => void;
   onSignOutGoogle: () => void;
@@ -38,6 +54,17 @@ interface SettingsCloudViewProps {
   onRestoreNow: () => void;
   onClearCache: () => void;
   onRepairCyrillicLibrary: () => void;
+  onAddScanFolder: () => void;
+  onDiscoverScanFolders: () => void;
+  onToggleScanFolder: (folderId: string) => void;
+  onRemoveScanFolder: (folderId: string) => void;
+  onApplyAndScanSelectedFolders: () => void;
+  onAddRecordingFolder: () => void;
+  onDiscoverRecordingFolders: () => void;
+  onToggleRecordingFolder: (folderId: string) => void;
+  onRemoveRecordingFolder: (folderId: string) => void;
+  onScanRecordingsFolders: () => void;
+  onDisableRecordingsVault: () => void;
 }
 
 const ACCENTS: Array<{ id: ThemeAccent; label: string; colorClass: string }> = [
@@ -66,8 +93,8 @@ const PAGE_TITLES: Record<SettingsPage, { title: string; subtitle: string }> = {
     subtitle: 'Pin a floating mini-controller or choose Android home widget size.',
   },
   storage: {
-    title: 'Storage & Repair',
-    subtitle: 'Offline audio cache & Cyrillic / Windows-1251 tag encoding repair.',
+    title: 'Folders & Cache',
+    subtitle: 'Pick specific music folders to scan & manage offline cache.',
   },
   cloud: {
     title: 'Cloud & Account',
@@ -105,6 +132,9 @@ export const SettingsCloudView: React.FC<SettingsCloudViewProps> = ({
   cacheStats,
   syncBusy,
   syncMessage,
+  scanningFolders = false,
+  scanningRecordings = false,
+  focusRecordingsStorageSignal = 0,
   onUpdateSettings,
   onSignInGoogle,
   onSignOutGoogle,
@@ -112,9 +142,65 @@ export const SettingsCloudView: React.FC<SettingsCloudViewProps> = ({
   onRestoreNow,
   onClearCache,
   onRepairCyrillicLibrary,
+  onAddScanFolder,
+  onDiscoverScanFolders,
+  onToggleScanFolder,
+  onRemoveScanFolder,
+  onApplyAndScanSelectedFolders,
+  onAddRecordingFolder,
+  onDiscoverRecordingFolders,
+  onToggleRecordingFolder,
+  onRemoveRecordingFolder,
+  onScanRecordingsFolders,
+  onDisableRecordingsVault,
 }) => {
   const formatMb = (bytes: number) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   const meta = PAGE_TITLES[page];
+
+  const [storageScope, setStorageScope] = useState<'music' | 'recordings'>('music');
+  const [pinModalOpen, setPinModalOpen] = useState(false);
+
+  React.useEffect(() => {
+    if (focusRecordingsStorageSignal > 0 && settings.recordingsEnabled) {
+      setStorageScope('recordings');
+    }
+  }, [focusRecordingsStorageSignal, settings.recordingsEnabled]);
+
+  React.useEffect(() => {
+    if (!settings.recordingsEnabled && storageScope === 'recordings') {
+      setStorageScope('music');
+    }
+  }, [settings.recordingsEnabled, storageScope]);
+
+  const foldersViewportRef = useRef<HTMLDivElement | null>(null);
+  const [folderPage, setFolderPage] = useState(0);
+  const folderLayout = useViewportPageSize(foldersViewportRef, {
+    mode: 'list',
+    listRowHeight: 46,
+    verticalPadding: 2,
+  });
+
+  const activeFolderList = useMemo(() => {
+    if (storageScope === 'recordings' && settings.recordingsEnabled) {
+      return Array.isArray(settings.recordingFolders) ? settings.recordingFolders : [];
+    }
+    return Array.isArray(settings.selectedScanFolders) ? settings.selectedScanFolders : [];
+  }, [storageScope, settings.recordingsEnabled, settings.recordingFolders, settings.selectedScanFolders]);
+
+  const enabledFoldersCount = useMemo(
+    () => activeFolderList.filter((f) => f.enabled).length,
+    [activeFolderList]
+  );
+  const folderTotalPages = Math.max(1, Math.ceil(activeFolderList.length / folderLayout.pageSize));
+  const safeFolderPage = Math.max(0, Math.min(folderTotalPages - 1, folderPage));
+  const pagedFolders = useMemo(
+    () =>
+      activeFolderList.slice(
+        safeFolderPage * folderLayout.pageSize,
+        safeFolderPage * folderLayout.pageSize + folderLayout.pageSize
+      ),
+    [activeFolderList, safeFolderPage, folderLayout.pageSize]
+  );
 
   return (
     <div className="h-full min-h-0 flex flex-col gap-2.5 max-w-4xl overflow-hidden">
@@ -194,6 +280,27 @@ export const SettingsCloudView: React.FC<SettingsCloudViewProps> = ({
                 onChange={() => {
                   tactile.toggle(!settings.gaplessPlayback);
                   onUpdateSettings({ gaplessPlayback: !settings.gaplessPlayback });
+                }}
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-2.5 border-t border-zinc-200/70 dark:border-zinc-800/70 gap-3">
+              <div className="flex items-start gap-2.5 min-w-0">
+                <Mic2 className="w-4 h-4 accent-text shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <div className="text-sm font-medium">Karaoke Lyrics Display</div>
+                  <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Show live synchronized karaoke lyrics while playing. Turn off to display original album cover.
+                  </div>
+                </div>
+              </div>
+              <ToggleSwitch
+                checked={settings.showLyrics !== false}
+                label="Karaoke Lyrics Display"
+                onChange={() => {
+                  const next = settings.showLyrics === false;
+                  tactile.toggle(next);
+                  onUpdateSettings({ showLyrics: next });
                 }}
               />
             </div>
@@ -418,42 +525,328 @@ export const SettingsCloudView: React.FC<SettingsCloudViewProps> = ({
         )}
 
         {page === 'storage' && (
-          <section className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-3 sm:p-4 space-y-3">
-            <div className="flex items-center justify-between gap-2 pb-2 border-b border-zinc-200/70 dark:border-zinc-800/70">
-              <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                Offline Cache
-              </span>
-              <span className="text-xs font-mono-tabular text-zinc-700 dark:text-zinc-300">
-                {cacheStats.count} cached · {formatMb(cacheStats.totalBytes)}
-              </span>
+          <div className="h-full min-h-0 flex flex-col gap-2 overflow-hidden">
+            {/* Sub-scope switcher + Private Recordings PIN Gate */}
+            <div className="shrink-0 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 px-2.5 py-2">
+              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-zinc-950 p-1 rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => {
+                    tactile.tap();
+                    setStorageScope('music');
+                    setFolderPage(0);
+                  }}
+                  className={`min-h-[30px] px-2.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                    storageScope === 'music'
+                      ? 'accent-bg'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                  }`}
+                >
+                  <FolderOpen className="w-3.5 h-3.5" />
+                  <span>Music Folders</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    tactile.tap();
+                    if (!settings.recordingsEnabled) {
+                      setPinModalOpen(true);
+                    } else {
+                      setStorageScope('recordings');
+                      setFolderPage(0);
+                    }
+                  }}
+                  className={`min-h-[30px] px-2.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                    storageScope === 'recordings'
+                      ? 'accent-bg'
+                      : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100'
+                  }`}
+                >
+                  {settings.recordingsEnabled ? (
+                    <Mic className="w-3.5 h-3.5" />
+                  ) : (
+                    <Lock className="w-3.5 h-3.5" />
+                  )}
+                  <span>Recordings Vault</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 ml-auto">
+                <span className="text-[11px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                  {settings.recordingsEnabled ? (
+                    <>
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                      <span className="hidden xs:inline">Recordings Menu On</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-3.5 h-3.5" />
+                      <span className="hidden xs:inline">PIN Locked</span>
+                    </>
+                  )}
+                </span>
+                <ToggleSwitch
+                  checked={Boolean(settings.recordingsEnabled)}
+                  label="Enable Private Recordings Vault"
+                  onChange={() => {
+                    if (settings.recordingsEnabled) {
+                      tactile.toggle(false);
+                      onDisableRecordingsVault();
+                      setStorageScope('music');
+                    } else {
+                      tactile.tap();
+                      setPinModalOpen(true);
+                    }
+                  }}
+                />
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                onClick={() => {
-                  tactile.tap();
-                  onClearCache();
-                }}
-                className="min-h-[40px] px-3.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-medium flex items-center justify-center gap-2 active:scale-95 transition-transform duration-100"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>Clear Offline Audio Cache</span>
-              </button>
+            {/* Active Multi-Folder Selection Panel (Music Folders OR Isolated Recordings Folders) */}
+            <section className="flex-1 min-h-0 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 p-3 sm:p-4 flex flex-col gap-2 overflow-hidden">
+              {storageScope === 'recordings' && settings.recordingsEnabled ? (
+                <div className="shrink-0 flex items-center justify-between gap-2 pb-2 border-b border-zinc-200/70 dark:border-zinc-800/70">
+                  <div className="min-w-0">
+                    <div className="text-xs sm:text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                      Isolated Call, Voice & Cam Audio Folders
+                    </div>
+                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
+                      {enabledFoldersCount} of {activeFolderList.length} recording folder(s) selected · Never mixed with music
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="shrink-0 flex items-center justify-between gap-2 pb-2 border-b border-zinc-200/70 dark:border-zinc-800/70">
+                  <div className="min-w-0">
+                    <div className="text-xs sm:text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                      Only scan selected music folders
+                    </div>
+                    <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
+                      {settings.onlyScanSelectedFolders
+                        ? `${enabledFoldersCount} of ${activeFolderList.length} selected folder(s) active`
+                        : 'All device music folders included (voice & call recordings excluded)'}
+                    </div>
+                  </div>
+                  <ToggleSwitch
+                    checked={Boolean(settings.onlyScanSelectedFolders)}
+                    label="Only scan selected folders"
+                    onChange={() => {
+                      tactile.toggle(!settings.onlyScanSelectedFolders);
+                      onUpdateSettings({
+                        onlyScanSelectedFolders: !settings.onlyScanSelectedFolders,
+                      });
+                    }}
+                  />
+                </div>
+              )}
 
-              <button
-                type="button"
-                onClick={() => {
-                  tactile.success();
-                  onRepairCyrillicLibrary();
-                }}
-                className="min-h-[40px] px-3.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-medium flex items-center justify-center gap-2 active:scale-95 transition-transform duration-100"
+              {/* Action Toolbar */}
+              <div className="shrink-0 flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={storageScope === 'recordings' ? scanningRecordings : scanningFolders}
+                  onClick={() => {
+                    tactile.tap();
+                    if (storageScope === 'recordings') onAddRecordingFolder();
+                    else onAddScanFolder();
+                  }}
+                  className="min-h-[36px] px-2.5 sm:px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-50"
+                >
+                  <FolderPlus className="w-3.5 h-3.5" />
+                  <span>Add Folder</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={storageScope === 'recordings' ? scanningRecordings : scanningFolders}
+                  onClick={() => {
+                    tactile.tap();
+                    if (storageScope === 'recordings') onDiscoverRecordingFolders();
+                    else onDiscoverScanFolders();
+                  }}
+                  className="min-h-[36px] px-2.5 sm:px-3 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100 disabled:opacity-50"
+                >
+                  <RefreshCw
+                    className={`w-3.5 h-3.5 ${
+                      (storageScope === 'recordings' ? scanningRecordings : scanningFolders)
+                        ? 'animate-spin'
+                        : ''
+                    }`}
+                  />
+                  <span>Discover</span>
+                </button>
+
+                {storageScope === 'recordings' ? (
+                  <button
+                    type="button"
+                    disabled={scanningRecordings}
+                    onClick={() => {
+                      tactile.tap();
+                      onScanRecordingsFolders();
+                    }}
+                    className="min-h-[36px] px-3 rounded-lg accent-bg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap ml-auto active:scale-95 transition-transform duration-100 disabled:opacity-40"
+                  >
+                    {scanningRecordings ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Mic className="w-3.5 h-3.5" />
+                    )}
+                    <span>{scanningRecordings ? 'Scanning...' : 'Scan Recordings'}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={
+                      scanningFolders ||
+                      (Boolean(settings.onlyScanSelectedFolders) && enabledFoldersCount === 0)
+                    }
+                    onClick={() => {
+                      tactile.tap();
+                      onApplyAndScanSelectedFolders();
+                    }}
+                    className="min-h-[36px] px-3 rounded-lg accent-bg text-xs font-medium flex items-center gap-1.5 whitespace-nowrap ml-auto active:scale-95 transition-transform duration-100 disabled:opacity-40"
+                  >
+                    {scanningFolders ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <FolderOpen className="w-3.5 h-3.5" />
+                    )}
+                    <span>
+                      {scanningFolders
+                        ? 'Scanning...'
+                        : settings.onlyScanSelectedFolders
+                        ? 'Scan Selected'
+                        : 'Rescan All'}
+                    </span>
+                  </button>
+                )}
+              </div>
+
+              {/* Paginated Multi-Folder Checklist */}
+              <div
+                ref={foldersViewportRef}
+                className="flex-1 min-h-0 overflow-hidden divide-y divide-zinc-200/70 dark:divide-zinc-800/70"
               >
-                <Wrench className="w-4 h-4" />
-                <span>Repair Cyrillic / Mojibake Tags</span>
-              </button>
-            </div>
-          </section>
+                {activeFolderList.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center px-3">
+                    {storageScope === 'recordings' ? (
+                      <>
+                        <Mic className="w-7 h-7 text-zinc-400 mb-1.5" />
+                        <div className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                          No recording folders selected yet
+                        </div>
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 max-w-sm">
+                          Tap Add Folder to pick Call Recordings, Voice Memos, or Camera Audio folders, or Discover to find audio folders on your device.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <FolderOpen className="w-7 h-7 text-zinc-400 mb-1.5" />
+                        <div className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                          No specific folders selected yet
+                        </div>
+                        <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 max-w-sm">
+                          Tap Add Folder to pick multiple music folders, or Discover to list folders already on your device. Unchecked folders will never be scanned.
+                        </p>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  pagedFolders.map((folder) => (
+                    <div
+                      key={folder.id}
+                      className="h-[46px] flex items-center justify-between gap-2 px-1"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          tactile.toggle(!folder.enabled);
+                          if (storageScope === 'recordings') onToggleRecordingFolder(folder.id);
+                          else onToggleScanFolder(folder.id);
+                        }}
+                        className="flex-1 min-w-0 min-h-[40px] flex items-center gap-2.5 text-left"
+                      >
+                        {folder.enabled ? (
+                          <CheckSquare className="w-4 h-4 accent-text shrink-0" />
+                        ) : (
+                          <Square className="w-4 h-4 text-zinc-400 shrink-0" />
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                            {folder.label}
+                          </div>
+                          <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate">
+                            {folder.path}
+                            {typeof folder.trackCount === 'number'
+                              ? ` · ${folder.trackCount} file${folder.trackCount === 1 ? '' : 's'}`
+                              : ''}
+                          </div>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        aria-label={`Remove ${folder.label}`}
+                        onClick={() => {
+                          tactile.tap();
+                          if (storageScope === 'recordings') onRemoveRecordingFolder(folder.id);
+                          else onRemoveScanFolder(folder.id);
+                        }}
+                        className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-zinc-400 hover:text-rose-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 shrink-0"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {activeFolderList.length > 0 && (
+                <PaginationBar
+                  page={safeFolderPage}
+                  totalPages={folderTotalPages}
+                  totalItems={activeFolderList.length}
+                  pageSize={folderLayout.pageSize}
+                  onChangePage={setFolderPage}
+                  itemLabel="folders"
+                />
+              )}
+            </section>
+
+            {/* Compact Offline Cache & Mojibake Repair Bar */}
+            <section className="shrink-0 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+              <div className="text-[11px] text-zinc-500 dark:text-zinc-400 font-mono-tabular whitespace-nowrap">
+                Cache · {cacheStats.count} files · {formatMb(cacheStats.totalBytes)}
+              </div>
+
+              <div className="flex items-center gap-1.5 ml-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    tactile.tap();
+                    onClearCache();
+                  }}
+                  className="min-h-[36px] px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[11px] font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Clear Cache</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    tactile.success();
+                    onRepairCyrillicLibrary();
+                  }}
+                  className="min-h-[36px] px-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-[11px] font-medium flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform duration-100"
+                >
+                  <Wrench className="w-3.5 h-3.5" />
+                  <span>Repair Cyrillic</span>
+                </button>
+              </div>
+            </section>
+          </div>
         )}
 
         {page === 'cloud' && (
@@ -543,6 +936,19 @@ export const SettingsCloudView: React.FC<SettingsCloudViewProps> = ({
           </section>
         )}
       </div>
+
+      <PinPromptModal
+        open={pinModalOpen}
+        title="Enable Private Recordings"
+        subtitle="Enter PIN 4194 to unlock the Recordings menu & choose separate Call / Voice / Cam Audio folders."
+        onSuccess={() => {
+          setPinModalOpen(false);
+          onUpdateSettings({ recordingsEnabled: true });
+          setStorageScope('recordings');
+          setFolderPage(0);
+        }}
+        onClose={() => setPinModalOpen(false)}
+      />
     </div>
   );
 };

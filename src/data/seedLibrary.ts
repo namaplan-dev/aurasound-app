@@ -98,6 +98,13 @@ export const DEFAULT_SETTINGS: AppSettings = {
   tactileSounds: true,
   hapticFeedback: true,
   sortBy: { field: 'title', ascending: true },
+  onlyScanSelectedFolders: false,
+  selectedScanFolders: [],
+  recordingsEnabled: false,
+  recordingFolders: [],
+  showLyrics: true,
+  karaokeOffsetMs: 0,
+  aiScanConfig: { scanLimitInput: '15', batchSize: 15, autoApplyTags: true },
 };
 
 export const BUNDLED_COVERS = {
@@ -140,6 +147,16 @@ export const SEED_TRACKS: Track[] = [
     rating: 5,
     playCount: 18,
     offlineCached: true,
+    lyrics: [
+      '[00:02.00]Velvet needle drops into the midnight groove',
+      '[00:08.50]Warm analog harmonics fill the quiet room',
+      '[00:15.20]Soft brass whispers over brush and snare',
+      '[00:22.40]Floating weightless through the evening air',
+      '[00:30.00]Every subtle overtone begins to glow',
+      '[00:38.20]Time slows down where the tape reels flow',
+      '[00:46.80]Hold that note in the amber light',
+      '[00:55.00]Spinning slow through the velvet night',
+    ].join('\n'),
     synthProfile: { rootHz: 220, chord: [1, 1.2, 1.5, 1.875], tempoBpm: 72, timbre: 'electric-piano' },
   }),
   makeSeedTrack({
@@ -161,6 +178,14 @@ export const SEED_TRACKS: Track[] = [
     rating: 5,
     playCount: 24,
     offlineCached: true,
+    lyrics: [
+      '[00:03.00]Rūkas kyla virš baltų kopų tyliai',
+      '[00:11.00]Bangos neša švelnų jūros aidą toli',
+      '[00:19.50]Pušų viršūnėse vėjas dainą pina',
+      '[00:28.00]Širdies aidas vakaro šviesoje gyvena',
+      '[00:37.50]Tarp marių ir dangaus sustoja laikas',
+      '[00:46.00]Gintaro krante skamba mūsų aidas',
+    ].join('\n'),
     synthProfile: { rootHz: 196, chord: [1, 1.25, 1.5, 1.875], tempoBpm: 62, timbre: 'ambient-drone' },
   }),
   makeSeedTrack({

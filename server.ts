@@ -11,7 +11,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '28mb' }));
 
 // Allow native Capacitor WebView (https://localhost / capacitor://localhost) to call /api/*
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -77,6 +77,213 @@ function getAiClient(): GoogleGenAI {
   });
 }
 
+interface AiQuotaInfo {
+  code: 'AI_QUOTA_EXHAUSTED';
+  retryAfterSeconds: number;
+  resetAtIso: string;
+  quotaScope: 'minute' | 'daily';
+  message: string;
+}
+
+let activeServerQuota: { resetAtMs: number; quotaScope: 'minute' | 'daily'; message: string } | null = null;
+
+function getSecondsUntilPacificMidnight(): number {
+  try {
+    const now = new Date();
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Los_Angeles',
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).formatToParts(now);
+    const num = (type: string) => Number(parts.find((p) => p.type === type)?.value || 0);
+    const h = num('hour') % 24;
+    const m = num('minute');
+    const s = num('second');
+    const secondsElapsed = h * 3600 + m * 60 + s;
+    return Math.max(60, 86400 - secondsElapsed);
+  } catch {
+    return 3600;
+  }
+}
+
+function parseDurationToSeconds(raw: string): number | null {
+  const text = String(raw || '').trim();
+  if (!text) return null;
+
+  let total = 0;
+  let matched = false;
+  const compound = text.matchAll(/(\d+(?:\.\d+)?)\s*(h|hr|hrs|hour|hours|m|min|mins|minute|minutes|s|sec|secs|second|seconds|ms)/gi);
+  for (const hit of compound) {
+    matched = true;
+    const val = Number(hit[1]);
+    const unit = hit[2].toLowerCase();
+    if (unit.startsWith('h')) total += val * 3600;
+    else if (unit === 'ms') total += val / 1000;
+    else if (unit.startsWith('m')) total += val * 60;
+    else total += val;
+  }
+  if (matched && total > 0) return Math.ceil(total);
+  return null;
+}
+
+function extractRetrySecondsFromError(err: unknown): number | null {
+  const seen = new Set<unknown>();
+  const scan = (node: unknown, depth = 0): number | null => {
+    if (!node || depth > 5) return null;
+    if (typeof node === 'string') {
+      const retryFieldMatch = node.match(/"retryDelay"\s*:\s*"([^"]+)"/i);
+      if (retryFieldMatch) {
+        const parsed = parseDurationToSeconds(retryFieldMatch[1]);
+        if (parsed) return parsed;
+      }
+      const phraseMatch = node.match(
+        /retry\s*(?:in|after)\s*(\d+(?:\.\d+)?\s*(?:h|hr|hrs|hours?|m|min|mins|minutes?|s|sec|secs|seconds?|ms))/i
+      );
+      if (phraseMatch) {
+        const parsed = parseDurationToSeconds(phraseMatch[1]);
+        if (parsed) return parsed;
+      }
+      return null;
+    }
+    if (typeof node !== 'object' || seen.has(node)) return null;
+    seen.add(node);
+    const obj = node as Record<string, unknown>;
+    if (typeof obj.retryDelay === 'string') {
+      const parsed = parseDurationToSeconds(obj.retryDelay);
+      if (parsed) return parsed;
+    }
+    for (const key of Object.keys(obj)) {
+      const found = scan(obj[key], depth + 1);
+      if (found) return found;
+    }
+    return null;
+  };
+  return scan(err);
+}
+
+function collectErrorText(err: unknown): string {
+  const chunks: string[] = [];
+  const seen = new Set<unknown>();
+  const walk = (node: unknown, depth = 0) => {
+    if (!node || depth > 4) return;
+    if (typeof node === 'string') {
+      chunks.push(node);
+      return;
+    }
+    if (typeof node !== 'object' || seen.has(node)) return;
+    seen.add(node);
+    const obj = node as Record<string, unknown>;
+    for (const key of ['message', 'status', 'code', 'reason', 'error', 'details']) {
+      if (obj[key] !== undefined) walk(obj[key], depth + 1);
+    }
+  };
+  walk(err);
+  return chunks.join(' ');
+}
+
+function formatRetryLabel(sec: number): string {
+  if (sec < 60) return `${sec}s`;
+  if (sec < 3600) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return s > 0 ? `${m}m ${s}s` : `${m}m`;
+  }
+  const h = Math.floor(sec / 3600);
+  const m = Math.round((sec % 3600) / 60);
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+function detectAiQuotaError(err: unknown): AiQuotaInfo | null {
+  const errObj = (err && typeof err === 'object' ? err : {}) as {
+    status?: number;
+    statusCode?: number;
+    code?: number | string;
+    message?: string;
+  };
+  const numericStatus = Number(errObj.status ?? errObj.statusCode ?? errObj.code ?? 0);
+  const combinedText = collectErrorText(err);
+
+  const isQuotaError =
+    numericStatus === 429 ||
+    /\b429\b|RESOURCE_EXHAUSTED|quota\s*(exceeded|limit|exhausted)|rate[\s_-]*limit|too\s+many\s+requests|tokens?\s*per\s*(minute|day)|requests?\s*per\s*(minute|day)|out\s+of\s+tokens/i.test(
+      combinedText
+    );
+
+  if (!isQuotaError) return null;
+
+  const parsedSeconds = extractRetrySecondsFromError(err);
+  const looksDaily =
+    /per[\s_-]*day|daily|requests_per_day|tokens_per_day|\brpd\b|\btpd\b/i.test(combinedText) ||
+    (parsedSeconds !== null && parsedSeconds >= 3600);
+
+  const quotaScope: 'minute' | 'daily' = looksDaily ? 'daily' : 'minute';
+  const retryAfterSeconds = Math.max(
+    5,
+    Math.min(
+      86400,
+      parsedSeconds ?? (quotaScope === 'daily' ? getSecondsUntilPacificMidnight() : 60)
+    )
+  );
+  const resetAtMs = Date.now() + retryAfterSeconds * 1000;
+  const resetAtIso = new Date(resetAtMs).toISOString();
+  const waitLabel = formatRetryLabel(retryAfterSeconds);
+
+  const message =
+    quotaScope === 'daily'
+      ? `AI daily token allowance was reached while processing large track batches. Tokens will restore in ~${waitLabel}.`
+      : `AI temporarily ran out of tokens while analyzing these tracks. Tokens automatically refill in ~${waitLabel} — AI will be ready to resume shortly.`;
+
+  activeServerQuota = { resetAtMs, quotaScope, message };
+
+  return {
+    code: 'AI_QUOTA_EXHAUSTED',
+    retryAfterSeconds,
+    resetAtIso,
+    quotaScope,
+    message,
+  };
+}
+
+function getActiveServerQuotaInfo(): AiQuotaInfo | null {
+  if (!activeServerQuota) return null;
+  const remainingMs = activeServerQuota.resetAtMs - Date.now();
+  if (remainingMs <= 0) {
+    activeServerQuota = null;
+    return null;
+  }
+  const retryAfterSeconds = Math.max(1, Math.ceil(remainingMs / 1000));
+  return {
+    code: 'AI_QUOTA_EXHAUSTED',
+    retryAfterSeconds,
+    resetAtIso: new Date(activeServerQuota.resetAtMs).toISOString(),
+    quotaScope: activeServerQuota.quotaScope,
+    message: activeServerQuota.message,
+  };
+}
+
+function sendAiEndpointError(res: Response, err: unknown, fallbackMessage: string) {
+  const quota = detectAiQuotaError(err);
+  if (quota) {
+    res.setHeader('Retry-After', String(quota.retryAfterSeconds));
+    res.status(429).json({
+      error: quota.message,
+      code: quota.code,
+      retryAfterSeconds: quota.retryAfterSeconds,
+      resetAtIso: quota.resetAtIso,
+      quotaScope: quota.quotaScope,
+    });
+    return;
+  }
+  const status = (err as { statusCode?: number; status?: number })?.statusCode ||
+    (err as { status?: number })?.status ||
+    500;
+  const safeStatus = status >= 400 && status < 600 ? status : 500;
+  const message = err instanceof Error ? err.message : fallbackMessage;
+  res.status(safeStatus).json({ error: message });
+}
+
 async function withAiTimeout<T>(promise: Promise<T>, timeoutMs = 25000): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
@@ -98,6 +305,15 @@ async function withAiTimeout<T>(promise: Promise<T>, timeoutMs = 25000): Promise
 // ---------- Health ----------
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ ok: true, service: 'aurasound' });
+});
+
+app.get('/api/ai/status', (_req: Request, res: Response) => {
+  const activeQuota = getActiveServerQuotaInfo();
+  if (activeQuota) {
+    res.json({ available: false, quota: activeQuota });
+    return;
+  }
+  res.json({ available: true });
 });
 
 // ---------- Native Android Google OAuth Chrome Bridge ----------
@@ -287,6 +503,19 @@ app.get('/api/auth/bridge', (req: Request, res: Response) => {
 // ---------- Gemini AI Smart Studio Endpoints ----------
 app.post('/api/ai/smart-playlist', async (req: Request, res: Response) => {
   try {
+    const activeQuota = getActiveServerQuotaInfo();
+    if (activeQuota) {
+      res.setHeader('Retry-After', String(activeQuota.retryAfterSeconds));
+      res.status(429).json({
+        error: activeQuota.message,
+        code: activeQuota.code,
+        retryAfterSeconds: activeQuota.retryAfterSeconds,
+        resetAtIso: activeQuota.resetAtIso,
+        quotaScope: activeQuota.quotaScope,
+      });
+      return;
+    }
+
     const { prompt, tracks = [], listeningHistory = [] } = req.body || {};
     if (!prompt || typeof prompt !== 'string') {
       res.status(400).json({ error: 'Prompt is required.' });
@@ -354,14 +583,25 @@ app.post('/api/ai/smart-playlist', async (req: Request, res: Response) => {
     const parsed = JSON.parse((response.text ?? '{}').trim());
     res.json(parsed);
   } catch (err) {
-    const status = (err as { statusCode?: number })?.statusCode || 500;
-    const message = err instanceof Error ? err.message : 'Failed to generate AI smart playlist.';
-    res.status(status).json({ error: message });
+    sendAiEndpointError(res, err, 'Failed to generate AI smart playlist.');
   }
 });
 
 app.post('/api/ai/daily-mix', async (req: Request, res: Response) => {
   try {
+    const activeQuota = getActiveServerQuotaInfo();
+    if (activeQuota) {
+      res.setHeader('Retry-After', String(activeQuota.retryAfterSeconds));
+      res.status(429).json({
+        error: activeQuota.message,
+        code: activeQuota.code,
+        retryAfterSeconds: activeQuota.retryAfterSeconds,
+        resetAtIso: activeQuota.resetAtIso,
+        quotaScope: activeQuota.quotaScope,
+      });
+      return;
+    }
+
     const { tracks = [], topGenres = [], favoriteArtists = [] } = req.body || {};
     const ai = getAiClient();
 
@@ -423,9 +663,7 @@ app.post('/api/ai/daily-mix', async (req: Request, res: Response) => {
     const parsed = JSON.parse((response.text ?? '{"mixes":[]}').trim());
     res.json(parsed);
   } catch (err) {
-    const status = (err as { statusCode?: number })?.statusCode || 500;
-    const message = err instanceof Error ? err.message : 'Failed to generate daily recommendations.';
-    res.status(status).json({ error: message });
+    sendAiEndpointError(res, err, 'Failed to generate daily recommendations.');
   }
 });
 
@@ -598,6 +836,129 @@ async function lookupCatalogMetadataForTrack(
   return null;
 }
 
+async function lookupLyricsForTrack(
+  artist: string,
+  title: string,
+  album: string,
+  durationSec = 0
+): Promise<{ lyrics: string; synced: boolean } | null> {
+  const cleanArtist = isGenericArtist(artist) ? '' : artist.trim();
+  const cleanAlbum = isGenericAlbum(album) ? '' : album.trim();
+  const cleanTitle = title
+    .replace(/^\d{1,3}[\s._-]+/, '')
+    .replace(/\.(flac|alac|wav|wave|mp3|m4a|aac|ogg|opus)$/i, '')
+    .replace(/\[[^\]]*\]/g, '')
+    .replace(/_/g, ' ')
+    .trim();
+
+  if (!cleanTitle || cleanTitle.length < 2) return null;
+
+  const targetTitleNorm = normalizeToken(cleanTitle);
+  const targetArtistNorm = normalizeToken(cleanArtist);
+
+  const pickBest = (
+    items: Array<{
+      trackName?: string;
+      artistName?: string;
+      syncedLyrics?: string | null;
+      plainLyrics?: string | null;
+      instrumental?: boolean;
+      duration?: number;
+    }>
+  ): { lyrics: string; synced: boolean } | null => {
+    const scored = items
+      .filter((it) => !it.instrumental && Boolean((it.syncedLyrics || it.plainLyrics || '').trim()))
+      .map((it) => {
+        const itTitle = normalizeToken(it.trackName || '');
+        const itArtist = normalizeToken(it.artistName || '');
+        const titleOk =
+          Boolean(itTitle && targetTitleNorm) &&
+          (itTitle === targetTitleNorm ||
+            itTitle.includes(targetTitleNorm) ||
+            targetTitleNorm.includes(itTitle));
+        const artistOk =
+          !targetArtistNorm ||
+          (Boolean(itArtist) &&
+            (itArtist === targetArtistNorm ||
+              itArtist.includes(targetArtistNorm) ||
+              targetArtistNorm.includes(itArtist)));
+        if (!titleOk || !artistOk) return null;
+        let score = it.syncedLyrics?.trim() ? 100 : 40;
+        if (itTitle === targetTitleNorm) score += 20;
+        if (targetArtistNorm && itArtist === targetArtistNorm) score += 20;
+        if (durationSec > 0 && it.duration && Math.abs(it.duration - durationSec) <= 8) score += 10;
+        return { it, score };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null)
+      .sort((a, b) => b.score - a.score);
+
+    const top = scored[0]?.it;
+    if (!top) return null;
+    const synced = (top.syncedLyrics || '').trim();
+    if (synced) return { lyrics: synced, synced: true };
+    const plain = (top.plainLyrics || '').trim();
+    return plain ? { lyrics: plain, synced: false } : null;
+  };
+
+  try {
+    if (cleanArtist) {
+      const params = new URLSearchParams({
+        artist_name: cleanArtist,
+        track_name: cleanTitle,
+      });
+      if (cleanAlbum) params.set('album_name', cleanAlbum);
+      if (durationSec > 5) params.set('duration', String(Math.round(durationSec)));
+      const resp = await fetchWithTimeout(
+        `https://lrclib.net/api/get?${params.toString()}`,
+        { headers: { 'User-Agent': 'AuraSoundPlayer/1.5.3 (https://github.com/namaplan-dev/aurasound-app)' } },
+        2800
+      );
+      if (resp.ok) {
+        const data = (await resp.json()) as {
+          trackName?: string;
+          artistName?: string;
+          syncedLyrics?: string | null;
+          plainLyrics?: string | null;
+          instrumental?: boolean;
+          duration?: number;
+        };
+        const hit = pickBest([data]);
+        if (hit) return hit;
+      }
+    }
+  } catch {
+    // Fall through to search endpoint
+  }
+
+  try {
+    const searchParams = new URLSearchParams({ track_name: cleanTitle });
+    if (cleanArtist) searchParams.set('artist_name', cleanArtist);
+    const resp = await fetchWithTimeout(
+      `https://lrclib.net/api/search?${searchParams.toString()}`,
+      { headers: { 'User-Agent': 'AuraSoundPlayer/1.5.3 (https://github.com/namaplan-dev/aurasound-app)' } },
+      2800
+    );
+    if (resp.ok) {
+      const arr = (await resp.json()) as Array<{
+        trackName?: string;
+        artistName?: string;
+        syncedLyrics?: string | null;
+        plainLyrics?: string | null;
+        instrumental?: boolean;
+        duration?: number;
+      }>;
+      if (Array.isArray(arr) && arr.length > 0) {
+        const hit = pickBest(arr);
+        if (hit) return hit;
+      }
+    }
+  } catch {
+    // Best-effort lookup only
+  }
+
+  return null;
+}
+
 async function runWithConcurrency<T>(
   items: T[],
   limit: number,
@@ -615,6 +976,19 @@ async function runWithConcurrency<T>(
 
 app.post('/api/ai/tag-cleanup', async (req: Request, res: Response) => {
   try {
+    const activeQuota = getActiveServerQuotaInfo();
+    if (activeQuota) {
+      res.setHeader('Retry-After', String(activeQuota.retryAfterSeconds));
+      res.status(429).json({
+        error: activeQuota.message,
+        code: activeQuota.code,
+        retryAfterSeconds: activeQuota.retryAfterSeconds,
+        resetAtIso: activeQuota.resetAtIso,
+        quotaScope: activeQuota.quotaScope,
+      });
+      return;
+    }
+
     const { tracks = [] } = req.body || {};
     if (!Array.isArray(tracks) || tracks.length === 0) {
       res.json({ suggestions: [] });
@@ -631,7 +1005,10 @@ app.post('/api/ai/tag-cleanup', async (req: Request, res: Response) => {
       year: String(t.year || ''),
       fileName: String(t.fileName || ''),
       duration: Number(t.duration || 0),
+      hasLyrics: Boolean(t.hasLyrics || (typeof t.lyrics === 'string' && t.lyrics.trim())),
     }));
+
+    const aiPromptSubset = subset.map(({ hasLyrics: _hl, ...rest }) => rest);
 
     const response = await withAiTimeout(
       ai.models.generateContent({
@@ -643,7 +1020,7 @@ app.post('/api/ai/tag-cleanup', async (req: Request, res: Response) => {
 4. Only omit a track if ALL 5 fields (title, artist, album, genre, year) are already accurate, spelled right, and complete.
 
 Tracks:
-${JSON.stringify(subset)}`,
+${JSON.stringify(aiPromptSubset)}`,
         config: {
           thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
           systemInstruction:
@@ -705,6 +1082,7 @@ ${JSON.stringify(subset)}`,
         suggestedAlbum: string;
         suggestedGenre: string;
         suggestedYear: string;
+        suggestedLyrics?: string;
         reason: string;
       }
     >();
@@ -724,22 +1102,26 @@ ${JSON.stringify(subset)}`,
       });
     }
 
-    // Pass 2: Official catalog verification (iTunes / MusicBrainz) for any tracks still missing real album or release year
-    const tracksNeedingCatalog = subset.filter((t) => {
-      const candidate = byId.get(t.id);
-      const curAlbum = candidate?.suggestedAlbum ?? t.album;
-      const curYear = candidate?.suggestedYear ?? extractYear4(t.year);
-      const curArtist = candidate?.suggestedArtist ?? t.artist;
-      return isGenericAlbum(curAlbum) || !curYear || isGenericArtist(curArtist);
-    });
-
-    await runWithConcurrency(tracksNeedingCatalog, 6, async (orig) => {
+    // Pass 2: Official catalog verification + Synced Karaoke LRC Lyrics lookup (LRCLIB + iTunes/MusicBrainz)
+    await runWithConcurrency(subset, 6, async (orig) => {
       const existing = byId.get(orig.id);
       const queryArtist = existing?.suggestedArtist || orig.artist;
       const queryTitle = existing?.suggestedTitle || orig.title;
       const queryAlbum = existing?.suggestedAlbum || orig.album;
-      const catalog = await lookupCatalogMetadataForTrack(queryArtist, queryTitle, queryAlbum);
-      if (!catalog) return;
+
+      const needsCatalog =
+        isGenericAlbum(queryAlbum) ||
+        !extractYear4(existing?.suggestedYear ?? orig.year) ||
+        isGenericArtist(queryArtist);
+
+      const [catalog, lyricsHit] = await Promise.all([
+        needsCatalog ? lookupCatalogMetadataForTrack(queryArtist, queryTitle, queryAlbum) : Promise.resolve(null),
+        !orig.hasLyrics
+          ? lookupLyricsForTrack(queryArtist, queryTitle, queryAlbum, orig.duration)
+          : Promise.resolve(null),
+      ]);
+
+      if (!catalog && !lyricsHit) return;
 
       const reasons: string[] = existing?.reason ? [existing.reason] : [];
       let nextTitle = existing?.suggestedTitle || orig.title;
@@ -747,29 +1129,34 @@ ${JSON.stringify(subset)}`,
       let nextAlbum = existing?.suggestedAlbum || orig.album;
       let nextGenre = existing?.suggestedGenre || orig.genre;
       let nextYear = existing?.suggestedYear || extractYear4(orig.year);
+      let nextLyrics = existing?.suggestedLyrics;
 
-      // Only replace title/artist from catalog if original/AI contains Cyrillic/Lithuanian? Never clobber Cyrillic with Latin transliteration
       const hasNonLatin = (v: string) => /[\u0400-\u04FF]/.test(v);
-      if (catalog.title && !hasNonLatin(nextTitle) && isGenericAlbum(nextTitle) === false) {
-        if (normalizeToken(catalog.title) !== normalizeToken(nextTitle) && nextTitle.length > 0) {
-          // Keep AI-verified clean title unless original was messy
-        } else if (catalog.title !== nextTitle && !hasNonLatin(catalog.title)) {
-          nextTitle = catalog.title;
+      if (catalog) {
+        if (catalog.title && !hasNonLatin(nextTitle) && isGenericAlbum(nextTitle) === false) {
+          if (normalizeToken(catalog.title) === normalizeToken(nextTitle) && catalog.title !== nextTitle && !hasNonLatin(catalog.title)) {
+            nextTitle = catalog.title;
+          }
+        }
+        if (catalog.artist && (isGenericArtist(nextArtist) || (!hasNonLatin(nextArtist) && normalizeToken(catalog.artist) === normalizeToken(nextArtist)))) {
+          nextArtist = catalog.artist;
+        }
+        if (catalog.album && isGenericAlbum(nextAlbum)) {
+          nextAlbum = catalog.album;
+          reasons.push('Matched album');
+        }
+        if (catalog.year && !nextYear) {
+          nextYear = catalog.year;
+          reasons.push('Added release year');
+        }
+        if (catalog.genre && (!nextGenre || nextGenre === 'Audio' || nextGenre === 'Unknown')) {
+          nextGenre = catalog.genre;
         }
       }
-      if (catalog.artist && (isGenericArtist(nextArtist) || (!hasNonLatin(nextArtist) && normalizeToken(catalog.artist) === normalizeToken(nextArtist)))) {
-        nextArtist = catalog.artist;
-      }
-      if (catalog.album && isGenericAlbum(nextAlbum)) {
-        nextAlbum = catalog.album;
-        reasons.push('Matched album');
-      }
-      if (catalog.year && !nextYear) {
-        nextYear = catalog.year;
-        reasons.push('Added release year');
-      }
-      if (catalog.genre && (!nextGenre || nextGenre === 'Audio' || nextGenre === 'Unknown')) {
-        nextGenre = catalog.genre;
+
+      if (lyricsHit?.lyrics) {
+        nextLyrics = lyricsHit.lyrics;
+        reasons.push(lyricsHit.synced ? 'Added synced karaoke lyrics' : 'Added embedded lyrics');
       }
 
       byId.set(orig.id, {
@@ -779,34 +1166,346 @@ ${JSON.stringify(subset)}`,
         suggestedAlbum: nextAlbum,
         suggestedGenre: nextGenre,
         suggestedYear: nextYear,
+        ...(nextLyrics ? { suggestedLyrics: nextLyrics } : {}),
         reason: Array.from(new Set(reasons)).join(' · ') || 'Matched official release metadata',
       });
     });
 
-    // Keep only suggestions that genuinely change at least one field
+    // Pass 3: For single-item / small batches still missing lyrics after LRCLIB, ask Gemini cleanly if confident
+    const stillMissingLyrics = subset.filter(
+      (orig) => !orig.hasLyrics && !byId.get(orig.id)?.suggestedLyrics
+    );
+    if (stillMissingLyrics.length > 0 && subset.length <= 4 && !getActiveServerQuotaInfo()) {
+      try {
+        const lyricsQuery = stillMissingLyrics.map((orig) => {
+          const cur = byId.get(orig.id);
+          return {
+            trackId: orig.id,
+            title: cur?.suggestedTitle || orig.title,
+            artist: cur?.suggestedArtist || orig.artist,
+            album: cur?.suggestedAlbum || orig.album,
+            duration: orig.duration,
+          };
+        });
+        const lyrResp = await withAiTimeout(
+          ai.models.generateContent({
+            model: 'gemini-4-hydrogen',
+            contents: `Provide authentic song lyrics (or LRC [mm:ss.xx] lines if confident of timing) in the song's ORIGINAL language for these tracks if you genuinely know the lyrics. Leave lyrics empty "" for instrumental tracks or if unsure — never invent fake lyrics:\n${JSON.stringify(
+              lyricsQuery
+            )}`,
+            config: {
+              thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+              systemInstruction:
+                'Return accurate original-language song lyrics formatted line-by-line (or [mm:ss.xx] LRC lines if timing is certain). Return empty string "" if unknown or instrumental.',
+              responseMimeType: 'application/json',
+              responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                  items: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.OBJECT,
+                      properties: {
+                        trackId: { type: Type.STRING },
+                        lyrics: { type: Type.STRING },
+                      },
+                      required: ['trackId', 'lyrics'],
+                    },
+                  },
+                },
+                required: ['items'],
+              },
+            },
+          }),
+          15000
+        );
+        const lyrParsed = JSON.parse((lyrResp.text ?? '{"items":[]}').trim()) as {
+          items?: Array<{ trackId?: string; lyrics?: string }>;
+        };
+        for (const item of lyrParsed.items || []) {
+          const id = String(item.trackId || '').trim();
+          const cleanLyr = String(item.lyrics || '').trim();
+          const orig = trackById.get(id);
+          if (!orig || !cleanLyr || cleanLyr.length < 24) continue;
+          const existing = byId.get(id);
+          const reasons = existing?.reason ? [existing.reason, 'Added lyrics'] : ['Added lyrics'];
+          byId.set(id, {
+            trackId: id,
+            suggestedTitle: existing?.suggestedTitle || orig.title,
+            suggestedArtist: existing?.suggestedArtist || orig.artist,
+            suggestedAlbum: existing?.suggestedAlbum || orig.album,
+            suggestedGenre: existing?.suggestedGenre || orig.genre,
+            suggestedYear: existing?.suggestedYear || extractYear4(orig.year),
+            suggestedLyrics: cleanLyr,
+            reason: Array.from(new Set(reasons)).join(' · '),
+          });
+        }
+      } catch {
+        // Optional AI lyrics enrichment must not fail main metadata cleanup response
+      }
+    }
+
+    // Keep only suggestions that genuinely change at least one field or add missing lyrics
     const finalSuggestions = Array.from(byId.values()).filter((s) => {
       const orig = trackById.get(s.trackId);
       if (!orig) return false;
       const origYear = extractYear4(orig.year);
-      return (
+      const tagsChanged =
         s.suggestedTitle.trim() !== orig.title.trim() ||
         s.suggestedArtist.trim() !== orig.artist.trim() ||
         s.suggestedAlbum.trim() !== orig.album.trim() ||
         s.suggestedGenre.trim() !== orig.genre.trim() ||
-        (Boolean(s.suggestedYear) && s.suggestedYear !== origYear)
-      );
+        (Boolean(s.suggestedYear) && s.suggestedYear !== origYear);
+      const lyricsAdded = !orig.hasLyrics && Boolean(s.suggestedLyrics?.trim());
+      return tagsChanged || lyricsAdded;
     });
 
     res.json({ suggestions: finalSuggestions });
   } catch (err) {
-    const status = (err as { statusCode?: number })?.statusCode || 500;
-    const message = err instanceof Error ? err.message : 'Failed to analyze track tags.';
-    res.status(status).json({ error: message });
+    sendAiEndpointError(res, err, 'Failed to analyze track tags.');
+  }
+});
+
+app.post('/api/ai/lyrics', async (req: Request, res: Response) => {
+  try {
+    const { title = '', artist = '', album = '', duration = 0 } = req.body || {};
+    const cleanTitle = String(title || '').trim();
+    const cleanArtist = String(artist || '').trim();
+    const cleanAlbum = String(album || '').trim();
+    const dur = Number(duration || 0);
+
+    if (!cleanTitle) {
+      res.status(400).json({ error: 'Track title is required.' });
+      return;
+    }
+
+    // 1. Instant zero-token synced LRC lookup via LRCLIB
+    const lrclibHit = await lookupLyricsForTrack(cleanArtist, cleanTitle, cleanAlbum, dur);
+    if (lrclibHit?.lyrics) {
+      res.json({
+        lyrics: lrclibHit.lyrics,
+        synced: lrclibHit.synced,
+        source: 'Synced Lyrics Catalog',
+      });
+      return;
+    }
+
+    // 2. Fallback to Gemini if LRCLIB had no match
+    const activeQuota = getActiveServerQuotaInfo();
+    if (activeQuota) {
+      res.setHeader('Retry-After', String(activeQuota.retryAfterSeconds));
+      res.status(429).json({
+        error: activeQuota.message,
+        code: activeQuota.code,
+        retryAfterSeconds: activeQuota.retryAfterSeconds,
+        resetAtIso: activeQuota.resetAtIso,
+        quotaScope: activeQuota.quotaScope,
+      });
+      return;
+    }
+
+    const ai = getAiClient();
+    const resp = await withAiTimeout(
+      ai.models.generateContent({
+        model: 'gemini-4-hydrogen',
+        contents: `Find accurate original-language lyrics for: Title="${cleanTitle}", Artist="${cleanArtist}", Album="${cleanAlbum}", Duration=${dur}s. Use [mm:ss.xx] LRC timestamps if certain of timing, otherwise clean line-by-line verses. Return empty string "" if purely instrumental or unknown.`,
+        config: {
+          thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+          systemInstruction:
+            'Return authentic song lyrics in the original language. Never translate or invent fake lyrics; return "" when unknown or instrumental.',
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              lyrics: { type: Type.STRING },
+            },
+            required: ['lyrics'],
+          },
+        },
+      })
+    );
+
+    const parsed = JSON.parse((resp.text ?? '{"lyrics":""}').trim()) as { lyrics?: string };
+    const cleanLyrics = String(parsed.lyrics || '').trim();
+    res.json({
+      lyrics: cleanLyrics,
+      synced: /\[\d{1,2}:\d{2}/.test(cleanLyrics),
+      source: 'AI Lyrics Search',
+    });
+  } catch (err) {
+    sendAiEndpointError(res, err, 'Unable to look up lyrics.');
+  }
+});
+
+app.post('/api/ai/transcribe', async (req: Request, res: Response) => {
+  try {
+    const activeQuota = getActiveServerQuotaInfo();
+    if (activeQuota) {
+      res.setHeader('Retry-After', String(activeQuota.retryAfterSeconds));
+      res.status(429).json({
+        error: activeQuota.message,
+        code: activeQuota.code,
+        retryAfterSeconds: activeQuota.retryAfterSeconds,
+        resetAtIso: activeQuota.resetAtIso,
+        quotaScope: activeQuota.quotaScope,
+      });
+      return;
+    }
+
+    const {
+      audioBase64 = '',
+      mimeType = 'audio/mp3',
+      fileName = '',
+      folderPath = '',
+      durationSec = 0,
+    } = req.body || {};
+
+    const cleanB64 = String(audioBase64 || '').replace(/^data:[^;]+;base64,/i, '').trim();
+    if (!cleanB64) {
+      res.status(400).json({ error: 'Audio data is required for transcription.' });
+      return;
+    }
+
+    const cleanMime = String(mimeType || 'audio/mp3').trim() || 'audio/mp3';
+    const cleanFileName = String(fileName || '').trim();
+    const cleanFolder = String(folderPath || '').trim();
+    const dur = Math.max(0, Number(durationSec || 0));
+
+    const ai = getAiClient();
+    const transcribePrompt = [
+      'Transcribe all spoken speech accurately in its original language(s).',
+      'If this is a phone call or multi-speaker conversation, label speaker turns cleanly on separate lines (e.g., "Speaker 1:", "Speaker 2:").',
+      'Include clear paragraph breaks and preserve exact names, phone numbers, dates, and amounts mentioned.',
+      'Do not summarize or translate — output the verbatim transcript text only.',
+    ].join(' ');
+
+    const transcriptResp = await withAiTimeout(
+      ai.models.generateContent({
+        model: 'gemini-3.5-transcribe',
+        contents: {
+          parts: [
+            {
+              inlineData: {
+                mimeType: cleanMime,
+                data: cleanB64,
+              },
+            },
+            {
+              text: transcribePrompt,
+            },
+          ],
+        },
+      }),
+      90000
+    );
+
+    const transcript = (transcriptResp.text ?? '').trim();
+
+    let recordingCategory: 'phone-call' | 'voice-memo' | 'cam-audio' | 'meeting' | 'voice-note' =
+      'voice-memo';
+    let suggestedTitle = '';
+    let participants: string[] = [];
+    let summary = '';
+    let tags: string[] = [];
+
+    // Lightweight metadata classification + tags extraction (graceful fallback if skipped/limited)
+    try {
+      const classifyResp = await withAiTimeout(
+        ai.models.generateContent({
+          model: 'gemini-4-hydrogen',
+          contents: `Analyze this audio recording transcript and file metadata to classify and tag it.
+File Name: "${cleanFileName}"
+Folder Path: "${cleanFolder}"
+Duration: ${dur}s
+Transcript excerpt:
+"""
+${transcript.slice(0, 6000)}
+"""`,
+          config: {
+            thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+            systemInstruction:
+              'Classify the recording accurately into one category: "phone-call" (call recording / two-way telephone conversation / ACR / incoming/outgoing), "cam-audio" (camera / video / camcorder audio / DCIM), "meeting" (multi-person discussion/interview), "voice-note" (short reminder/dictation under ~60s), or "voice-memo" (longer personal monologue/voice recording). Extract concise topic tags, spoken participants/caller names if clear, a short descriptive title in the original language, and a 1-2 sentence summary.',
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                recordingCategory: { type: Type.STRING },
+                suggestedTitle: { type: Type.STRING },
+                participants: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
+                },
+                summary: { type: Type.STRING },
+                tags: {
+                  type: Type.ARRAY,
+                  items: { type: Type.STRING },
+                },
+              },
+              required: ['recordingCategory', 'suggestedTitle', 'participants', 'summary', 'tags'],
+            },
+          },
+        }),
+        25000
+      );
+
+      const parsed = JSON.parse((classifyResp.text ?? '{}').trim()) as {
+        recordingCategory?: string;
+        suggestedTitle?: string;
+        participants?: string[];
+        summary?: string;
+        tags?: string[];
+      };
+
+      const rawCat = String(parsed.recordingCategory || '').toLowerCase().trim();
+      if (
+        rawCat === 'phone-call' ||
+        rawCat === 'voice-memo' ||
+        rawCat === 'cam-audio' ||
+        rawCat === 'meeting' ||
+        rawCat === 'voice-note'
+      ) {
+        recordingCategory = rawCat;
+      }
+      suggestedTitle = String(parsed.suggestedTitle || '').trim();
+      participants = Array.isArray(parsed.participants)
+        ? parsed.participants.map((p) => String(p).trim()).filter(Boolean).slice(0, 6)
+        : [];
+      summary = String(parsed.summary || '').trim();
+      tags = Array.isArray(parsed.tags)
+        ? parsed.tags.map((t) => String(t).trim()).filter(Boolean).slice(0, 8)
+        : [];
+    } catch {
+      // Secondary tag enrichment is optional; return full transcript regardless
+    }
+
+    res.json({
+      transcript,
+      recordingCategory,
+      suggestedTitle,
+      participants,
+      summary,
+      tags,
+    });
+  } catch (err) {
+    sendAiEndpointError(res, err, 'Failed to transcribe recording.');
   }
 });
 
 app.post('/api/ai/duplicate-scan', async (req: Request, res: Response) => {
   try {
+    const activeQuota = getActiveServerQuotaInfo();
+    if (activeQuota) {
+      res.setHeader('Retry-After', String(activeQuota.retryAfterSeconds));
+      res.status(429).json({
+        error: activeQuota.message,
+        code: activeQuota.code,
+        retryAfterSeconds: activeQuota.retryAfterSeconds,
+        resetAtIso: activeQuota.resetAtIso,
+        quotaScope: activeQuota.quotaScope,
+      });
+      return;
+    }
+
     const { tracks = [] } = req.body || {};
     if (!Array.isArray(tracks) || tracks.length < 2) {
       res.json({ groups: [] });
@@ -868,9 +1567,7 @@ app.post('/api/ai/duplicate-scan', async (req: Request, res: Response) => {
     const parsed = JSON.parse((response.text ?? '{"groups":[]}').trim());
     res.json(parsed);
   } catch (err) {
-    const status = (err as { statusCode?: number })?.statusCode || 500;
-    const message = err instanceof Error ? err.message : 'Failed to scan duplicates with AI.';
-    res.status(status).json({ error: message });
+    sendAiEndpointError(res, err, 'Failed to scan duplicates with AI.');
   }
 });
 
@@ -985,46 +1682,52 @@ app.post('/api/ai/album-art', async (req: Request, res: Response) => {
       title: t.title,
     }));
 
-    try {
-      const ai = getAiClient();
-      const response = await ai.models.generateContent({
-        model: 'gemini-4-hydrogen',
-        contents: `Normalize these tracks into clean official Artist, Album/Release, and Song Title strings for original album cover art lookup (strip bitrates, track numbers, brackets like [FLAC], (Remastered), file extensions):\n${JSON.stringify(
-          subset
-        )}`,
-        config: {
-          systemInstruction:
-            'Extract clean canonical artist, album, and song title without translating non-English titles.',
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              queries: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    trackId: { type: Type.STRING },
-                    artist: { type: Type.STRING },
-                    album: { type: Type.STRING },
-                    title: { type: Type.STRING },
+    let quotaNotice: AiQuotaInfo | null = getActiveServerQuotaInfo();
+    if (!quotaNotice) {
+      try {
+        const ai = getAiClient();
+        const response = await withAiTimeout(
+          ai.models.generateContent({
+            model: 'gemini-4-hydrogen',
+            contents: `Normalize these tracks into clean official Artist, Album/Release, and Song Title strings for original album cover art lookup (strip bitrates, track numbers, brackets like [FLAC], (Remastered), file extensions):\n${JSON.stringify(
+              subset
+            )}`,
+            config: {
+              systemInstruction:
+                'Extract clean canonical artist, album, and song title without translating non-English titles.',
+              responseMimeType: 'application/json',
+              responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                  queries: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.OBJECT,
+                      properties: {
+                        trackId: { type: Type.STRING },
+                        artist: { type: Type.STRING },
+                        album: { type: Type.STRING },
+                        title: { type: Type.STRING },
+                      },
+                      required: ['trackId', 'artist', 'album', 'title'],
+                    },
                   },
-                  required: ['trackId', 'artist', 'album', 'title'],
                 },
+                required: ['queries'],
               },
             },
-            required: ['queries'],
-          },
-        },
-      });
-      const parsed = JSON.parse((response.text ?? '{"queries":[]}').trim()) as {
-        queries?: Array<{ trackId: string; artist: string; album: string; title: string }>;
-      };
-      if (Array.isArray(parsed.queries) && parsed.queries.length > 0) {
-        normalizedQueries = parsed.queries;
+          })
+        );
+        const parsed = JSON.parse((response.text ?? '{"queries":[]}').trim()) as {
+          queries?: Array<{ trackId: string; artist: string; album: string; title: string }>;
+        };
+        if (Array.isArray(parsed.queries) && parsed.queries.length > 0) {
+          normalizedQueries = parsed.queries;
+        }
+      } catch (aiErr) {
+        quotaNotice = detectAiQuotaError(aiErr);
+        // Proceed with direct metadata catalog lookup even if AI normalization hits quota
       }
-    } catch {
-      // Proceed with direct metadata if AI normalization fails
     }
 
     const results: Array<{
@@ -1050,10 +1753,9 @@ app.post('/api/ai/album-art', async (req: Request, res: Response) => {
       }
     }
 
-    res.json({ results });
+    res.json({ results, ...(quotaNotice ? { aiQuota: quotaNotice } : {}) });
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Failed to look up original album art.';
-    res.status(500).json({ error: message });
+    sendAiEndpointError(res, err, 'Failed to look up original album art.');
   }
 });
 

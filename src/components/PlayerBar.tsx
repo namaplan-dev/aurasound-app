@@ -3,6 +3,7 @@ import {
   Cast,
   ChevronUp,
   Heart,
+  Mic2,
   Pause,
   Play,
   Repeat,
@@ -232,8 +233,17 @@ export const PlayerBar: React.FC<PlayerBarProps> = React.memo(
                 className="w-10 h-10 sm:w-12 sm:h-12 [@media(max-height:520px)]:w-9 [@media(max-height:520px)]:h-9 rounded-xl shadow-sm"
               />
               <div className="min-w-0 flex-1">
-                <div className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate group-hover:underline">
-                  {track.title}
+                <div className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate group-hover:underline flex items-center gap-1.5">
+                  <span className="truncate">{track.title}</span>
+                  {Boolean(track.lyrics?.trim()) && (
+                    <span
+                      title="Has embedded lyrics"
+                      aria-label="Has embedded lyrics"
+                      className="inline-flex shrink-0"
+                    >
+                      <Mic2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 accent-text" />
+                    </span>
+                  )}
                 </div>
                 <div className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate flex items-center gap-1.5">
                   <span className="truncate">{track.artist}</span>

@@ -33,6 +33,7 @@ const KEYS = {
   EQ_PRESETS: 'aurasound_eq_presets_v1',
   DAILY_RECS: 'aurasound_daily_recs_v1',
   SESSION: 'aurasound_session_v1',
+  RECORDINGS: 'aurasound_recordings_v1',
 };
 
 function safeReadJson<T>(key: string, fallback: T): T {
@@ -73,6 +74,23 @@ export function loadSettings(): AppSettings {
       field: saved.sortBy?.field || DEFAULT_SETTINGS.sortBy?.field || 'title',
       ascending: saved.sortBy?.ascending !== undefined ? saved.sortBy.ascending : true,
     },
+    onlyScanSelectedFolders: Boolean(saved.onlyScanSelectedFolders),
+    selectedScanFolders: Array.isArray(saved.selectedScanFolders)
+      ? saved.selectedScanFolders
+      : [],
+    recordingsEnabled: Boolean(saved.recordingsEnabled),
+    recordingFolders: Array.isArray(saved.recordingFolders)
+      ? saved.recordingFolders
+      : [],
+    showLyrics: saved.showLyrics !== false,
+    karaokeOffsetMs:
+      typeof saved.karaokeOffsetMs === 'number' && Number.isFinite(saved.karaokeOffsetMs)
+        ? saved.karaokeOffsetMs
+        : 0,
+    aiScanConfig: {
+      ...DEFAULT_SETTINGS.aiScanConfig,
+      ...(saved.aiScanConfig || {}),
+    },
   };
 }
 
@@ -85,11 +103,19 @@ export function loadTracks(): Track[] {
   if (!saved || !Array.isArray(saved) || saved.length === 0) {
     return SEED_TRACKS;
   }
-  return saved.map((t) =>
-    t.coverUrl && LEGACY_COVER_MAP[t.coverUrl]
-      ? { ...t, coverUrl: LEGACY_COVER_MAP[t.coverUrl] }
-      : t
+  const seedLyricsById = new Map(
+    SEED_TRACKS.filter((st) => Boolean(st.lyrics)).map((st) => [st.id, st.lyrics!])
   );
+  return saved.map((t) => {
+    let next =
+      t.coverUrl && LEGACY_COVER_MAP[t.coverUrl]
+        ? { ...t, coverUrl: LEGACY_COVER_MAP[t.coverUrl] }
+        : t;
+    if (next.source === 'builtin' && !next.lyrics && seedLyricsById.has(next.id)) {
+      next = { ...next, lyrics: seedLyricsById.get(next.id) };
+    }
+    return next;
+  });
 }
 
 export function saveTracks(tracks: Track[]): void {
@@ -151,6 +177,17 @@ export function saveDailyRecommendations(recs: DailyRecommendation[]): void {
   safeWriteJson(KEYS.DAILY_RECS, recs);
 }
 
+export function loadRecordings(): Track[] {
+  const saved = safeReadJson<Track[] | null>(KEYS.RECORDINGS, null);
+  if (!saved || !Array.isArray(saved)) return [];
+  return saved.map((r) => ({ ...r, isRecording: true }));
+}
+
+export function saveRecordings(recordings: Track[]): void {
+  const normalized = recordings.map((r) => ({ ...r, isRecording: true }));
+  safeWriteJson(KEYS.RECORDINGS, normalized);
+}
+
 const DEFAULT_SESSION: SessionState = {
   currentTrackId: null,
   currentTimeSeconds: 0,
@@ -163,6 +200,8 @@ const DEFAULT_SESSION: SessionState = {
   selectedFolderFilter: null,
   selectedPlaylistFilter: null,
   nowPlayingOpen: true,
+  nowPlayingDeckPage: 'player',
+  libraryStartIndices: {},
   libraryScrollTop: 0,
   mainScrollTop: 0,
   updatedAt: 0,
@@ -174,9 +213,36 @@ export function loadSession(): SessionState {
     ...DEFAULT_SESSION,
     ...saved,
     queueTrackIds: Array.isArray(saved.queueTrackIds) ? saved.queueTrackIds : [],
+    libraryStartIndices:
+      saved.libraryStartIndices && typeof saved.libraryStartIndices === 'object'
+        ? saved.libraryStartIndices
+        : {},
   };
 }
 
 export function saveSession(session: SessionState): void {
   safeWriteJson(KEYS.SESSION, session);
+}
+
+export function normalizeFolderKey(raw: string): string {
+  return String(raw || '')
+    .replace(/\\/g, '/')
+    .replace(/^\/+|\/+$/g, '')
+    .replace(/\/{2,}/g, '/')
+    .trim()
+    .toLowerCase();
+}
+
+export function folderMatchesAllowedList(
+  trackFolderPath: string | undefined,
+  allowedFolderPaths: string[]
+): boolean {
+  if (allowedFolderPaths.length === 0) return true;
+  const candidate = normalizeFolderKey(trackFolderPath || '');
+  if (!candidate) return false;
+  return allowedFolderPaths.some((allowed) => {
+    const normAllowed = normalizeFolderKey(allowed);
+    if (!normAllowed) return false;
+    return candidate === normAllowed || candidate.startsWith(`${normAllowed}/`);
+  });
 }

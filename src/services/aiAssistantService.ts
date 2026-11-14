@@ -42,6 +42,143 @@ async function fetchWithClientTimeout(
   }
 }
 
+export interface AiQuotaState {
+  resetAtMs: number;
+  retryAfterSeconds: number;
+  quotaScope: 'minute' | 'daily';
+  message: string;
+}
+
+export class AiQuotaExhaustedError extends Error {
+  readonly code = 'AI_QUOTA_EXHAUSTED';
+  readonly quota: AiQuotaState;
+
+  constructor(quota: AiQuotaState) {
+    super(quota.message);
+    this.name = 'AiQuotaExhaustedError';
+    this.quota = quota;
+  }
+}
+
+let activeAiQuotaState: AiQuotaState | null = null;
+const quotaListeners = new Set<(state: AiQuotaState | null) => void>();
+
+function notifyQuotaListeners() {
+  for (const listener of quotaListeners) {
+    listener(activeAiQuotaState);
+  }
+}
+
+export function getActiveAiQuotaState(): AiQuotaState | null {
+  return activeAiQuotaState;
+}
+
+export function setActiveAiQuotaState(state: AiQuotaState | null) {
+  activeAiQuotaState = state;
+  notifyQuotaListeners();
+}
+
+export function clearActiveAiQuotaState() {
+  if (!activeAiQuotaState) return;
+  activeAiQuotaState = null;
+  notifyQuotaListeners();
+}
+
+export function subscribeAiQuotaState(listener: (state: AiQuotaState | null) => void): () => void {
+  quotaListeners.add(listener);
+  listener(activeAiQuotaState);
+  return () => {
+    quotaListeners.delete(listener);
+  };
+}
+
+export function formatAiQuotaCountdown(
+  resetAtMs: number,
+  nowMs = Date.now()
+): {
+  remainingSec: number;
+  countdownText: string;
+  readyTimeText: string;
+  isRestored: boolean;
+} {
+  const remainingMs = Math.max(0, resetAtMs - nowMs);
+  const remainingSec = Math.ceil(remainingMs / 1000);
+  const isRestored = remainingSec <= 0;
+
+  let countdownText = '0s';
+  if (remainingSec > 0) {
+    if (remainingSec < 60) {
+      countdownText = `${remainingSec}s`;
+    } else if (remainingSec < 3600) {
+      const m = Math.floor(remainingSec / 60);
+      const s = remainingSec % 60;
+      countdownText = `${m}m ${String(s).padStart(2, '0')}s`;
+    } else {
+      const h = Math.floor(remainingSec / 3600);
+      const m = Math.floor((remainingSec % 3600) / 60);
+      countdownText = m > 0 ? `${h}h ${m}m` : `${h}h`;
+    }
+  }
+
+  const targetDate = new Date(resetAtMs);
+  const sameDay = targetDate.toDateString() === new Date(nowMs).toDateString();
+  const readyTimeText = new Intl.DateTimeFormat(undefined, {
+    ...(sameDay ? {} : { month: 'short', day: 'numeric' }),
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(targetDate);
+
+  return { remainingSec, countdownText, readyTimeText, isRestored };
+}
+
+export function buildAiQuotaStateFromPayload(
+  payload: Record<string, unknown>,
+  retryAfterHeader?: string | null
+): AiQuotaState {
+  const rawSeconds = Number(payload.retryAfterSeconds ?? retryAfterHeader ?? 60);
+  const retryAfterSeconds =
+    Number.isFinite(rawSeconds) && rawSeconds > 0 ? Math.ceil(rawSeconds) : 60;
+  const parsedReset =
+    typeof payload.resetAtIso === 'string' ? Date.parse(payload.resetAtIso) : NaN;
+  const resetAtMs =
+    Number.isFinite(parsedReset) && parsedReset > Date.now()
+      ? parsedReset
+      : Date.now() + retryAfterSeconds * 1000;
+  const quotaScope: 'minute' | 'daily' =
+    payload.quotaScope === 'daily' || retryAfterSeconds >= 3600 ? 'daily' : 'minute';
+  const fallbackMsg =
+    quotaScope === 'daily'
+      ? 'Daily AI token allowance reached while scanning large track batches.'
+      : 'AI temporarily ran out of tokens while scanning these tracks.';
+  const message =
+    typeof payload.error === 'string' && payload.error.trim()
+      ? payload.error.trim()
+      : fallbackMsg;
+  return { resetAtMs, retryAfterSeconds, quotaScope, message };
+}
+
+export function parseAiErrorResponse(
+  resp: Response,
+  payload: Record<string, unknown>,
+  fallbackMessage: string
+): Error {
+  const errorStr = typeof payload.error === 'string' ? payload.error : '';
+  const isQuota =
+    resp.status === 429 ||
+    payload.code === 'AI_QUOTA_EXHAUSTED' ||
+    /RESOURCE_EXHAUSTED|quota\s*(exceeded|limit|exhausted)|rate[\s_-]*limit|too\s+many\s+requests|out\s+of\s+tokens/i.test(
+      errorStr
+    );
+
+  if (isQuota) {
+    const quotaState = buildAiQuotaStateFromPayload(payload, resp.headers.get('Retry-After'));
+    setActiveAiQuotaState(quotaState);
+    return new AiQuotaExhaustedError(quotaState);
+  }
+
+  return new Error(errorStr || `${fallbackMessage} (HTTP ${resp.status}).`);
+}
+
 export type StepProgressCallback = (
   current: number,
   total: number,
@@ -184,7 +321,13 @@ export async function runDuplicateScan(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tracks: chunk }),
       });
+      if (resp.status === 429) {
+        const errPayload = (await resp.json().catch(() => ({}))) as Record<string, unknown>;
+        parseAiErrorResponse(resp, errPayload, 'AI duplicate check paused due to token limit');
+        break;
+      }
       if (resp.ok) {
+        clearActiveAiQuotaState();
         const data = (await resp.json()) as {
           groups?: Array<{
             keepTrackId?: string;
@@ -267,11 +410,135 @@ export function prioritizeTracksForTagScan(tracks: Track[]): Track[] {
   return [...tracks].sort((a, b) => scoreTrackMetadataNeeds(b) - scoreTrackMetadataNeeds(a));
 }
 
+export interface KaraokeLine {
+  timeSec: number;
+  endSec: number;
+  text: string;
+  isSynced: boolean;
+}
+
+const LRC_TIMESTAMP_REGEX = /\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?\]/g;
+
+export function parseLyricsForKaraoke(rawLyrics: string | undefined, trackDurationSec = 180): KaraokeLine[] {
+  const raw = (rawLyrics || '').replace(/\r\n/g, '\n').trim();
+  if (!raw) return [];
+
+  const duration = Math.max(10, Number(trackDurationSec) || 180);
+  const rawLines = raw.split('\n');
+  const syncedLines: Array<{ timeSec: number; text: string }> = [];
+
+  for (const line of rawLines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    // Skip ID-style metadata headers like [ar:...], [ti:...], [al:...], [by:...], [length:...]
+    if (/^\[(ar|ti|al|au|by|re|ve|length|offset):/i.test(trimmed)) continue;
+
+    LRC_TIMESTAMP_REGEX.lastIndex = 0;
+    const timestamps: number[] = [];
+    let match: RegExpExecArray | null;
+    while ((match = LRC_TIMESTAMP_REGEX.exec(trimmed)) !== null) {
+      const mins = Number.parseInt(match[1], 10);
+      const secs = Number.parseInt(match[2], 10);
+      const fracRaw = match[3] || '0';
+      const frac =
+        fracRaw.length === 3
+          ? Number.parseInt(fracRaw, 10) / 1000
+          : fracRaw.length === 2
+          ? Number.parseInt(fracRaw, 10) / 100
+          : Number.parseInt(fracRaw, 10) / 10;
+      timestamps.push(mins * 60 + secs + frac);
+    }
+
+    if (timestamps.length > 0) {
+      const lyricText = trimmed.replace(LRC_TIMESTAMP_REGEX, '').trim();
+      if (!lyricText) continue;
+      for (const ts of timestamps) {
+        syncedLines.push({ timeSec: ts, text: lyricText });
+      }
+    }
+  }
+
+  if (syncedLines.length > 0) {
+    syncedLines.sort((a, b) => a.timeSec - b.timeSec);
+    return syncedLines.map((item, idx) => {
+      const nextTime =
+        idx < syncedLines.length - 1
+          ? syncedLines[idx + 1].timeSec
+          : Math.max(item.timeSec + 4.5, duration);
+      return {
+        timeSec: item.timeSec,
+        endSec: Math.max(item.timeSec + 0.8, nextTime),
+        text: item.text,
+        isSynced: true,
+      };
+    });
+  }
+
+  // Fallback for untimed plain lyrics: distribute lines cleanly across playable window
+  const plainLines = rawLines.map((l) => l.trim()).filter(Boolean);
+  if (plainLines.length === 0) return [];
+  const introOffset = Math.min(8, duration * 0.04);
+  const outroBuffer = Math.min(8, duration * 0.05);
+  const usableSpan = Math.max(10, duration - introOffset - outroBuffer);
+  const step = usableSpan / plainLines.length;
+
+  return plainLines.map((text, idx) => {
+    const start = introOffset + idx * step;
+    const end = idx < plainLines.length - 1 ? introOffset + (idx + 1) * step : duration;
+    return {
+      timeSec: start,
+      endSec: Math.max(start + 1.0, end),
+      text,
+      isSynced: false,
+    };
+  });
+}
+
+export async function fetchLyricsForTrack(
+  track: Pick<Track, 'title' | 'artist' | 'album' | 'duration'>
+): Promise<{ lyrics: string; synced: boolean; source: string } | null> {
+  const resp = await fetchWithClientTimeout(resolveApiUrl('/api/ai/lyrics'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: track.title,
+      artist: track.artist,
+      album: track.album,
+      duration: track.duration,
+    }),
+  });
+
+  const payload = (await resp.json().catch(() => ({}))) as {
+    lyrics?: string;
+    synced?: boolean;
+    source?: string;
+    error?: string;
+    [key: string]: unknown;
+  };
+
+  if (!resp.ok) {
+    throw parseAiErrorResponse(resp, payload, 'Lyrics lookup failed');
+  }
+  clearActiveAiQuotaState();
+
+  const lyrics = String(payload.lyrics || '').trim();
+  if (!lyrics) return null;
+  return {
+    lyrics,
+    synced: Boolean(payload.synced),
+    source: String(payload.source || 'Lyrics Service'),
+  };
+}
+
 export function applyTagSuggestionToTrack(t: Track, s: TagCleanupSuggestion): Track {
   const nextYear =
     s.suggestedYear !== undefined
       ? s.suggestedYear.trim() || undefined
       : t.year;
+  const nextLyrics =
+    s.suggestedLyrics !== undefined
+      ? s.suggestedLyrics.trim() || undefined
+      : t.lyrics;
   return {
     ...t,
     title: s.suggestedTitle || t.title,
@@ -279,6 +546,7 @@ export function applyTagSuggestionToTrack(t: Track, s: TagCleanupSuggestion): Tr
     album: s.suggestedAlbum || t.album,
     genre: s.suggestedGenre || t.genre,
     year: nextYear,
+    lyrics: nextLyrics,
   };
 }
 
@@ -326,17 +594,21 @@ export async function runBatchedTagCleanupScan(
     const resp = await fetchWithClientTimeout(resolveApiUrl('/api/ai/tag-cleanup'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tracks: chunk }),
+      body: JSON.stringify({
+        tracks: chunk.map((t) => ({ ...t, hasLyrics: Boolean(t.lyrics?.trim()) })),
+      }),
     });
 
     const payload = (await resp.json().catch(() => ({}))) as {
       error?: string;
       suggestions?: Array<Record<string, string>>;
+      [key: string]: unknown;
     };
 
     if (!resp.ok) {
-      throw new Error(payload.error || `AI metadata service returned HTTP ${resp.status}.`);
+      throw parseAiErrorResponse(resp, payload, 'AI metadata service failed');
     }
+    clearActiveAiQuotaState();
 
     const batchSuggestions: TagCleanupSuggestion[] = [];
     for (let k = 0; k < chunk.length; k++) {
@@ -349,13 +621,16 @@ export async function runBatchedTagCleanupScan(
         const nextGenre = (match.suggestedGenre || orig.genre).trim() || orig.genre;
         const nextYear = (match.suggestedYear || orig.year || '').trim();
         const origYear = (orig.year || '').trim();
+        const origLyrics = (orig.lyrics || '').trim();
+        const nextLyrics = (match.suggestedLyrics || origLyrics).trim();
 
         const hasRealChange =
           nextTitle !== orig.title.trim() ||
           nextArtist !== orig.artist.trim() ||
           nextAlbum !== orig.album.trim() ||
           nextGenre !== orig.genre.trim() ||
-          (Boolean(nextYear) && nextYear !== origYear);
+          (Boolean(nextYear) && nextYear !== origYear) ||
+          (Boolean(nextLyrics) && nextLyrics !== origLyrics);
 
         if (hasRealChange) {
           const item: TagCleanupSuggestion = {
@@ -365,11 +640,13 @@ export async function runBatchedTagCleanupScan(
             currentAlbum: orig.album,
             currentGenre: orig.genre,
             currentYear: origYear,
+            currentLyrics: origLyrics || undefined,
             suggestedTitle: nextTitle,
             suggestedArtist: nextArtist,
             suggestedAlbum: nextAlbum,
             suggestedGenre: nextGenre,
             suggestedYear: nextYear,
+            suggestedLyrics: nextLyrics || undefined,
             reason: (match.reason || 'AI identified & corrected metadata').trim(),
             selected: true,
           };
@@ -394,6 +671,77 @@ export async function runBatchedTagCleanupScan(
 
     if (batchSuggestions.length > 0) {
       options?.onBatchComplete?.(batchSuggestions);
+    }
+  }
+
+  return Array.from(suggestionsById.values());
+}
+
+export async function runSingleItemAiScan(targetTracks: Track[]): Promise<TagCleanupSuggestion[]> {
+  if (targetTracks.length === 0) return [];
+  const batchSize = 25;
+  const suggestionsById = new Map<string, TagCleanupSuggestion>();
+
+  for (let i = 0; i < targetTracks.length; i += batchSize) {
+    const chunk = targetTracks.slice(i, i + batchSize);
+    const resp = await fetchWithClientTimeout(resolveApiUrl('/api/ai/tag-cleanup'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tracks: chunk.map((t) => ({ ...t, hasLyrics: Boolean(t.lyrics?.trim()) })),
+      }),
+    });
+
+    const payload = (await resp.json().catch(() => ({}))) as {
+      error?: string;
+      suggestions?: Array<Record<string, string>>;
+      [key: string]: unknown;
+    };
+
+    if (!resp.ok) {
+      throw parseAiErrorResponse(resp, payload, 'AI metadata service failed');
+    }
+    clearActiveAiQuotaState();
+
+    for (const orig of chunk) {
+      const match = (payload.suggestions || []).find((s) => s.trackId === orig.id);
+      if (!match) continue;
+      const nextTitle = (match.suggestedTitle || orig.title).trim() || orig.title;
+      const nextArtist = (match.suggestedArtist || orig.artist).trim() || orig.artist;
+      const nextAlbum = (match.suggestedAlbum || orig.album).trim() || orig.album;
+      const nextGenre = (match.suggestedGenre || orig.genre).trim() || orig.genre;
+      const nextYear = (match.suggestedYear || orig.year || '').trim();
+      const origYear = (orig.year || '').trim();
+      const origLyrics = (orig.lyrics || '').trim();
+      const nextLyrics = (match.suggestedLyrics || origLyrics).trim();
+
+      const hasRealChange =
+        nextTitle !== orig.title.trim() ||
+        nextArtist !== orig.artist.trim() ||
+        nextAlbum !== orig.album.trim() ||
+        nextGenre !== orig.genre.trim() ||
+        (Boolean(nextYear) && nextYear !== origYear) ||
+        (Boolean(nextLyrics) && nextLyrics !== origLyrics);
+
+      if (hasRealChange) {
+        suggestionsById.set(orig.id, {
+          trackId: orig.id,
+          currentTitle: orig.title,
+          currentArtist: orig.artist,
+          currentAlbum: orig.album,
+          currentGenre: orig.genre,
+          currentYear: origYear,
+          currentLyrics: origLyrics || undefined,
+          suggestedTitle: nextTitle,
+          suggestedArtist: nextArtist,
+          suggestedAlbum: nextAlbum,
+          suggestedGenre: nextGenre,
+          suggestedYear: nextYear,
+          suggestedLyrics: nextLyrics || undefined,
+          reason: (match.reason || 'AI identified & corrected metadata').trim(),
+          selected: true,
+        });
+      }
     }
   }
 
@@ -461,12 +809,23 @@ export async function runOriginalAlbumArtScan(
       if (resp.ok) {
         handledByServer = true;
         const data = (await resp.json()) as {
+          aiQuota?: Record<string, unknown>;
           results?: Array<{
             trackId: string;
             coverUrl: string;
             sourceLabel?: string;
           }>;
         };
+        if (data.aiQuota) {
+          setActiveAiQuotaState(buildAiQuotaStateFromPayload({
+            error: data.aiQuota.message,
+            retryAfterSeconds: data.aiQuota.retryAfterSeconds,
+            resetAtIso: data.aiQuota.resetAtIso,
+            quotaScope: data.aiQuota.quotaScope,
+          }));
+        } else {
+          clearActiveAiQuotaState();
+        }
         for (let k = 0; k < chunk.length; k++) {
           const orig = chunk[k];
           const match = (data.results || []).find((r) => r.trackId === orig.id);

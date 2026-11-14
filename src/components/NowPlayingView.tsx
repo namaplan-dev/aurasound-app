@@ -6,6 +6,7 @@ import {
   Heart,
   Library,
   ListMusic,
+  Mic2,
   Pause,
   Play,
   Repeat,
@@ -23,6 +24,7 @@ import { RepeatMode, StreamingQuality, Track } from '../types/music';
 import { audioEngine } from '../services/audioEngine';
 import { formatDuration } from '../utils/textNormalization';
 import { CoverArt } from './CoverArt';
+import { KaraokeLyricsView, KaraokeTvStageOverlay } from './KaraokeLyricsView';
 import { PaginationBar } from './PaginationBar';
 import { useViewportPageSize } from '../hooks/useViewportPageSize';
 import { tactile } from '../services/tactileFeedback';
@@ -44,6 +46,16 @@ interface NowPlayingViewProps {
   volume: number;
   lowBatteryMode: boolean;
   streamingQuality: StreamingQuality;
+  showLyrics: boolean;
+  karaokeOffsetMs: number;
+  fetchingLyrics?: boolean;
+  tvStageOpen?: boolean;
+  initialDeckPage?: 'player' | 'queue';
+  onChangeDeckPage?: (page: 'player' | 'queue') => void;
+  onSetTvStageOpen?: (open: boolean) => void;
+  onToggleShowLyrics: () => void;
+  onChangeKaraokeOffsetMs: (nextMs: number) => void;
+  onFetchTrackLyrics?: (track: Track) => void;
   onClose: () => void;
   onTogglePlay: () => void;
   onPrev: () => void;
@@ -77,6 +89,16 @@ export const NowPlayingView = React.memo(
         volume,
         lowBatteryMode,
         streamingQuality,
+        showLyrics,
+        karaokeOffsetMs,
+        fetchingLyrics = false,
+        tvStageOpen: controlledTvStageOpen,
+        initialDeckPage = 'player',
+        onChangeDeckPage,
+        onSetTvStageOpen,
+        onToggleShowLyrics,
+        onChangeKaraokeOffsetMs,
+        onFetchTrackLyrics,
         onClose,
         onTogglePlay,
         onPrev,
@@ -95,8 +117,14 @@ export const NowPlayingView = React.memo(
       },
       ref
     ) => {
-      const [deckPage, setDeckPage] = useState<DeckPage>('player');
+      const [deckPage, setDeckPage] = useState<DeckPage>(initialDeckPage);
       const [queuePage, setQueuePage] = useState(0);
+      const [localTvStageOpen, setLocalTvStageOpen] = useState(false);
+      const tvStageOpen = controlledTvStageOpen ?? localTvStageOpen;
+      const setTvStageOpen = (next: boolean) => {
+        setLocalTvStageOpen(next);
+        onSetTvStageOpen?.(next);
+      };
       const [progress, setProgress] = useState({ currentTime: 0, duration: track?.duration || 0 });
       const [dragTime, setDragTime] = useState<number | null>(null);
 
@@ -183,6 +211,10 @@ export const NowPlayingView = React.memo(
       }, [open]);
 
       useEffect(() => {
+        onChangeDeckPage?.(deckPage);
+      }, [deckPage, onChangeDeckPage]);
+
+      useEffect(() => {
         if (!open) return;
         const onKey = (e: KeyboardEvent) => {
           if (e.key === 'Escape') onClose();
@@ -191,9 +223,9 @@ export const NowPlayingView = React.memo(
         return () => window.removeEventListener('keydown', onKey);
       }, [open, onClose]);
 
-      // Real-time audio spectrum analyzer (respects Low Battery Mode & hidden tab)
+      // Real-time audio spectrum analyzer (active when Cover Art is shown & not Low Battery Mode)
       useEffect(() => {
-        if (!open || deckPage !== 'player' || !isPlaying || lowBatteryMode) return;
+        if (!open || deckPage !== 'player' || showLyrics || !isPlaying || lowBatteryMode) return;
         let rafId = 0;
         const bins = new Uint8Array(64);
         const draw = () => {
@@ -223,7 +255,7 @@ export const NowPlayingView = React.memo(
         };
         rafId = requestAnimationFrame(draw);
         return () => cancelAnimationFrame(rafId);
-      }, [open, deckPage, isPlaying, lowBatteryMode]);
+      }, [open, deckPage, showLyrics, isPlaying, lowBatteryMode]);
 
       if (!track) return null;
 
@@ -447,6 +479,27 @@ export const NowPlayingView = React.memo(
                   </span>
                   <button
                     type="button"
+                    onClick={() => {
+                      tactile.toggle(!showLyrics);
+                      onToggleShowLyrics();
+                    }}
+                    title={
+                      showLyrics
+                        ? 'Karaoke Lyrics ON — tap to show Album Cover'
+                        : 'Album Cover ON — tap to show Karaoke Lyrics'
+                    }
+                    aria-label={showLyrics ? 'Show Album Cover' : 'Show Karaoke Lyrics'}
+                    className={`min-h-[34px] px-2 flex items-center gap-1 rounded-xl border text-xs font-medium active:scale-95 transition-all duration-100 ${
+                      showLyrics
+                        ? 'accent-soft-bg border-amber-500/40'
+                        : 'border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200/60 dark:hover:bg-zinc-800'
+                    }`}
+                  >
+                    <Mic2 className="w-3.5 h-3.5" />
+                    <span className="hidden xs:inline sm:inline">Lyrics</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={onOpenShare}
                     aria-label="Share current track"
                     className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl hover:bg-zinc-200/60 dark:hover:bg-zinc-800 active:scale-90 transition-transform duration-100"
@@ -461,27 +514,44 @@ export const NowPlayingView = React.memo(
             <div className="flex-1 min-h-0 overflow-hidden px-4 sm:px-8 py-2.5 sm:py-4 flex flex-col">
               {deckPage === 'player' ? (
                 <div className="max-w-5xl w-full h-full min-h-0 mx-auto flex flex-col lg:flex-row [@media(max-height:540px)]:flex-row items-center justify-evenly gap-2.5 sm:gap-4 lg:gap-10">
-                  {/* Fluid Viewport-Fitted Cover Art + Spectrum */}
-                  <div
-                    data-sheet-handle="true"
-                    className="flex-1 min-h-0 w-full max-w-[320px] lg:max-w-[400px] [@media(max-height:540px)]:max-w-[200px] flex flex-col items-center justify-center gap-2"
-                  >
-                    <div className="h-[min(27dvh,220px)] sm:h-[min(36dvh,310px)] lg:h-[min(50dvh,380px)] [@media(max-height:540px)]:h-[min(56dvh,185px)] aspect-square max-w-full">
-                      <CoverArt
-                        src={track.coverUrl}
-                        alt={track.title}
-                        className="w-full h-full rounded-2xl shadow-xl border border-zinc-200/50 dark:border-zinc-800"
+                  {/* Fluid Viewport-Fitted Karaoke Stage (when Lyrics ON) OR Original Cover Art + Spectrum (when Lyrics OFF) */}
+                  {showLyrics ? (
+                    <div className="flex-1 min-h-0 w-full max-w-[480px] lg:max-w-[520px] h-[min(34dvh,300px)] sm:h-[min(42dvh,380px)] lg:h-[min(60dvh,460px)] [@media(max-height:540px)]:h-full [@media(max-height:540px)]:max-w-[340px]">
+                      <KaraokeLyricsView
+                        track={track}
+                        isPlaying={isPlaying}
+                        offsetMs={karaokeOffsetMs}
+                        fetchingLyrics={fetchingLyrics}
+                        onChangeOffsetMs={onChangeKaraokeOffsetMs}
+                        onSeek={(sec) => audioEngine.seek(sec)}
+                        onFetchLyrics={onFetchTrackLyrics}
+                        onOpenCast={onOpenCast}
+                        onToggleTvStage={() => setTvStageOpen(true)}
+                        onShowAlbumCover={onToggleShowLyrics}
                       />
                     </div>
-                    {!lowBatteryMode && (
-                      <canvas
-                        ref={canvasRef}
-                        width={360}
-                        height={32}
-                        className="w-full max-w-[300px] h-6 sm:h-8 [@media(max-height:540px)]:hidden rounded-lg opacity-90 shrink-0"
-                      />
-                    )}
-                  </div>
+                  ) : (
+                    <div
+                      data-sheet-handle="true"
+                      className="flex-1 min-h-0 w-full max-w-[320px] lg:max-w-[400px] [@media(max-height:540px)]:max-w-[200px] flex flex-col items-center justify-center gap-2"
+                    >
+                      <div className="h-[min(27dvh,220px)] sm:h-[min(36dvh,310px)] lg:h-[min(50dvh,380px)] [@media(max-height:540px)]:h-[min(56dvh,185px)] aspect-square max-w-full">
+                        <CoverArt
+                          src={track.coverUrl}
+                          alt={track.title}
+                          className="w-full h-full rounded-2xl shadow-xl border border-zinc-200/50 dark:border-zinc-800"
+                        />
+                      </div>
+                      {!lowBatteryMode && (
+                        <canvas
+                          ref={canvasRef}
+                          width={360}
+                          height={32}
+                          className="w-full max-w-[300px] h-6 sm:h-8 [@media(max-height:540px)]:hidden rounded-lg opacity-90 shrink-0"
+                        />
+                      )}
+                    </div>
+                  )}
 
                   {/* Right / Bottom Track Info & Transport Controls */}
                   <div className="w-full max-w-md shrink-0 flex flex-col gap-2.5 sm:gap-3.5 [@media(max-height:540px)]:gap-1.5">
@@ -790,6 +860,19 @@ export const NowPlayingView = React.memo(
               )}
             </div>
           </div>
+
+          <KaraokeTvStageOverlay
+            open={tvStageOpen}
+            track={track}
+            isPlaying={isPlaying}
+            offsetMs={karaokeOffsetMs}
+            fetchingLyrics={fetchingLyrics}
+            onChangeOffsetMs={onChangeKaraokeOffsetMs}
+            onSeek={(sec) => audioEngine.seek(sec)}
+            onFetchLyrics={onFetchTrackLyrics}
+            onOpenCast={onOpenCast}
+            onClose={() => setTvStageOpen(false)}
+          />
         </>
       );
     }

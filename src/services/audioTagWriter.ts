@@ -5,6 +5,7 @@ export interface AudioTagUpdate {
   genre?: string;
   year?: string;
   composer?: string;
+  lyrics?: string;
 }
 
 export interface TagWriteResult {
@@ -86,6 +87,36 @@ function encodeId3v23TextFrame(frameId: string, text: string): Uint8Array {
   return frame;
 }
 
+function encodeId3v23UsltFrame(lyrics: string): Uint8Array {
+  // ID3v2.3 USLT frame: encoding (0x01 UTF-16LE BOM) + lang ("eng") + empty desc (FF FE 00 00) + BOM + UTF-16LE text
+  const strLen = lyrics.length;
+  const payloadLen = 1 + 3 + 4 + 2 + strLen * 2;
+  const frame = new Uint8Array(10 + payloadLen);
+  frame[0] = 0x55; // U
+  frame[1] = 0x53; // S
+  frame[2] = 0x4c; // L
+  frame[3] = 0x54; // T
+  writeUint32BE(frame, 4, payloadLen);
+  frame[8] = 0;
+  frame[9] = 0;
+  frame[10] = 0x01; // UTF-16 with BOM
+  frame[11] = 0x65; // 'e'
+  frame[12] = 0x6e; // 'n'
+  frame[13] = 0x67; // 'g'
+  frame[14] = 0xff; // empty descriptor BOM + null
+  frame[15] = 0xfe;
+  frame[16] = 0x00;
+  frame[17] = 0x00;
+  frame[18] = 0xff; // lyrics BOM
+  frame[19] = 0xfe;
+  for (let i = 0; i < strLen; i++) {
+    const code = lyrics.charCodeAt(i);
+    frame[20 + i * 2] = code & 0xff;
+    frame[21 + i * 2] = (code >>> 8) & 0xff;
+  }
+  return frame;
+}
+
 function buildId3v1Bytes(
   base: Uint8Array,
   tags: AudioTagUpdate
@@ -128,7 +159,7 @@ function concatUint8Arrays(chunks: Uint8Array[]): Uint8Array {
   return out;
 }
 
-const REPLACED_ID3_FRAMES = new Set([
+const REPLACED_ID3_BASE_FRAMES = new Set([
   'TIT2',
   'TPE1',
   'TALB',
@@ -143,6 +174,8 @@ const REPLACED_ID3_FRAMES = new Set([
   'TYE',
   'TCM',
 ]);
+
+const LYRICS_ID3_FRAMES = new Set(['USLT', 'SYLT', 'ULT']);
 
 function rewriteMp3Tags(source: Uint8Array, tags: AudioTagUpdate): TagWriteResult {
   const hasId3v2 =
@@ -194,7 +227,11 @@ function rewriteMp3Tags(source: Uint8Array, tags: AudioTagUpdate): TagWriteResul
         pos += 10;
         if (size <= 0 || pos + size > oldEnd) break;
 
-        if (!REPLACED_ID3_FRAMES.has(frameId)) {
+        const shouldReplace =
+          REPLACED_ID3_BASE_FRAMES.has(frameId) ||
+          (tags.lyrics !== undefined && LYRICS_ID3_FRAMES.has(frameId));
+
+        if (!shouldReplace) {
           const rebuilt = new Uint8Array(10 + size);
           rebuilt[0] = source[pos - 10];
           rebuilt[1] = source[pos - 9];
@@ -232,6 +269,9 @@ function rewriteMp3Tags(source: Uint8Array, tags: AudioTagUpdate): TagWriteResul
   }
   if (tags.composer !== undefined && tags.composer.trim()) {
     newFrames.push(encodeId3v23TextFrame('TCOM', tags.composer.trim()));
+  }
+  if (tags.lyrics !== undefined && tags.lyrics.trim()) {
+    newFrames.push(encodeId3v23UsltFrame(tags.lyrics.trim()));
   }
 
   const allFrames = [...newFrames, ...preservedFrames];
@@ -274,7 +314,7 @@ function rewriteMp3Tags(source: Uint8Array, tags: AudioTagUpdate): TagWriteResul
   };
 }
 
-const REPLACED_VORBIS_KEYS = new Set([
+const REPLACED_VORBIS_BASE_KEYS = new Set([
   'TITLE',
   'ARTIST',
   'ALBUM',
@@ -283,6 +323,8 @@ const REPLACED_VORBIS_KEYS = new Set([
   'YEAR',
   'COMPOSER',
 ]);
+
+const LYRICS_VORBIS_KEYS = new Set(['LYRICS', 'UNSYNCEDLYRICS']);
 
 function rewriteFlacTags(source: Uint8Array, tags: AudioTagUpdate): TagWriteResult {
   if (
@@ -337,7 +379,10 @@ function rewriteFlacTags(source: Uint8Array, tags: AudioTagUpdate): TagWriteResu
           const eqIdx = entry.indexOf('=');
           if (eqIdx > 0) {
             const key = entry.slice(0, eqIdx).trim().toUpperCase();
-            if (!REPLACED_VORBIS_KEYS.has(key)) {
+            const shouldReplace =
+              REPLACED_VORBIS_BASE_KEYS.has(key) ||
+              (tags.lyrics !== undefined && LYRICS_VORBIS_KEYS.has(key));
+            if (!shouldReplace) {
               existingOtherComments.push(entry);
             }
           }
@@ -363,6 +408,9 @@ function rewriteFlacTags(source: Uint8Array, tags: AudioTagUpdate): TagWriteResu
   }
   if (tags.composer !== undefined && tags.composer.trim()) {
     newComments.push(`COMPOSER=${tags.composer.trim()}`);
+  }
+  if (tags.lyrics !== undefined && tags.lyrics.trim()) {
+    newComments.push(`LYRICS=${tags.lyrics.trim()}`);
   }
   const allComments = [...newComments, ...existingOtherComments];
 
